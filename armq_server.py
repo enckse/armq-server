@@ -7,7 +7,6 @@ Excepts BROADCAST messages only.
 import zmq
 import threading
 import queue
-import signal
 import redis
 import time
 import argparse
@@ -21,7 +20,11 @@ log = logging.getLogger('armq')
 log.addHandler(JournalHandler(SYSLOG_IDENTIFIER='armq'))
 ch = logging.StreamHandler()
 log.addHandler(ch)
-log.setLevel(logging.INFO)
+log.setLevel(logging.DEBUG)
+
+# cmds
+FLUSH = "flush"
+STOP = "kill"
 
 
 def process(q, host, port, bucketing):
@@ -39,7 +42,17 @@ def process(q, host, port, bucketing):
                 bucket = int(time.time() / bucketing)
                 log.debug(bucket)
                 log.debug(obj)
-                r.rpush(str(bucket), obj.decode("utf-8"))
+                obj_str = obj.decode("utf-8").strip()
+                if obj_str == STOP:
+                    log.info("stop request")
+                    with lock:
+                        RUNNING = False
+                elif obj_str == FLUSH:
+                    log.info("flushing")
+                    r.save()
+                    count = 0
+                else:
+                    r.rpush(str(bucket), obj_str)
                 if count > 100:
                     r.save()
                     count = 0
@@ -77,16 +90,6 @@ def main():
                                                     args.bucket))
     thread.daemon = True
     thread.start()
-
-    def signal_handler(signal, frame):
-        """Signal handler to stop."""
-        global RUNNING
-        global lock
-        log.info("received KILL")
-        q.put(None)
-        with lock:
-            RUNNING = False
-    signal.signal(signal.SIGUSR1, signal_handler)
     run = True
     while run:
         try:

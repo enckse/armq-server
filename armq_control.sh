@@ -2,21 +2,30 @@
 function _kill()
 {
     echo "killing server"
-    pid=$(pgrep -f "python armq_server.py")
-    for p in $pid; do
-		kill -10 $p
-		echo "kill" | nc $1 $2
+    _msg "kill" $1 $2
+    end=1
+    while [ $end -eq 1 ]; do
+        p=$(pgrep -f "python armq_server.py")
+        if [ -z "$p" ]; then
+            end=0
+        else
+            _msg "end" $1 $2
+        fi
     done
+}
+
+_msg() {
+    echo "$1" | nc $2 $3 &
 }
 
 function _flush()
 {
-    echo "" | nc $1 $2
+    _msg "flush" $1 $2
 }
 
 function _test()
 {
-    echo "test" | nc $1 $2 &
+    _msg "test" $1 $2
 }
 
 function _help()
