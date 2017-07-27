@@ -38,7 +38,7 @@ ACK = "ack"
 
 def admin(args):
     """Administration of server."""
-    if args.command == None:
+    if args.command is None:
         log.warn("no command set...")
         return
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -53,6 +53,7 @@ def admin(args):
         totalsent = totalsent + sent
     s.recv(len(ACK))
     s.shutdown(socket.SHUT_WR)
+
 
 def process(q, host, port, bucketing):
     """process data."""
@@ -123,7 +124,9 @@ def main():
     if server_mode:
         server(args)
 
+
 def server(args):
+    """Host the receiving server."""
     context = zmq.Context()
     socket = context.socket(zmq.STREAM)
     socket.bind(args.bind)
