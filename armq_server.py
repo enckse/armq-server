@@ -11,9 +11,17 @@ import signal
 import redis
 import time
 import argparse
+import logging
+from systemd.journal import JournalHandler
 
 RUNNING = True
 lock = threading.RLock()
+
+log = logging.getLogger('armq')
+log.addHandler(JournalHandler(SYSLOG_IDENTIFIER='armq'))
+ch = logging.StreamHandler()
+log.addHandler(ch)
+log.setLevel(logging.INFO)
 
 
 def process(q, host, port, bucketing):
@@ -22,30 +30,31 @@ def process(q, host, port, bucketing):
     global RUNNING
     run = True
     r = redis.StrictRedis(host=host, port=port, db=0)
-    print("connected to redis")
+    log.info("connected to redis")
     count = 0
     while run:
         try:
             obj = q.get()
             if obj is not None:
                 bucket = int(time.time() / bucketing)
-                print(bucket)
+                log.debug(bucket)
+                log.debug(obj)
                 r.rpush(str(bucket), obj.decode("utf-8"))
                 if count > 100:
                     r.save()
                     count = 0
                 count += 1
         except Exception as e:
-            print('processing error')
-            print(e)
+            log.warn("processing error")
+            log.warn(e)
         with lock:
             run = RUNNING
     try:
         r.save()
     except Exception as e:
-        print('exit error')
-        print(e)
-    print('background processing completed')
+        log.warn('exit error')
+        log.warn(e)
+    log.info("worker done")
 
 
 def main():
@@ -73,7 +82,7 @@ def main():
         """Signal handler to stop."""
         global RUNNING
         global lock
-        print('killed')
+        log.info("received KILL")
         q.put(None)
         with lock:
             RUNNING = False
@@ -85,10 +94,11 @@ def main():
             q.put(rcv)
             socket.send_multipart([clientid, "ack".encode("utf-8")])
         except Exception as e:
-            print('socket error')
-            print(e)
+            log.warn("socket error")
+            log.warn(e)
         with lock:
             run = RUNNING
+    log.info('done')
 
 if __name__ == '__main__':
     main()
