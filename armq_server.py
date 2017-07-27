@@ -11,6 +11,7 @@ import redis
 import time
 import argparse
 import logging
+import socket
 from systemd.journal import JournalHandler
 
 RUNNING = True
@@ -25,7 +26,33 @@ log.setLevel(logging.DEBUG)
 # cmds
 FLUSH = "flush"
 STOP = "kill"
+TEST = "test"
 
+# modes
+SERVER = "server"
+ADMIN = "admin"
+
+# Constants
+ACK = "ack"
+
+
+def admin(args):
+    """Administration of server."""
+    if args.command == None:
+        log.warn("no command set...")
+        return
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    parts = args.bind.split(":")
+    s.connect((parts[1].replace("//*", "localhost"), int(parts[2])))
+    totalsent = 0
+    msg = args.command.encode("utf-8")
+    while totalsent < len(msg):
+        sent = s.send(msg[totalsent:])
+        if sent == 0:
+            raise RuntimeError("socket connection broken")
+        totalsent = totalsent + sent
+    s.recv(len(ACK))
+    s.shutdown(socket.SHUT_WR)
 
 def process(q, host, port, bucketing):
     """process data."""
@@ -79,7 +106,24 @@ def main():
     parser.add_argument('--rserver', type=str, default='localhost')
     parser.add_argument('--bucket', type=int, default=100)
     parser.add_argument('--bind', type=str, default="tcp://*:5555")
+    parser.add_argument('--command',
+                        type=str,
+                        default=None,
+                        choices=[FLUSH, STOP, TEST])
+    parser.add_argument('--mode',
+                        type=str,
+                        default=None,
+                        choices=[SERVER, ADMIN])
     args = parser.parse_args()
+    server_mode = True
+    if args.mode:
+        server_mode = args.mode == SERVER
+        if args.mode == ADMIN:
+            admin(args)
+    if server_mode:
+        server(args)
+
+def server(args):
     context = zmq.Context()
     socket = context.socket(zmq.STREAM)
     socket.bind(args.bind)
@@ -95,7 +139,7 @@ def main():
         try:
             clientid, rcv = socket.recv_multipart()
             q.put(rcv)
-            socket.send_multipart([clientid, "ack".encode("utf-8")])
+            socket.send_multipart([clientid, ACK.encode("utf-8")])
         except Exception as e:
             log.warn("socket error")
             log.warn(e)
