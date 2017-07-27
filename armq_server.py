@@ -15,6 +15,7 @@ import argparse
 RUNNING = True
 lock = threading.RLock()
 
+
 def process(q, host, port, bucketing):
     """process data."""
     global lock
@@ -35,10 +36,15 @@ def process(q, host, port, bucketing):
                     count = 0
                 count += 1
         except Exception as e:
+            print('processing error')
             print(e)
         with lock:
             run = RUNNING
-    r.save()
+    try:
+        r.save()
+    except Exception as e:
+        print('exit error')
+        print(e)
     print('background processing completed')
 
 
@@ -56,10 +62,15 @@ def main():
     socket = context.socket(zmq.STREAM)
     socket.bind(args.bind)
     q = queue.Queue()
-    thread = threading.Thread(target=process,args=(q, args.rserver, args.rport, args.bucket))
+    thread = threading.Thread(target=process, args=(q,
+                                                    args.rserver,
+                                                    args.rport,
+                                                    args.bucket))
     thread.daemon = True
     thread.start()
+
     def signal_handler(signal, frame):
+        """Signal handler to stop."""
         global RUNNING
         global lock
         print('killed')
@@ -74,6 +85,7 @@ def main():
             q.put(rcv)
             socket.send_multipart([clientid, "ack".encode("utf-8")])
         except Exception as e:
+            print('socket error')
             print(e)
         with lock:
             run = RUNNING
