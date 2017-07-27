@@ -2,7 +2,7 @@
 """
 Receive data from ARMA extensions and store.
 
-Excepts BROADCAST messages only.
+Accepts BROADCAST messages only.
 """
 import zmq
 import threading
