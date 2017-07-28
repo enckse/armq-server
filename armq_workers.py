@@ -7,8 +7,8 @@ import argparse
 import logging
 from systemd.journal import JournalHandler
 
-log = logging.getLogger('armq')
-log.addHandler(JournalHandler(SYSLOG_IDENTIFIER='armq'))
+log = logging.getLogger('armqw')
+log.addHandler(JournalHandler(SYSLOG_IDENTIFIER='armqw'))
 ch = logging.StreamHandler()
 log.addHandler(ch)
 log.setLevel(logging.DEBUG)
