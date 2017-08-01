@@ -139,6 +139,8 @@ def server(args):
     while run:
         try:
             clientid, rcv = socket.recv_multipart()
+            if len(rcv) == 0:
+                continue
             q.put(rcv)
             socket.send_multipart([clientid, ACK.encode("utf-8")])
         except Exception as e:
