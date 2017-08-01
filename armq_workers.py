@@ -7,8 +7,6 @@ from systemd.journal import JournalHandler
 
 log = logging.getLogger('armqw')
 log.addHandler(JournalHandler(SYSLOG_IDENTIFIER='armqw'))
-ch = logging.StreamHandler()
-log.addHandler(ch)
 log.setLevel(logging.DEBUG)
 
 

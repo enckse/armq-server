@@ -19,8 +19,6 @@ lock = threading.RLock()
 
 log = logging.getLogger('armq')
 log.addHandler(JournalHandler(SYSLOG_IDENTIFIER='armq'))
-ch = logging.StreamHandler()
-log.addHandler(ch)
 log.setLevel(logging.DEBUG)
 
 # cmds
