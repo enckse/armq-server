@@ -1,0 +1,22 @@
+pkgname=armq-server
+pkgver=0.0.1
+pkgrel=1
+pkgdesc="arma data capture server and utilities"
+url="https://github.com/enckse/armq-server"
+license=('MIT')
+depends=('python' 'python-systemd' 'python-redis' 'python-pyzmq')
+makedepends=('git')
+source=("git+$url")
+sha512sums=('SKIP')
+
+pkgver() {
+    cd ${srcdir}/$pkgname
+    printf "%s.c%s" "$(date -u +%Y%m%d.%H%M)" "$(git rev-parse --short HEAD)"
+}
+
+package() {
+    cd ${srcdir}/$pkgname
+    install -Dm 755 armq_server.py ${pkgdir}/usr/bin/armq_server.py
+    install -Dm 755 armq_workers.py ${pkgdir}/usr/bin/armq_workers.py
+    install -Dm 644 service/armqserver.service ${pkgdir}/usr/lib/systemd/system/armqserver.service
+}
