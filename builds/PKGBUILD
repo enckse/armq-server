@@ -18,5 +18,6 @@ package() {
     cd ${srcdir}/$pkgname
     install -Dm 755 armq_server.py ${pkgdir}/usr/bin/armq_server
     install -Dm 755 armq_workers.py ${pkgdir}/usr/bin/armq_workers
+    install -Dm 755 armq_admin ${pkgdir}/usr/bin/armq_admin
     install -Dm 644 service/armqserver.service ${pkgdir}/usr/lib/systemd/system/armqserver.service
 }
