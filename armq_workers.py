@@ -106,6 +106,7 @@ CREATE TABLE IF NOT EXISTS data (
         c.execute("""
 CREATE TABLE IF NOT EXISTS attrs (
     src int,
+    idx int,
     attr text
 )
 """)
@@ -123,8 +124,9 @@ CREATE TABLE IF NOT EXISTS attrs (
                 last = c.execute("SELECT last_insert_rowid()").fetchone()[0]
                 if segment.cat != "n":
                     parts = segment.raw.split("`")
-                    seg_parts = [(last, x) for x in parts]
-                    c.executemany("INSERT INTO attrs VALUES (?, ?)", seg_parts)
+                    seg_parts = [(last, ind, x) for ind, x in enumerate(parts)]
+                    c.executemany("INSERT INTO attrs VALUES (?, ?, ?)",
+                                  seg_parts)
 
 
 def raw(request):
