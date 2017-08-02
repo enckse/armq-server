@@ -51,8 +51,11 @@ def cache(request):
         cached[item[0]] = item[1]
     return cached
 
+
 def _raw_segment(f, tag, end=""):
+    """Raw segment output."""
     f.write("\n==={}==={}".format(tag, end).encode("utf-8"))
+
 
 def raw(request):
     """Raw data stream to disk."""
