@@ -3,6 +3,7 @@
 import redis
 import argparse
 import logging
+import os
 from systemd.journal import JournalHandler
 
 log = logging.getLogger('armqw')
@@ -18,6 +19,7 @@ class Request(object):
         self.bucket = None
         self.server = None
         self.since = None
+        self.working = None
 
 
 def _get_data(request, decode=False):
@@ -49,11 +51,18 @@ def cache(request):
         cached[item[0]] = item[1]
     return cached
 
+def _raw_segment(f, tag, end=""):
+    f.write("\n==={}==={}".format(tag, end).encode("utf-8"))
 
 def raw(request):
     """Raw data stream to disk."""
+    base_path = os.path.join(request.working, 'raw-')
     for item in _get_data(request):
-        print(item)
+        with open(base_path + str(item[0]) + ".dump", 'wb') as f:
+            for datum in item[1]:
+                _raw_segment(f, "STARTS", "\n")
+                f.write(datum)
+                _raw_segment(f, "ENDING")
 
 
 def common_worker(host, port, req, callback):
@@ -82,10 +91,14 @@ def main():
     parser.add_argument('--mode', type=str, required=True, choices=opts.keys())
     parser.add_argument('--since', type=int, default=None)
     parser.add_argument('--bucket', type=int, default=100)
+    parser.add_argument('--workdir', type=str, default=None)
     args = parser.parse_args()
     req = Request()
     req.bucket = args.bucket
     req.since = args.since
+    req.working = ''
+    if args.workdir:
+        req.working = args.workdir 
     common_worker(args.server, args.port, req, opts[args.mode])
 
 if __name__ == '__main__':
