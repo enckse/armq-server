@@ -56,11 +56,16 @@ def _raw_segment(f, tag, end=""):
 
 def raw(request):
     """Raw data stream to disk."""
-    base_path = os.path.join(request.working, 'raw-')
-    for item in _get_data(request):
-        with open(base_path + str(item[0]) + ".dump", 'wb') as f:
+    base_path = os.path.join(request.working, 'raw.dump')
+    log.info("writing to file")
+    log.info(base_path)
+    with open(base_path, 'wb') as f:
+        for item in _get_data(request):
+            val = str(item[0]).encode("utf-8")
             for datum in item[1]:
-                _raw_segment(f, "STARTS", "\n")
+                _raw_segment(f, "STARTS ", "\n")
+                f.write(val)
+                f.write(b"\n")
                 f.write(datum)
                 _raw_segment(f, "ENDING")
 
