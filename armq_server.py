@@ -19,7 +19,7 @@ lock = threading.RLock()
 
 log = logging.getLogger('armq')
 log.addHandler(JournalHandler(SYSLOG_IDENTIFIER='armq'))
-log.setLevel(logging.DEBUG)
+log.setLevel(logging.INFO)
 
 # cmds
 FLUSH = "flush"
