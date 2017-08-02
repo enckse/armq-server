@@ -22,9 +22,10 @@ log.addHandler(JournalHandler(SYSLOG_IDENTIFIER='armq'))
 log.setLevel(logging.INFO)
 
 # cmds
-FLUSH = "flush"
+SNAP = "snapshot"
 STOP = "kill"
 TEST = "test"
+FLUSH = "flush"
 
 # modes
 SERVER = "server"
@@ -73,9 +74,13 @@ def process(q, host, port, bucketing):
                     log.info("stop request")
                     with lock:
                         RUNNING = False
-                elif obj_str == FLUSH:
-                    log.info("flushing")
+                elif obj_str == SNAP:
+                    log.info("saving")
                     r.save()
+                    count = 0
+                elif obj_str == FLUSH:
+                    log.info('flushing')
+                    r.flushall()
                     count = 0
                 else:
                     r.rpush(str(bucket), obj_str)
@@ -108,7 +113,7 @@ def main():
     parser.add_argument('--command',
                         type=str,
                         default=None,
-                        choices=[FLUSH, STOP, TEST])
+                        choices=[FLUSH, STOP, TEST, SNAP])
     parser.add_argument('--mode',
                         type=str,
                         default=None,
