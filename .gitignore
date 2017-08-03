@@ -101,3 +101,4 @@ ENV/
 bin/
 *.dump
 *.db
+armqdata/
