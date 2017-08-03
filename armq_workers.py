@@ -171,7 +171,7 @@ def main():
     parser.add_argument('--mode', type=str, required=True, choices=opts.keys())
     parser.add_argument('--since', type=int, default=None)
     parser.add_argument('--bucket', type=int, default=100)
-    parser.add_argument('--workdir', type=str, default=None)
+    parser.add_argument('--workdir', type=str, default='armqdata')
     args = parser.parse_args()
     req = Request()
     req.bucket = args.bucket
@@ -179,6 +179,8 @@ def main():
     req.working = ''
     if args.workdir:
         req.working = args.workdir
+        if not os.path.exists(req.working):
+            os.mkdir(req.working)
     common_worker(args.server, args.port, req, opts[args.mode])
 
 if __name__ == '__main__':
