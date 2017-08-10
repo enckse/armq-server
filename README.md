@@ -16,6 +16,8 @@ python armq_server.py
 
 change the `rport` and `rserver` settings if redis is not co-located
 
+[![Build Status](https://travis-ci.org/enckse/armq-server.svg?branch=master)](https://travis-ci.org/enckse/armq-server)
+
 # Admin
 
 to save current state
