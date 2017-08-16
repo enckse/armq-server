@@ -1,3 +1,4 @@
+SRC=$(shell find . -type f | grep ".py$$")
 .PHONY: all
 
 
@@ -7,5 +8,5 @@ install:
 all: analyze
 
 analyze:
-	pep8 *.py
-	pep257 *.py
+	pep8 $(SRC)
+	pep257 $(SRC)
