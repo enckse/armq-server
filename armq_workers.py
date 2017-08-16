@@ -181,7 +181,7 @@ def main():
         req.working = args.workdir
         if not os.path.exists(req.working):
             os.mkdir(req.working)
-    common_worker(server, port, req, opts[args.mode])
+    common_worker(args.server, args.port, req, opts[args.mode])
 
 
 def load_cached(server, port, req):
