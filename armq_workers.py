@@ -150,7 +150,7 @@ def common_worker(host, port, req, callback):
     log.info("connected to redis")
     try:
         req.server = r
-        callback(req)
+        return callback(req)
     except Exception as e:
         log.warn("callback error")
         log.warn(e)
@@ -186,7 +186,7 @@ def main():
 
 def load_cached(server, port, req):
     """Load cached data."""
-    common_worker(server, port, req, cache)
+    return common_worker(server, port, req, cache)
 
 
 if __name__ == '__main__':
