@@ -14,6 +14,10 @@ TIME = "time"
 LAST = "last"
 HISTORY = "history"
 
+EVENT_DATUM = {}
+EVENT_DATUM["unit_killed"] = {"victim": "unit", "attacker": "unit"}
+IGNORE_EVENTS = ["positions_infantry", "positions_vehicles"]
+
 # flask
 app = Flask(__name__)
 
@@ -72,9 +76,18 @@ def _proc(key, data, time):
         if time is not None and compare <= time:
             continue
         event = parts[3]
-        # TODO: filter events
+        if event in EVENT_DATUM:
+            datum = EVENT_DATUM[event]
+            obj = json.loads(parts[4])
+            event += "<hr>"
+            added = []
+            for item in datum:
+                added.append("{} = '{}' ".format(item, obj[item][datum[item]]))
+            event += "<br>".join(added)
+        elif event in IGNORE_EVENTS:
+            continue
         app.config[TIME] = compare
-        text = event + " @ " + str(compare)
+        text = event + "<hr>time: " + str(compare)
         hist = app.config[HISTORY]
         hist.insert(0, text)
         if len(hist) > 25:
@@ -117,10 +130,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--port', type=int, default=6379)
     parser.add_argument('--server', type=str, default='localhost')
+    parser.add_argument('--since', type=int, default=None)
     args = parser.parse_args()
     app.config[SERVER] = args.server
     app.config[PORT] = args.port
-    app.config[SINCE] = None
+    app.config[SINCE] = args.since
     app.config[TIME] = None
     app.config[LAST] = None
     app.config[HISTORY] = []
