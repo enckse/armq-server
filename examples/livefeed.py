@@ -31,7 +31,6 @@ HTML = """
 <style>
 body
 {
-    background-color:#f0f0f0;
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
@@ -44,7 +43,8 @@ body
 }
 .entry
 {
-    border: 2px solid black;
+    border-radius: 10px;
+    border: 2px solid blue;
     padding: 10px;
 }
 
