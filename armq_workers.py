@@ -3,7 +3,6 @@
 import redis
 import argparse
 import logging
-import sqlite3 as sl
 import os
 from systemd.journal import JournalHandler
 
@@ -89,46 +88,6 @@ def _segment(data_row):
     return obj
 
 
-def sqlite(request):
-    """Save to sqlite database."""
-    base_path = _get_path(request, "armq.db")
-    with sl.connect(base_path) as conn:
-        c = conn.cursor()
-        c.execute("""
-CREATE TABLE IF NOT EXISTS data (
-    bucket int,
-    type text,
-    uuid text,
-    timestamp text,
-    category text,
-    data text
-)""")
-        c.execute("""
-CREATE TABLE IF NOT EXISTS attrs (
-    src int,
-    idx int,
-    attr text
-)
-""")
-        for item in _get_data(request, decode=True):
-            bucket = item[0]
-            for obj in item[1]:
-                segment = _segment(obj)
-                c.execute("INSERT INTO data VALUES (?, ?, ?, ?, ?, ?)",
-                          (bucket,
-                           segment.type,
-                           segment.uuid,
-                           segment.timestamp,
-                           segment.cat,
-                           segment.raw))
-                last = c.execute("SELECT last_insert_rowid()").fetchone()[0]
-                if segment.cat != "n":
-                    parts = segment.raw.split("`")
-                    seg_parts = [(last, ind, x) for ind, x in enumerate(parts)]
-                    c.executemany("INSERT INTO attrs VALUES (?, ?, ?)",
-                                  seg_parts)
-
-
 def raw(request):
     """Raw data stream to disk."""
     base_path = _get_path(request, "armq.dump")
@@ -160,11 +119,9 @@ def main():
     """Main entry."""
     _CACHE = "cache"
     _RAW = "raw"
-    _SQL = "sqlite"
     opts = {}
     opts[_CACHE] = cache
     opts[_RAW] = raw
-    opts[_SQL] = sqlite
     parser = argparse.ArgumentParser()
     parser.add_argument('--port', type=int, default=6379)
     parser.add_argument('--server', type=str, default='localhost')
