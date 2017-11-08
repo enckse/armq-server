@@ -48,7 +48,6 @@ def admin(args):
         if sent == 0:
             raise RuntimeError("socket connection broken")
         totalsent = totalsent + sent
-    s.recv(len(ACK))
     s.shutdown(socket.SHUT_WR)
 
 
