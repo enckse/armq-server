@@ -68,7 +68,7 @@ def _proc(key, data, time):
     """Process cache data."""
     for item in data[key]:
         parts = item.split("`")
-        if not parts[0].endswith(":event"):
+        if not parts[0] == "event":
             continue
         compare = float(parts[-1])
         if compare == 0:
@@ -131,6 +131,7 @@ if __name__ == "__main__":
     parser.add_argument('--port', type=int, default=6379)
     parser.add_argument('--server', type=str, default='localhost')
     parser.add_argument('--since', type=int, default=None)
+    parser.add_argument('--web', type=int, default=7070)
     args = parser.parse_args()
     app.config[SERVER] = args.server
     app.config[PORT] = args.port
@@ -138,4 +139,4 @@ if __name__ == "__main__":
     app.config[TIME] = None
     app.config[LAST] = None
     app.config[HISTORY] = []
-    app.run()
+    app.run(host="0.0.0.0", port=args.web)
