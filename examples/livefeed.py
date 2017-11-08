@@ -13,6 +13,7 @@ SINCE = "since"
 TIME = "time"
 LAST = "last"
 HISTORY = "history"
+TAG = "tag"
 
 EVENT_DATUM = {}
 EVENT_DATUM["unit_killed"] = {"victim": "unit", "attacker": "unit"}
@@ -66,10 +67,14 @@ ENTRY = "<div class=\"entry\">" + CONTENT_KEY + "</div>"
 
 def _proc(key, data, time):
     """Process cache data."""
+    tagged = app.config[TAG]
     for item in data[key]:
         parts = item.split("`")
         if not parts[0] == "event":
             continue
+        if tagged is not None:
+            if parts[1] != tagged:
+                continue
         compare = float(parts[-2])
         if compare == 0:
             continue
@@ -132,6 +137,7 @@ if __name__ == "__main__":
     parser.add_argument('--server', type=str, default='localhost')
     parser.add_argument('--since', type=int, default=None)
     parser.add_argument('--web', type=int, default=7070)
+    parser.add_argument('--tag', type=str, default=None)
     args = parser.parse_args()
     app.config[SERVER] = args.server
     app.config[PORT] = args.port
@@ -139,4 +145,5 @@ if __name__ == "__main__":
     app.config[TIME] = None
     app.config[LAST] = None
     app.config[HISTORY] = []
+    app.config[TAG] = args.tag
     app.run(host="0.0.0.0", port=args.web)
