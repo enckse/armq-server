@@ -4,7 +4,6 @@ Receive data from ARMA extensions and store.
 
 Accepts BROADCAST messages only.
 """
-import zmq
 import threading
 import queue
 import redis
@@ -65,11 +64,11 @@ def process(q, host, port, bucketing):
     while run:
         try:
             obj = q.get()
-            if obj is not None:
+            if obj is not None and len(obj) > 0:
                 bucket = int(time.time() / bucketing)
                 log.debug(bucket)
                 log.debug(obj)
-                obj_str = obj.decode("utf-8").strip()
+                obj_str = "".join([x.decode("utf-8").strip() for x in obj])
                 if obj_str == STOP:
                     log.info("stop request")
                     with lock:
@@ -109,7 +108,7 @@ def main():
     parser.add_argument('--rport', type=int, default=6379)
     parser.add_argument('--rserver', type=str, default='localhost')
     parser.add_argument('--bucket', type=int, default=100)
-    parser.add_argument('--bind', type=str, default="tcp://*:5555")
+    parser.add_argument('--port', type=int, default=5000)
     parser.add_argument('--command',
                         type=str,
                         default=None,
@@ -130,9 +129,6 @@ def main():
 
 def server(args):
     """Host the receiving server."""
-    context = zmq.Context()
-    socket = context.socket(zmq.STREAM)
-    socket.bind(args.bind)
     q = queue.Queue()
     thread = threading.Thread(target=process, args=(q,
                                                     args.rserver,
@@ -141,13 +137,23 @@ def server(args):
     thread.daemon = True
     thread.start()
     run = True
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.bind(("127.0.0.1", args.port))
+    server.listen(5)
     while run:
         try:
-            clientid, rcv = socket.recv_multipart()
+            (clientsock, addr) = server.accept()
+            reading = True
+            rcv = []
+            while reading:
+                recvd = clientsock.recv(1024)
+                if recvd is None or len(recvd) == 0:
+                    reading = False
+                else:
+                    rcv.append(recvd)
             if len(rcv) == 0:
                 continue
             q.put(rcv)
-            socket.send_multipart([clientid, ACK.encode("utf-8")])
         except Exception as e:
             log.warn("socket error")
             log.warn(e)
