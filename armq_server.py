@@ -40,8 +40,7 @@ def admin(args):
         log.warn("no command set...")
         return
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    parts = args.bind.split(":")
-    s.connect((parts[1].replace("//*", "localhost"), int(parts[2])))
+    s.connect(("localhost", args.port))
     totalsent = 0
     msg = args.command.encode("utf-8")
     while totalsent < len(msg):
