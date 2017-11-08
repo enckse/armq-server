@@ -70,7 +70,7 @@ def _proc(key, data, time):
         parts = item.split("`")
         if not parts[0] == "event":
             continue
-        compare = float(parts[-1])
+        compare = float(parts[-2])
         if compare == 0:
             continue
         if time is not None and compare <= time:
