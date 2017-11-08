@@ -30,9 +30,6 @@ FLUSH = "flush"
 SERVER = "server"
 ADMIN = "admin"
 
-# Constants
-ACK = "ack"
-
 
 def admin(args):
     """Administration of server."""
