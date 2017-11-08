@@ -100,8 +100,6 @@ def process(q, host, port, bucketing):
 
 def main():
     """receive and background process data."""
-    global lock
-    global RUNNING
     parser = argparse.ArgumentParser()
     parser.add_argument('--rport', type=int, default=6379)
     parser.add_argument('--rserver', type=str, default='localhost')
@@ -127,6 +125,8 @@ def main():
 
 def server(args):
     """Host the receiving server."""
+    global lock
+    global RUNNING
     q = queue.Queue()
     thread = threading.Thread(target=process, args=(q,
                                                     args.rserver,
