@@ -17,7 +17,10 @@ TAG = "tag"
 
 EVENT_DATUM = {}
 EVENT_DATUM["unit_killed"] = {"victim": "unit", "attacker": "unit"}
-IGNORE_EVENTS = ["get_in", "get_out", "positions_infantry", "positions_vehicles"]
+IGNORE_EVENTS = ["get_in",
+                 "get_out",
+                 "positions_infantry",
+                 "positions_vehicles"]
 
 # flask
 app = Flask(__name__)
