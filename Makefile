@@ -14,6 +14,6 @@ dependencies:
 	pip install git+https://github.com/systemd/python-systemd.git#egg=systemd
 
 analyze:
-	pip install pep8 pep257
-	pep8 $(SRC)
+	pip install pycodestyle pep257
+	pycodestyle $(SRC)
 	pep257 $(SRC)
