@@ -9,6 +9,9 @@ install:
 	cp -f armq_workers.py $(INSTALL)armq_workers
 	cp -f service/armqserver.service /usr/lib/systemd/system/armqserver.service	
 
+dependencies:
+	pip install redis
+
 analyze:
 	pip install pep8 pep257
 	pep8 $(SRC)
