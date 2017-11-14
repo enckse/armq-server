@@ -7,11 +7,18 @@ In conjunction with [armq](https://github.com/enckse/armq) - provides a receivin
 
 armq-server works by using a socket receiver (for general TCP traffic from armq). It takes this data and background saves to redis
 
+# Install
+
+clone this repository and navigate to it:
+```
+make install
+```
+
 # Usage
 
 to run the server
 ```
-python armq_server.py
+armq_server
 ```
 
 change the `rport` and `rserver` settings if redis is not co-located
@@ -22,10 +29,16 @@ change the `rport` and `rserver` settings if redis is not co-located
 
 to save current state
 ```
-python armq_server.py --mode admin --command flush
+armq_admin flush
 ``` 
 
 to stop
 ```
-python armq_server.py --mode admin --command kill
+armq_admin kill
 ``` 
+
+# Service
+
+```
+systemctl start armqserver.service
+```
