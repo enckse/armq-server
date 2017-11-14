@@ -11,6 +11,7 @@ install:
 
 dependencies:
 	pip install redis
+	pip install git+https://github.com/systemd/python-systemd.git#egg=systemd
 
 analyze:
 	pip install pep8 pep257
