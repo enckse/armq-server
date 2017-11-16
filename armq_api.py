@@ -13,6 +13,9 @@ _DELIMITER = "`"
 _PAYLOAD = "data"
 _ERRORS = "errors"
 
+# payload information
+_TAG_INDEX = 1
+
 app = Flask(__name__)
 
 def _redis():
@@ -27,6 +30,15 @@ def _new_response():
 def _mark_error(response, error):
     print(error)
     response[_ERRORS].append(error)
+
+def _is_tag(string_tag):
+    try:
+        if len(string_tag) == 4:
+            check = [x for x in string_tag if x >= 'a' and x <= 'z']
+            if len(check) == len(string_tag):
+                return string_tag
+    except Exception as e:
+        return None
 
 @app.route("/armq/tags")
 def get_tags():
@@ -44,7 +56,13 @@ def get_tags():
         int_keys[val] = k
         try:
             first = r.lrange(k, 0, 0)[0]
-            first_keys[val] = _disect(first)
+            disected = _disect(first)
+            if len(disected) > 1:
+                tag = _disect(first)[_TAG_INDEX]
+                tag = _is_tag(tag)
+                if tag is None:
+                    continue
+                first_keys[val] = tag
         except Exception as e:
             _mark_error(data, "unable to get tag {}".format(k))
             print(e)
