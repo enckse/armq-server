@@ -13,6 +13,7 @@ install:
 dependencies:
 	pip install redis
 	pip install git+https://github.com/systemd/python-systemd.git#egg=systemd
+	pip install flask
 
 analyze:
 	pip install pycodestyle pep257
