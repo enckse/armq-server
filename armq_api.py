@@ -79,7 +79,8 @@ def get_buckets():
     data = _new_response()
     data[_PAYLOAD] = []
     for b in sorted(list(_get_buckets(r))):
-        data[_PAYLOAD].append({"bucket": b, "slice": time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(b * _BUCKETS))})
+        sliced time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(b * _BUCKETS))
+        data[_PAYLOAD].append({"bucket": b, "slice": sliced})
     return jsonify(data)
 
 
