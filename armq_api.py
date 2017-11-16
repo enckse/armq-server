@@ -82,7 +82,7 @@ def get_buckets():
 @app.route("/armq/buckets/<after>")
 def get_buckets_after(after):
     """Get buckets after a specific time."""
-    timestamp = datetime.strptime("%Y-%m-%dT%H:%M:%S", after)
+    timestamp = datetime.datetime.strptime(after, "%Y-%m-%dT%H:%M:%S")
     return _get_available_buckets(timestamp)
 
 
@@ -92,9 +92,10 @@ def _get_available_buckets(after):
     data = _new_response()
     data[_PAYLOAD] = []
     for b in sorted(list(_get_buckets(r))):
-        sliced = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(b * _BUCKETS))
+        b_time = time.gmtime(b * _BUCKETS)
+        sliced = time.strftime("%Y-%m-%d %H:%M:%S", b_time)
         if after is not None:
-            if sliced < after:
+            if b_time < after:
                 continue
         data[_PAYLOAD].append({"bucket": b, "slice": sliced})
     return jsonify(data)
