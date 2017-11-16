@@ -203,7 +203,7 @@ def _new_response():
 
 def _mark_error(response, error):
     """Create an error response entry."""
-    print(error)
+    log.error(error)
     response[_ERRORS].append(error)
 
 
@@ -327,7 +327,7 @@ def get_tag_data_by_bucket(tag, bucket):
             except Exception as e:
                 _mark_error(data,
                             "parse error {}".format(entry.decode("utf-8")))
-                print(e)
+                log.warn(e)
     return jsonify(data)
 
 
@@ -367,7 +367,7 @@ def _get_available_tags(epoch):
                 first_keys[val] = tag
         except Exception as e:
             _mark_error(data, "unable to get tag {}".format(k))
-            print(e)
+            log.warn(e)
             continue
     last_tag = None
     interrogate = []
@@ -388,7 +388,7 @@ def _get_available_tags(epoch):
                 last_tag = tagged
         except Exception as e:
             _mark_error(data, "unable to prefetch {}".format(k))
-            print(e)
+            log.warn(e)
     while len(interrogate) > 0:
         current = interrogate.pop()
         for item in r.lrange(int_keys[current], 0, -1):
@@ -399,7 +399,7 @@ def _get_available_tags(epoch):
                 _create_tag_start(tag, current)
             except Exception as e:
                 _mark_error(data, "unable to interrogate {}".format(k))
-                print(e)
+                log.warn(e)
     return jsonify(data)
 
 
