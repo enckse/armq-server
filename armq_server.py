@@ -311,7 +311,8 @@ def get_tag_data_by_bucket(tag, bucket):
     return _get_tag_data_by_bucket(tag, bucket, False)
 
 
-def _get_tag_data_by_bucket(tag, bucket, auto_json)
+def _get_tag_data_by_bucket(tag, bucket, auto_json):
+    """Get tag data by buckets with auto-json conversion on/off."""
     r = _redis()
     data = _new_response()
     b = _get_one_bucket(r, bucket)
