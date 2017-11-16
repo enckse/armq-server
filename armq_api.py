@@ -19,7 +19,7 @@ def _redis():
     return redis.StrictRedis(host=_HOST, port=_PORT, db=0)
 
 def _disect(obj):
-    return obj.split(_DELIMITER)
+    return obj.decode("utf-8").split(_DELIMITER)
 
 def _new_response():
     return { _PAYLOAD: None, _ERRORS: [] }
