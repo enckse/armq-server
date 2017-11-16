@@ -1,12 +1,14 @@
 #!/usr/bin/python
 """Data reading endpoints from redis."""
 import redis
+import time
 import argparse
 from flask import Flask, jsonify
 
 # redis connection
 _HOST = "127.0.0.1"
 _PORT = 6379
+_BUCKETS = 100
 
 # data information
 _DELIMITER = "`"
@@ -73,6 +75,8 @@ def get_buckets():
     """Get all buckets."""
     r = _redis()
     data = _new_response()
+    for b in sorted(list(_get_buckets(r))):
+        data[_PAYLOAD] = {"bucket": b, "slice": time.strftime("%Y-%m-%d %H:%M:%S", b * _BUCKETS)}
     data[_PAYLOAD] = sorted(list(_get_buckets(r)))
     return jsonify(data)
 
