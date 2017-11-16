@@ -302,6 +302,16 @@ def get_bucket_metadata(bucket):
 @app.route("/armq/tag/<tag>/data/<bucket>")
 def get_tag_data_by_bucket(tag, bucket):
     """Get tags by bucket (data)."""
+    return _get_tag_data_by_bucket(tag, bucket, True)
+
+
+@app.route("/armq/tag/<tag>/data/<bucket>/raw")
+def get_tag_data_by_bucket(tag, bucket):
+    """Get tags by bucket (data) without auto-checking for JSON."""
+    return _get_tag_data_by_bucket(tag, bucket, False)
+
+
+def _get_tag_data_by_bucket(tag, bucket, auto_json)
     r = _redis()
     data = _new_response()
     b = _get_one_bucket(r, bucket)
@@ -322,16 +332,18 @@ def get_tag_data_by_bucket(tag, bucket):
                 idx = 0
                 for item in _disect(entry):
                     append = item
-                    try:
-                        clean = item.strip()
-                        if clean.startswith("{") or clean.startswith("["):
-                            append = json.loads(clean)
-                            is_json.append(idx)
-                    except Exception as e:
-                        pass
+                    if auto_json:
+                        try:
+                            clean = item.strip()
+                            if clean.startswith("{") or clean.startswith("["):
+                                append = json.loads(clean)
+                                is_json.append(idx)
+                        except Exception as e:
+                            pass
                     jsoned.append(append)
                     idx += 1
-                jsoned.append({_JSON: is_json})
+                if auto_json:
+                    jsoned.append({_JSON: is_json})
                 data[_PAYLOAD].append(jsoned)
             except Exception as e:
                 _mark_error(data,
