@@ -83,7 +83,7 @@ def get_buckets():
 def get_buckets_after(after):
     """Get buckets after a specific time."""
     timestamp = datetime.datetime.strptime(after, "%Y-%m-%dT%H:%M:%S")
-    return _get_available_buckets(timestamp)
+    return _get_available_buckets(timestamp.timestamp())
 
 
 def _get_available_buckets(after):
@@ -92,7 +92,8 @@ def _get_available_buckets(after):
     data = _new_response()
     data[_PAYLOAD] = []
     for b in sorted(list(_get_buckets(r))):
-        b_time = time.gmtime(b * _BUCKETS)
+        epoch = b * _BUCKETS
+        b_time = time.gmtime(epoch)
         sliced = time.strftime("%Y-%m-%d %H:%M:%S", b_time)
         if after is not None:
             if b_time < after:
