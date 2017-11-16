@@ -17,6 +17,7 @@ _PAYLOAD = "data"
 _ERRORS = "errors"
 _NEXT = "next"
 _AFTER_TIME = "after"
+_META = "meta"
 
 # payload information
 _TAG_INDEX = 1
@@ -36,7 +37,7 @@ def _disect(obj):
 
 def _new_response():
     """Create a new response object (common)."""
-    return {_PAYLOAD: None, _ERRORS: []}
+    return {_PAYLOAD: None, _ERRORS: [], _META: {}}
 
 
 def _mark_error(response, error):
@@ -90,13 +91,18 @@ def _get_epoch_as_dt(epoch_time):
     return time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(epoch_time))
 
 
+def _new_meta(resp, key, data):
+    """Metadata entry."""
+    resp[_META][key] = data
+
+
 def _get_available_buckets(after):
     """Get available buckets."""
     r = _redis()
     data = _new_response()
     data[_PAYLOAD] = []
     if after is not None:
-        data[_AFTER_TIME] = _get_epoch_as_dt(after)
+        _new_meta(data, _AFTER_TIME, _get_epoch_as_dt(after))
     for b in sorted(list(_get_buckets(r))):
         epoch = b * _BUCKETS
         sliced = _get_epoch_as_dt(epoch)
@@ -142,7 +148,7 @@ def get_tag_data_by_bucket(tag, bucket):
         is_next = False
         for scan in sorted(list(_get_buckets(r))):
             if is_next:
-                data[_NEXT] = scan
+                _new_meta(data, _NEXT, scan)
                 break
             if scan == b:
                 is_next = True
