@@ -85,7 +85,7 @@ def get_bucket_metadata(bucket):
     b = list(_get_buckets(r, match=int(bucket)))
     data[_PAYLOAD] = []
     if len(b) > 0:
-        for entry in r.lrange(str(b), 0, -1):
+        for entry in r.lrange(str(b[0]), 0, -1):
             tag = _get_tag(entry)
             if tag is None:
                 # metadata is not tagged
