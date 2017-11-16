@@ -80,7 +80,7 @@ def get_tags():
                 tagged = first_keys[k]
                 if tagged == last_tag:
                     interrogate.pop()
-                interrogate.append(tagged)
+                interrogate.append(k)
                 if tagged not in data[_PAYLOAD]:
                     data[_PAYLOAD][tagged] = k
                 last_tag = tagged
