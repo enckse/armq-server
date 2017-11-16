@@ -105,7 +105,7 @@ def _get_available_buckets(epoch):
     data[_PAYLOAD] = []
     if epoch is not None:
         _new_meta(data, _AFTER_TIME, _get_epoch_as_dt(epoch))
-    for b in sorted(list(_get_buckets(r, after=after))):
+    for b in sorted(list(_get_buckets(r, after=epoch))):
         sliced = _get_epoch_as_dt(b * BUCKETS)
         data[_PAYLOAD].append({"bucket": b, "slice": sliced})
     return jsonify(data)
