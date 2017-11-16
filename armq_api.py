@@ -73,6 +73,8 @@ def get_tags():
             continue
     last_tag = None
     interrogate = []
+    def _create_tag_start(tag, key):
+        data[_PAYLOAD][tag] = {"start": key}
     for k in sorted(int_keys.keys()):
         try:
             tagged = None
@@ -82,7 +84,7 @@ def get_tags():
                     interrogate.pop()
                 interrogate.append(k)
                 if tagged not in data[_PAYLOAD]:
-                    data[_PAYLOAD][tagged] = k
+                    _create_tag_start(tagged, k)
                 last_tag = tagged
         except Exception as e:
             _mark_error(data, "unable to prefetch {}".format(k))
@@ -94,7 +96,7 @@ def get_tags():
                 tag = _get_tag(item)
                 if tag is None:
                     continue
-                data[_PAYLOAD][tag] = current
+                _create_tag_start(tag, current)
             except Exception as e:
                 _mark_error(data, "unable to interrogate {}".format(k))
                 print(e)
