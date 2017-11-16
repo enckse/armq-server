@@ -129,7 +129,7 @@ def _empty_params(rule):
     return len(defaults) >= len(arguments)
 
 
-@app.route("/routes")
+@app.route("/armq/routes")
 def app_routes():
     links = []
     for rule in app.url_map.iter_rules():
