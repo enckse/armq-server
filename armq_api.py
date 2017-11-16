@@ -128,6 +128,7 @@ def get_bucket_metadata(bucket):
     r = _redis()
     data = _new_response()
     b = _get_one_bucket(r, bucket)
+    data[_PAYLOAD] = []
     if b is not None:
         for entry in r.lrange(bucket, 0, -1):
             tag = _get_tag(entry)
