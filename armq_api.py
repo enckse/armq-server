@@ -80,7 +80,7 @@ def get_tags():
                 tagged = first_keys[k]
                 if tagged == last_tag:
                     interrogate.pop()
-                interrogate.push(tagged)
+                interrogate.append(tagged)
                 if tagged not in data[_PAYLOAD]:
                     data[_PAYLOAD][tagged] = k
                 last_tag = tagged
@@ -90,20 +90,20 @@ def get_tags():
     while len(interrogate) > 0:
         current = interrogate.pop()
         for item in r.lrange(int_keys[current], 0, -1):
-        try:
-            tag = _get_tag(item)
-            if tag is None:
-                continue
-            data[_PAYLOAD][tag] = current
-        except Exception as e:
-            _mark_error(data, "unable to interrogate {}".format(k))
-            print(e)
+            try:
+                tag = _get_tag(item)
+                if tag is None:
+                    continue
+                data[_PAYLOAD][tag] = current
+            except Exception as e:
+                _mark_error(data, "unable to interrogate {}".format(k))
+                print(e)
     return jsonify(data)
 
 def main():
     """Main entry."""
     parser = argparse.ArgumentParser(description="armq-server API")
-parser.add_argument("--host",
+    parser.add_argument("--host",
                         default="0.0.0.0",
                         type=str,
                         help="host name")
