@@ -56,11 +56,13 @@ def _get_tag(obj):
     return _is_tag(_disect(obj)[_TAG_INDEX])
 
 
-def _get_buckets(server):
+def _get_buckets(server, match=None):
     """Get buckets as ints."""
     for k in server.keys():
         try:
             val = int(k)
+            if match is not None and val != match:
+                continue
             yield val
         except ValueError:
             continue
@@ -68,11 +70,27 @@ def _get_buckets(server):
 
 @app.route("/armq/buckets")
 def get_buckets():
+    """Get all buckets."""
     r = _redis()
     data = _new_response()
     data[_PAYLOAD] = sorted(list(_get_buckets(r)))
     return jsonify(data)
 
+
+@app.route("/armq/<bucket>/metadata")
+def get_bucket_metadata(bucket):
+    """Get bucket metadata."""
+    r = _redis()
+    data = _new_response()
+    b = list(_get_buckets(r, match=int(bucket)))
+    data[_PAYLOAD] = []
+    if len(b) > 0:
+        for entry in r.lrange(str(b), 0, -1):
+            tag = _get_tag(entry)
+            if tag is None:
+                # metadata is not tagged
+                data[_PAYLOAD].append(entry)
+    return jsonify(data)
 
 @app.route("/armq/tags")
 def get_tags():
