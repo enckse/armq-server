@@ -18,3 +18,6 @@ analyze:
 	pip install pycodestyle pep257
 	pycodestyle $(SRC)
 	pep257 $(SRC)
+
+endpoints:
+	cat armq_api.py | grep "@app.route" | cut -d "(" -f 2 | cut -d ")" -f 1 | sed 's/"//g' | sort
