@@ -182,7 +182,7 @@ def get_tags_after(after):
 
 
 def _get_available_tags(epoch):
-    """Tags available (after an epoch time?)."""
+    """Get tags available (after an epoch time?)."""
     r = _redis()
     int_keys = {}
     first_keys = {}
