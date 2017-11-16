@@ -6,7 +6,9 @@ all: analyze
 install:
 	install -Dm755 armq_server.py $(INSTALL)armq_server
 	install -Dm755 armq_admin $(INSTALL)armq_admin
-	install -Dm644 service/armqserver.service /usr/lib/systemd/system/armqserver.service	
+	install -Dm644 service/armqserver.service /usr/lib/systemd/system/armqserver.service
+	install -Dm644 service/armqapi.service /usr/lib/systemd/system/armqapi.service
+	install -Dm755 armq_api.py $(INSTALL)armq_api
 
 dependencies:
 	pip install redis
