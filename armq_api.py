@@ -75,8 +75,9 @@ def get_buckets():
     """Get all buckets."""
     r = _redis()
     data = _new_response()
+    data[_PAYLOAD] = []
     for b in sorted(list(_get_buckets(r))):
-        data[_PAYLOAD] = {"bucket": b, "slice": time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(b * _BUCKETS))}
+        data[_PAYLOAD].append({"bucket": b, "slice": time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(b * _BUCKETS))})
     return jsonify(data)
 
 
