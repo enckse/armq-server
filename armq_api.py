@@ -175,6 +175,12 @@ def get_tags():
     return _get_available_tags(None)
 
 
+@app.route("/armq/tags/<after>")
+def get_tags_after(after):
+    """Get tags after a epoch time."""
+    return _get_available_tags(int(after))
+
+
 def _get_available_tags(epoch):
     """Tags available (after an epoch time?)."""
     r = _redis()
