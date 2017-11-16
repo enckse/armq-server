@@ -3,7 +3,6 @@
 import redis
 import time
 import argparse
-import datetime
 import json
 from flask import Flask, jsonify
 
@@ -81,9 +80,8 @@ def get_buckets():
 
 @app.route("/armq/buckets/<after>")
 def get_buckets_after(after):
-    """Get buckets after a specific time."""
-    timestamp = datetime.datetime.strptime(after, "%Y-%m-%dT%H:%M:%S")
-    return _get_available_buckets(timestamp.timestamp())
+    """Get buckets after a specific time (epoch)."""
+    return _get_available_buckets(int(after))
 
 
 def _get_available_buckets(after):
