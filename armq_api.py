@@ -89,8 +89,9 @@ def get_bucket_metadata(bucket):
             tag = _get_tag(entry)
             if tag is None:
                 # metadata is not tagged
-                data[_PAYLOAD].append(entry)
+                data[_PAYLOAD].append(_disect(entry))
     return jsonify(data)
+
 
 @app.route("/armq/tags")
 def get_tags():
