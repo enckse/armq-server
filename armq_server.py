@@ -54,6 +54,7 @@ _TAG_INDEX = 1
 # flask
 app = Flask(__name__)
 
+
 def admin(args):
     """Administration of server."""
     if args.command is None:
