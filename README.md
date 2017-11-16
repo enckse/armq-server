@@ -42,3 +42,10 @@ armq_admin kill
 ```
 systemctl start armqserver.service
 ```
+
+## API
+
+to execute the api, run the armq_api script
+```
+armq_api
+```
