@@ -299,24 +299,26 @@ def get_bucket_metadata(bucket):
     return jsonify(data)
 
 
-@app.route("/armq/tag/<tag>/data/<bucket>")
-def get_tag_data_by_bucket(tag, bucket):
+@app.route("/armq/tag/<tag>/data/<bucket>/json/<start>/<end>")
+def get_tag_data_by_bucket(tag, bucket, start, end):
     """Get tags by bucket (data)."""
-    return _get_tag_data_by_bucket(tag, bucket, True)
+    return _get_tag_data_by_bucket(tag, bucket, True, start, end)
 
 
-@app.route("/armq/tag/<tag>/data/<bucket>/raw")
-def get_tag_data_by_bucket(tag, bucket):
+@app.route("/armq/tag/<tag>/data/<bucket>/raw/<start>/<end>")
+def get_tag_data_by_bucket(tag, bucket, start, end):
     """Get tags by bucket (data) without auto-checking for JSON."""
-    return _get_tag_data_by_bucket(tag, bucket, False)
+    return _get_tag_data_by_bucket(tag, bucket, False, start, end)
 
 
-def _get_tag_data_by_bucket(tag, bucket, auto_json):
+def _get_tag_data_by_bucket(tag, bucket, auto_json, start, end):
     """Get tag data by buckets with auto-json conversion on/off."""
     r = _redis()
     data = _new_response()
     b = _get_one_bucket(r, bucket)
     data[_PAYLOAD] = []
+    start_idx = int(start)
+    end_idx = int(end)
     if b is not None:
         is_next = False
         for scan in sorted(list(_get_buckets(r))):
@@ -325,7 +327,7 @@ def _get_tag_data_by_bucket(tag, bucket, auto_json):
                 break
             if scan == b:
                 is_next = True
-        for entry in r.lrange(bucket, 0, -1):
+        for entry in r.lrange(bucket, start_idx, end_idx):
             try:
                 entries = _disect(entry)
                 jsoned = []

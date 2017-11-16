@@ -81,12 +81,12 @@ to filter (`<after>` == epoch time)
 /armq/tags/<after>
 ```
 
-to get tag data from a bucket (including next available bucket that _might_ have tag data)
+to get tag data from a bucket (including next available bucket that _might_ have tag data) within the range given
 ```
-/armq/tag/<tag>/data/<bucket>
+/armq/tag/<tag>/data/<bucket>/json/<start>/<end>
 ```
 
 without auto-json detection of fields from ^
 ```
-/armq/tag/<tag>/data/<bucket>/raw
+/armq/tag/<tag>/data/<bucket>/raw/<start>/<end>
 ```
