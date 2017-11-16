@@ -18,21 +18,30 @@ _TAG_INDEX = 1
 
 app = Flask(__name__)
 
+
 def _redis():
+    """Create redis connection."""
     return redis.StrictRedis(host=_HOST, port=_PORT, db=0)
 
+
 def _disect(obj):
+    """Disect data by delimiter."""
     return obj.decode("utf-8").split(_DELIMITER)
 
+
 def _new_response():
-    return { _PAYLOAD: None, _ERRORS: [] }
+    """Create a new response object (common)."""
+    return {_PAYLOAD: None, _ERRORS: []}
+
 
 def _mark_error(response, error):
+    """Create an error response entry."""
     print(error)
     response[_ERRORS].append(error)
 
 
 def _is_tag(string_tag):
+    """Check if an entry is a tag."""
     try:
         if len(string_tag) == 4:
             check = [x for x in string_tag if x >= 'a' and x <= 'z']
@@ -41,7 +50,9 @@ def _is_tag(string_tag):
     except Exception as e:
         return None
 
+
 def _get_tag(obj):
+    """Get a tag from an entry."""
     return _is_tag(_disect(obj)[_TAG_INDEX])
 
 @app.route("/armq/tags")
