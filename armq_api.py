@@ -84,15 +84,20 @@ def get_buckets_after(after):
     return _get_available_buckets(int(after))
 
 
+def _get_epoch_as_dt(epoch_time):
+    """Get epoch as dt consistently (string)."""
+    return time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(epoch_time))
+
+
 def _get_available_buckets(after):
     """Get available buckets."""
     r = _redis()
     data = _new_response()
     data[_PAYLOAD] = []
+    if after is not None:
+        data[_PAYLOAD] = _get_as_dt(after)
     for b in sorted(list(_get_buckets(r))):
-        epoch = b * _BUCKETS
-        b_time = time.gmtime(epoch)
-        sliced = time.strftime("%Y-%m-%d %H:%M:%S", b_time)
+        sliced = _get_epoch_as_dt(b * _BUCKETS)
         if after is not None:
             if epoch < after:
                 continue
