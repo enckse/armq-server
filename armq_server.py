@@ -51,6 +51,7 @@ _PAYLOAD = "data"
 _ERRORS = "errors"
 _NEXT = "next"
 _META = "meta"
+_JSON = "json"
 
 # payload information
 _TAG_INDEX = 1
@@ -317,16 +318,21 @@ def get_tag_data_by_bucket(tag, bucket):
             try:
                 entries = _disect(entry)
                 jsoned = []
+                is_json = []
+                idx = 0
                 for item in _disect(entry):
                     append = item
                     try:
                         clean = item.strip()
                         if clean.startswith("{") or clean.startswith("["):
                             append = json.loads(clean)
+                            is_json.append(idx)
                     except Exception as e:
                         pass
                     jsoned.append(append)
-                    data[_PAYLOAD].append(jsoned)
+                    idx += 1
+                jsoned.append({_JSON: is_json})
+                data[_PAYLOAD].append(jsoned)
             except Exception as e:
                 _mark_error(data,
                             "parse error {}".format(entry.decode("utf-8")))
