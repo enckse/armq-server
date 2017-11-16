@@ -106,7 +106,7 @@ def _get_available_buckets(epoch):
     if epoch is not None:
         _new_meta(data, _AFTER_TIME, _get_epoch_as_dt(epoch))
     for b in sorted(list(_get_buckets(r, after=epoch))):
-        sliced = _get_epoch_as_dt(b * BUCKETS)
+        sliced = _get_epoch_as_dt(b * _BUCKETS)
         data[_PAYLOAD].append({"bucket": b, "slice": sliced})
     return jsonify(data)
 
@@ -175,12 +175,17 @@ def get_tag_data_by_bucket(tag, bucket):
 @app.route("/armq/tags")
 def get_tags():
     """Get all tags."""
+    return _get_available_tags(None)
+
+
+def _get_available_tags(epoch):
+    """Tags available (after an epoch time?)."""
     r = _redis()
     int_keys = {}
     first_keys = {}
     data = _new_response()
     data[_PAYLOAD] = {}
-    for k in _get_buckets(r):
+    for k in _get_buckets(r, after=epoch):
         val = None
         try:
             val = int(k)
