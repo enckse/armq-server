@@ -14,6 +14,7 @@ _BUCKETS = 100
 _DELIMITER = "`"
 _PAYLOAD = "data"
 _ERRORS = "errors"
+_NEXT = "next"
 
 # payload information
 _TAG_INDEX = 1
@@ -81,19 +82,46 @@ def get_buckets():
     return jsonify(data)
 
 
+def _get_one_bucket(server, bucket):
+    """Get one bucket."""
+    b = list(_get_buckets(server, match=int(bucket)))
+    if len(b) > 0:
+        return b[0]
+    else:
+        return None
+
+
 @app.route("/armq/<bucket>/metadata")
 def get_bucket_metadata(bucket):
     """Get bucket metadata."""
     r = _redis()
     data = _new_response()
-    b = list(_get_buckets(r, match=int(bucket)))
-    data[_PAYLOAD] = []
-    if len(b) > 0:
-        for entry in r.lrange(str(b[0]), 0, -1):
+    b = _get_one_bucket(r, bucket)
+    if b is not None:
+        for entry in r.lrange(bucket, 0, -1):
             tag = _get_tag(entry)
             if tag is None:
                 # metadata is not tagged
                 data[_PAYLOAD].append(_disect(entry))
+    return jsonify(data)
+
+
+@app.route("/armq/tag/<tag>/data/<bucket>")
+def get_tag_data_by_bucket(tag, bucket):
+    """Get tags by bucket (data)."""
+    r = _redis()
+    data = _new_response()
+    b = _get_one_bucket(r, bucket)
+    if b is not None:
+        is_next = False
+        for scan in sorted(list(_get_buckets(r))):
+            if is_next:
+                data[_NEXT] = scan
+                break
+            if scan == b:
+                is_next = True
+        for data in r.lrange(bucket, 0, -1):
+            data[_PAYLOAD].append(_disect(entry))
     return jsonify(data)
 
 
