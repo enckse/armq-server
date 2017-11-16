@@ -11,7 +11,6 @@ import time
 import argparse
 import logging
 import socket
-from systemd.journal import JournalHandler
 import redis
 import time
 import argparse
@@ -20,9 +19,14 @@ from flask import Flask, jsonify, url_for
 
 RUNNING = True
 lock = threading.RLock()
+_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 
 log = logging.getLogger('armq')
-log.addHandler(JournalHandler(SYSLOG_IDENTIFIER='armq'))
+ch = logging.StreamHandler()
+formatter = formatter = logging.Formatter(_FORMAT)
+ch.setFormatter(formatter)
+ch.setLevel(logging.INFO)
+log.addHandler(ch)
 log.setLevel(logging.INFO)
 
 # cmds
