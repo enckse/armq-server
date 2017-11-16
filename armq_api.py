@@ -55,6 +55,7 @@ def _get_tag(obj):
     """Get a tag from an entry."""
     return _is_tag(_disect(obj)[_TAG_INDEX])
 
+
 @app.route("/armq/tags")
 def get_tags():
     """Get all tags."""
@@ -84,7 +85,9 @@ def get_tags():
             continue
     last_tag = None
     interrogate = []
+
     def _create_tag_start(tag, key):
+        """Create a new tag entry."""
         data[_PAYLOAD][tag] = {"start": key}
     for k in sorted(int_keys.keys()):
         try:
@@ -112,6 +115,7 @@ def get_tags():
                 _mark_error(data, "unable to interrogate {}".format(k))
                 print(e)
     return jsonify(data)
+
 
 def main():
     """Main entry."""
