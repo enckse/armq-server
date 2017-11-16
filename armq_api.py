@@ -16,6 +16,7 @@ _DELIMITER = "`"
 _PAYLOAD = "data"
 _ERRORS = "errors"
 _NEXT = "next"
+_AFTER_TIME = "after"
 
 # payload information
 _TAG_INDEX = 1
@@ -95,9 +96,10 @@ def _get_available_buckets(after):
     data = _new_response()
     data[_PAYLOAD] = []
     if after is not None:
-        data[_PAYLOAD] = _get_as_dt(after)
+        data[_AFTER_TIME] = _get_epoch_as_dt(after)
     for b in sorted(list(_get_buckets(r))):
-        sliced = _get_epoch_as_dt(b * _BUCKETS)
+        epoch = b * _BUCKETS
+        sliced = _get_epoch_as_dt(epoch)
         if after is not None:
             if epoch < after:
                 continue
