@@ -10,6 +10,8 @@ _PORT = 6379
 
 # data information
 _DELIMITER = "`"
+_PAYLOAD = "data"
+_ERRORS = "errors"
 
 app = Flask(__name__)
 
@@ -18,6 +20,13 @@ def _redis():
 
 def _disect(obj):
     return obj.split(_DELIMITER)
+
+def _new_response():
+    return { _PAYLOAD: None, _ERRORS: [] }
+
+def _mark_error(response, error):
+    print(error)
+    response[_ERRORS].append(error)
 
 @app.route("/armq/tags")
 def get_tags():
@@ -32,8 +41,14 @@ def get_tags():
         except ValueError:
             continue
         int_keys[val] = k
-        first = r.lrange(k, 0, 0)
-        first_keys[val] = _disect(first)
+        try:
+            first = r.lrange(k, 0, 0)[0]
+            first_keys[val] = _disect(first)
+
+        except Exception as e:
+            _mark_error(data, "unable to get tag {}".format(k))
+            print(e)
+            continue
     print(first_keys)
     print("")
 #    last = None
