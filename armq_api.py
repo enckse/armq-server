@@ -70,7 +70,7 @@ def _get_buckets(server):
 def get_buckets():
     r = _redis()
     data = _new_response()
-    data[_PAYLOAD] = list(_get_buckets(r))
+    data[_PAYLOAD] = sorted(list(_get_buckets(r)))
     return jsonify(data)
 
 
