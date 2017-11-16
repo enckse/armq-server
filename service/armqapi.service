@@ -1,0 +1,10 @@
+[Unit]
+Description=armq api server
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/armq_api
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
