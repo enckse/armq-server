@@ -112,6 +112,7 @@ def get_tag_data_by_bucket(tag, bucket):
     r = _redis()
     data = _new_response()
     b = _get_one_bucket(r, bucket)
+    data[_PAYLOAD] = []
     if b is not None:
         is_next = False
         for scan in sorted(list(_get_buckets(r))):
@@ -120,7 +121,7 @@ def get_tag_data_by_bucket(tag, bucket):
                 break
             if scan == b:
                 is_next = True
-        for data in r.lrange(bucket, 0, -1):
+        for entry in r.lrange(bucket, 0, -1):
             data[_PAYLOAD].append(_disect(entry))
     return jsonify(data)
 
