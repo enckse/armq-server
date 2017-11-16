@@ -81,3 +81,8 @@ to get tag data from a bucket (including next available bucket that _might_ have
 ```
 /armq/tag/<tag>/data/<bucket>
 ```
+
+without auto-json detection of fields from ^
+```
+/armq/tag/<tag>/data/<bucket>/raw
+```
