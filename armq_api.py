@@ -8,10 +8,16 @@ from flask import Flask, jsonify
 _HOST = "127.0.0.1"
 _PORT = 6379
 
+# data information
+_DELIMITER = "`"
+
 app = Flask(__name__)
 
 def _redis():
     return redis.StrictRedis(host=_HOST, port=_PORT, db=0)
+
+def _disect(obj):
+    return obj.split(_DELIMITER)
 
 @app.route("/armq/tags")
 def get_tags():
@@ -27,8 +33,9 @@ def get_tags():
             continue
         int_keys[val] = k
         first = r.lrange(k, 0, 0)
-        first_keys[val] = first
+        first_keys[val] = _disect(first)
     print(first_keys)
+    print("")
 #    last = None
 #    for k in sorted(int_keys.keys()):
 #        str_key = int_keys[k]
