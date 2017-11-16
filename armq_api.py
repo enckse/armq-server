@@ -34,6 +34,7 @@ def get_tags():
     r = _redis()
     int_keys = {}
     first_keys = {}
+    data = _new_response()
     for k in r.keys():
         val = None
         try:
@@ -44,7 +45,6 @@ def get_tags():
         try:
             first = r.lrange(k, 0, 0)[0]
             first_keys[val] = _disect(first)
-
         except Exception as e:
             _mark_error(data, "unable to get tag {}".format(k))
             print(e)
