@@ -56,6 +56,24 @@ def _get_tag(obj):
     return _is_tag(_disect(obj)[_TAG_INDEX])
 
 
+def _get_buckets(server):
+    """Get buckets as ints."""
+    for k in server.keys():
+        try:
+            val = int(k)
+            yield val
+        except ValueError:
+            continue
+
+
+@app.route("/armq/buckets")
+def get_buckets():
+    r = _redis()
+    data = _new_response()
+    data[_PAYLOAD] = list(_get_buckets(r))
+    return jsonify(data)
+
+
 @app.route("/armq/tags")
 def get_tags():
     """Get all tags."""
@@ -64,7 +82,7 @@ def get_tags():
     first_keys = {}
     data = _new_response()
     data[_PAYLOAD] = {}
-    for k in r.keys():
+    for k in _get_buckets(r):
         val = None
         try:
             val = int(k)
