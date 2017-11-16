@@ -4,7 +4,7 @@ import redis
 import time
 import argparse
 import json
-from flask import Flask, jsonify
+from flask import Flask, jsonify, url_for
 
 # redis connection
 _HOST = "127.0.0.1"
@@ -120,6 +120,25 @@ def _get_one_bucket(server, bucket):
         return b[0]
     else:
         return None
+
+
+def _empty_params(rule):
+    """Empty parameters."""
+    defaults = rule.defaults if rule.defaults is not None else ()
+    arguments = rule.arguments if rule.arguments is not None else ()
+    return len(defaults) >= len(arguments)
+
+
+@app.route("/routes")
+def app_routes():
+    links = []
+    for rule in app.url_map.iter_rules():
+        if "GET" in rule.methods and _empty_params(rule):
+            url = url_for(rule.endpoint, **(rule.defaults or {}))
+            links.append((url, rule.endpoint))
+    data = _new_response()
+    data[_PAYLOAD] = links
+    return jsonify(data)
 
 
 @app.route("/armq/<bucket>/metadata")
