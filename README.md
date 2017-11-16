@@ -72,6 +72,11 @@ to list the tags
 /armq/tags
 ```
 
+to filter (`<after>` == epoch time)
+```
+/armq/tags/<after>
+```
+
 to get tag data from a bucket (including next available bucket that _might_ have tag data)
 ```
 /armq/tag/<tag>/data/<bucket>
