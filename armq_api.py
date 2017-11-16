@@ -122,7 +122,12 @@ def get_tag_data_by_bucket(tag, bucket):
             if scan == b:
                 is_next = True
         for entry in r.lrange(bucket, 0, -1):
-            data[_PAYLOAD].append(_disect(entry))
+            try:
+                data[_PAYLOAD].append(_disect(entry))
+            except Exception as e:
+                _mark_error(data,
+                            "parse error {}".format(entry.decode("utf-8")))
+                print(e)
     return jsonify(data)
 
 
