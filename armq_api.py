@@ -16,7 +16,6 @@ _DELIMITER = "`"
 _PAYLOAD = "data"
 _ERRORS = "errors"
 _NEXT = "next"
-_AFTER_TIME = "after"
 _META = "meta"
 
 # payload information
@@ -103,8 +102,6 @@ def _get_available_buckets(epoch):
     r = _redis()
     data = _new_response()
     data[_PAYLOAD] = []
-    if epoch is not None:
-        _new_meta(data, _AFTER_TIME, _get_epoch_as_dt(epoch))
     for b in sorted(list(_get_buckets(r, after=epoch))):
         sliced = _get_epoch_as_dt(b * _BUCKETS)
         data[_PAYLOAD].append({"bucket": b, "slice": sliced})
