@@ -31,6 +31,7 @@ def _mark_error(response, error):
     print(error)
     response[_ERRORS].append(error)
 
+
 def _is_tag(string_tag):
     try:
         if len(string_tag) == 4:
@@ -40,6 +41,9 @@ def _is_tag(string_tag):
     except Exception as e:
         return None
 
+def _get_tag(obj):
+    return _is_tag(_disect(obj)[_TAG_INDEX])
+
 @app.route("/armq/tags")
 def get_tags():
     """Get all tags."""
@@ -47,6 +51,7 @@ def get_tags():
     int_keys = {}
     first_keys = {}
     data = _new_response()
+    data[_PAYLOAD] = {}
     for k in r.keys():
         val = None
         try:
@@ -58,8 +63,7 @@ def get_tags():
             first = r.lrange(k, 0, 0)[0]
             disected = _disect(first)
             if len(disected) > 1:
-                tag = _disect(first)[_TAG_INDEX]
-                tag = _is_tag(tag)
+                tag = _get_tag(first)
                 if tag is None:
                     continue
                 first_keys[val] = tag
@@ -67,20 +71,39 @@ def get_tags():
             _mark_error(data, "unable to get tag {}".format(k))
             print(e)
             continue
-    print(first_keys)
-    print("")
-#    last = None
-#    for k in sorted(int_keys.keys()):
-#        str_key = int_keys[k]
-#        first = r.lrange(str_key, 0, 0)
-#        
-#        objs = r.lrange(int_keys[k], 0
-
+    last_tag = None
+    interrogate = []
+    for k in sorted(int_keys.keys()):
+        try:
+            tagged = None
+            if k in first_keys:
+                tagged = first_keys[k]
+                if tagged == last_tag:
+                    interrogate.pop()
+                interrogate.push(tagged)
+                if tagged not in data[_PAYLOAD]:
+                    data[_PAYLOAD][tagged] = k
+                last_tag = tagged
+        except Exception as e:
+            _mark_error(data, "unable to prefetch {}".format(k))
+            print(e)
+    while len(interrogate) > 0:
+        current = interrogate.pop()
+        for item in r.lrange(int_keys[current], 0, -1):
+        try:
+            tag = _get_tag(item)
+            if tag is None:
+                continue
+            data[_PAYLOAD][tag] = current
+        except Exception as e:
+            _mark_error(data, "unable to interrogate {}".format(k))
+            print(e)
+    return jsonify(data)
 
 def main():
     """Main entry."""
     parser = argparse.ArgumentParser(description="armq-server API")
-    parser.add_argument("--host",
+parser.add_argument("--host",
                         default="0.0.0.0",
                         type=str,
                         help="host name")
