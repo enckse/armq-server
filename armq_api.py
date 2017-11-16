@@ -122,25 +122,6 @@ def _get_one_bucket(server, bucket):
         return None
 
 
-def _empty_params(rule):
-    """Empty parameters."""
-    defaults = rule.defaults if rule.defaults is not None else ()
-    arguments = rule.arguments if rule.arguments is not None else ()
-    return len(defaults) >= len(arguments)
-
-
-@app.route("/armq/routes")
-def app_routes():
-    links = []
-    for rule in app.url_map.iter_rules():
-        if "GET" in rule.methods and _empty_params(rule):
-            url = url_for(rule.endpoint, **(rule.defaults or {}))
-            links.append((url, rule.endpoint))
-    data = _new_response()
-    data[_PAYLOAD] = links
-    return jsonify(data)
-
-
 @app.route("/armq/<bucket>/metadata")
 def get_bucket_metadata(bucket):
     """Get bucket metadata."""
