@@ -34,11 +34,12 @@ FLUSH = "flush"
 # modes
 SERVER = "server"
 ADMIN = "admin"
+API = "api"
 
 # redis connection
-_HOST = "127.0.0.1"
-_PORT = 6379
-_BUCKETS = 100
+_REDIS_HOST = "127.0.0.1"
+_REDIS_PORT = 6379
+_REDIS_BUCKETS = 100
 
 # data information
 _DELIMITER = "`"
@@ -120,9 +121,6 @@ def process(q, host, port, bucketing):
 def main():
     """receive and background process data."""
     parser = argparse.ArgumentParser()
-    parser.add_argument('--rport', type=int, default=6379)
-    parser.add_argument('--rserver', type=str, default='localhost')
-    parser.add_argument('--bucket', type=int, default=100)
     parser.add_argument('--port', type=int, default=5000)
     parser.add_argument('--command',
                         type=str,
@@ -155,9 +153,9 @@ def server(args):
     global RUNNING
     q = queue.Queue()
     thread = threading.Thread(target=process, args=(q,
-                                                    args.rserver,
-                                                    args.rport,
-                                                    args.bucket))
+                                                    _REDIS_HOST,
+                                                    _REDIS_PORT,
+                                                    _REDIS_BUCKETS))
     thread.daemon = True
     thread.start()
     run = True
@@ -188,7 +186,7 @@ def server(args):
 
 def _redis():
     """Create redis connection."""
-    return redis.StrictRedis(host=_HOST, port=_PORT, db=0)
+    return redis.StrictRedis(host=_REDIS_HOST, port=_REDIS_PORT, db=0)
 
 
 def _disect(obj):
@@ -230,7 +228,7 @@ def _get_buckets(server, match=None, after=None):
             val = int(k)
             if match is not None and val != match:
                 continue
-            if after is not None and val * _BUCKETS < after:
+            if after is not None and val * _REDIS_BUCKETS < after:
                 continue
             yield val
         except ValueError:
@@ -265,7 +263,7 @@ def _get_available_buckets(epoch):
     data = _new_response()
     data[_PAYLOAD] = []
     for b in sorted(list(_get_buckets(r, after=epoch))):
-        sliced = _get_epoch_as_dt(b * _BUCKETS)
+        sliced = _get_epoch_as_dt(b * _REDIS_BUCKETS)
         data[_PAYLOAD].append({"bucket": b, "slice": sliced})
     return jsonify(data)
 
