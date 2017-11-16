@@ -3,6 +3,7 @@
 import redis
 import time
 import argparse
+import datetime
 import json
 from flask import Flask, jsonify
 
@@ -75,11 +76,26 @@ def _get_buckets(server, match=None):
 @app.route("/armq/buckets")
 def get_buckets():
     """Get all buckets."""
+    return _get_available_buckets(None)
+
+
+@app.route("/armq/buckets/<after>")
+def get_buckets_after(after):
+    """Get buckets after a specific time."""
+    timestamp = datetime.strptime("%Y-%m-%dT%H:%M:%S", after)
+    return _get_available_buckets(timestamp)
+
+
+def _get_available_buckets(after):
+    """Get available buckets."""
     r = _redis()
     data = _new_response()
     data[_PAYLOAD] = []
     for b in sorted(list(_get_buckets(r))):
-        sliced time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(b * _BUCKETS))
+        sliced = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(b * _BUCKETS))
+        if after is not None:
+            if sliced < after:
+                continue
         data[_PAYLOAD].append({"bucket": b, "slice": sliced})
     return jsonify(data)
 
