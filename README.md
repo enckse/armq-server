@@ -21,8 +21,6 @@ to run the server
 armq_server
 ```
 
-change the `rport` and `rserver` settings if redis is not co-located
-
 [![Build Status](https://travis-ci.org/enckse/armq-server.svg?branch=master)](https://travis-ci.org/enckse/armq-server)
 
 # Admin
@@ -39,8 +37,14 @@ armq_admin kill
 
 # Service
 
+to enable the receiving endpoint
 ```
 systemctl start armqserver.service
+```
+
+to enable the web API to query data received
+```
+systemctl start armqapi.service
 ```
 
 ## API
