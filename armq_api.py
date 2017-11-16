@@ -62,12 +62,14 @@ def _get_tag(obj):
     return _is_tag(_disect(obj)[_TAG_INDEX])
 
 
-def _get_buckets(server, match=None):
+def _get_buckets(server, match=None, after=None):
     """Get buckets as ints."""
     for k in server.keys():
         try:
             val = int(k)
             if match is not None and val != match:
+                continue
+            if after is not None and val * _BUCKETS < after:
                 continue
             yield val
         except ValueError:
@@ -96,19 +98,15 @@ def _new_meta(resp, key, data):
     resp[_META][key] = data
 
 
-def _get_available_buckets(after):
+def _get_available_buckets(epoch):
     """Get available buckets."""
     r = _redis()
     data = _new_response()
     data[_PAYLOAD] = []
-    if after is not None:
-        _new_meta(data, _AFTER_TIME, _get_epoch_as_dt(after))
-    for b in sorted(list(_get_buckets(r))):
-        epoch = b * _BUCKETS
-        sliced = _get_epoch_as_dt(epoch)
-        if after is not None:
-            if epoch < after:
-                continue
+    if epoch is not None:
+        _new_meta(data, _AFTER_TIME, _get_epoch_as_dt(epoch))
+    for b in sorted(list(_get_buckets(r, after=after))):
+        sliced = _get_epoch_as_dt(b * BUCKETS)
         data[_PAYLOAD].append({"bucket": b, "slice": sliced})
     return jsonify(data)
 
