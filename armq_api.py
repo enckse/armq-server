@@ -1,6 +1,7 @@
 #!/usr/bin/python
 """Data reading endpoints from redis."""
 import redis
+import argparse
 from flask import Flask, jsonify
 
 # redis connection
