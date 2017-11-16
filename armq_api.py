@@ -3,6 +3,7 @@
 import redis
 import time
 import argparse
+import json
 from flask import Flask, jsonify
 
 # redis connection
@@ -123,7 +124,18 @@ def get_tag_data_by_bucket(tag, bucket):
                 is_next = True
         for entry in r.lrange(bucket, 0, -1):
             try:
-                data[_PAYLOAD].append(_disect(entry))
+                entries = _disect(entry)
+                jsoned = []
+                for item in _disect(entry):
+                    append = item
+                    try:
+                        clean = item.strip()
+                        if clean.startswith("{") or clean.startswith("["):
+                            append = json.loads(clean)
+                    except Exception as e:
+                        pass
+                    jsoned.append(append)
+                    data[_PAYLOAD].append(jsoned)
             except Exception as e:
                 _mark_error(data,
                             "parse error {}".format(entry.decode("utf-8")))
