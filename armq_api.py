@@ -94,7 +94,7 @@ def _get_available_buckets(after):
         b_time = time.gmtime(epoch)
         sliced = time.strftime("%Y-%m-%d %H:%M:%S", b_time)
         if after is not None:
-            if b_time < after:
+            if epoch < after:
                 continue
         data[_PAYLOAD].append({"bucket": b, "slice": sliced})
     return jsonify(data)
