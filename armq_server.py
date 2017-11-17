@@ -396,8 +396,7 @@ def _get_available_tags(epoch):
                 tag = _get_tag(first)
                 if tag is None:
                     continue
-                if val not in first_keys:
-                    first_keys[val] = tag
+                first_keys[val] = tag
         except Exception as e:
             _mark_error(data, "unable to get tag {}".format(k))
             log.warn(e)
@@ -431,7 +430,8 @@ def _get_available_tags(epoch):
                 tag = _get_tag(item)
                 if tag is None:
                     continue
-                _create_tag_start(tag, current)
+                if tag not in data[_PAYLOAD]:
+                    _create_tag_start(tag, current)
             except Exception as e:
                 _mark_error(data, "unable to interrogate {}".format(k))
                 log.warn(e)
