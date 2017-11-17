@@ -406,8 +406,9 @@ def _get_available_tags(epoch):
 
     def _create_tag_start(tag, key):
         """Create a new tag entry."""
-        sliced = _get_epoch_as_dt(key * _REDIS_BUCKETS)
-        data[_PAYLOAD][tag] = {"start": key, "dt": sliced }
+        if tag not in data[_PAYLOAD]:
+            sliced = _get_epoch_as_dt(key * _REDIS_BUCKETS)
+            data[_PAYLOAD][tag] = {"start": key, "dt": sliced }
 
     for k in sorted(int_keys.keys()):
         try:
@@ -417,8 +418,7 @@ def _get_available_tags(epoch):
                 if tagged == last_tag:
                     interrogate.pop()
                 interrogate.append(k)
-                if tagged not in data[_PAYLOAD]:
-                    _create_tag_start(tagged, k)
+                _create_tag_start(tagged, k)
                 last_tag = tagged
         except Exception as e:
             _mark_error(data, "unable to prefetch {}".format(k))
@@ -430,8 +430,7 @@ def _get_available_tags(epoch):
                 tag = _get_tag(item)
                 if tag is None:
                     continue
-                if tag not in data[_PAYLOAD]:
-                    _create_tag_start(tag, current)
+                _create_tag_start(tag, current)
             except Exception as e:
                 _mark_error(data, "unable to interrogate {}".format(k))
                 log.warn(e)
