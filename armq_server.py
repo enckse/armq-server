@@ -396,7 +396,8 @@ def _get_available_tags(epoch):
                 tag = _get_tag(first)
                 if tag is None:
                     continue
-                first_keys[val] = tag
+                if val not in first_keys:
+                    first_keys[val] = tag
         except Exception as e:
             _mark_error(data, "unable to get tag {}".format(k))
             log.warn(e)
