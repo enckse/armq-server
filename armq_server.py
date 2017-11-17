@@ -320,7 +320,7 @@ def _get_tag_data_by_bucket(tag, bucket, auto_json, start, end):
     start_idx = int(start)
     end_idx = int(end)
     data_count = 0
-    if b is not None:
+    if b is not None and start <= end:
         is_next = False
         for scan in sorted(list(_get_buckets(r))):
             if is_next:
