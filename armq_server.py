@@ -391,12 +391,11 @@ def _get_available_tags(epoch):
 
     def _new_item(tag, key):
         """Create a new tag entry."""
-        if tag not in data[_PAYLOAD]:
+        if tag is not None tag not in data[_PAYLOAD]:
             sliced = _get_epoch_as_dt(key * _REDIS_BUCKETS)
             data[_PAYLOAD][tag] = {"start": key, "dt": sliced }
 
     buckets = sorted(list(_get_buckets(r, after=epoch)))
-    print("HERE")
     for k in buckets:
         val = None
         try:
