@@ -329,7 +329,7 @@ def _get_tag_data_by_bucket(tag, bucket, auto_json, start, end):
         for entry in r.lrange(bucket, start_idx, end_idx):
             try:
                 entries = _disect(entry)
-                entry_tag = _disect[TAG_INDEX]
+                entry_tag = _disect[_TAG_INDEX]
                 if _is_tag(entry_tag):
                     if entry_tag != tag:
                         continue
