@@ -380,7 +380,7 @@ def _get_available_tags(epoch):
     r = _redis()
     data = _new_response()
     data[_PAYLOAD] = {}
-    
+
     def _disect_tag(key, element):
         """disect a tag."""
         obj = r.lindex(key, element)
@@ -393,7 +393,7 @@ def _get_available_tags(epoch):
         """Create a new tag entry."""
         if tag is not None and tag not in data[_PAYLOAD]:
             sliced = _get_epoch_as_dt(key * _REDIS_BUCKETS)
-            data[_PAYLOAD][tag] = {"start": key, "dt": sliced }
+            data[_PAYLOAD][tag] = {"start": key, "dt": sliced}
 
     buckets = sorted(list(_get_buckets(r, after=epoch)))
     for k in buckets:
