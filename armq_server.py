@@ -8,7 +8,6 @@ import threading
 import queue
 import redis
 import time
-import argparse
 import logging
 import socket
 import redis
@@ -135,7 +134,7 @@ def main():
     parser.add_argument('--mode',
                         type=str,
                         default=None,
-                        choices=[SERVER, ADMIN])
+                        choices=[SERVER, ADMIN, API])
     parser.add_argument("--apihost",
                         default="0.0.0.0",
                         type=str,
