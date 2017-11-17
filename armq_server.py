@@ -411,8 +411,6 @@ def _get_available_tags(epoch):
                 # must scan...
                 for i in r.lrange(k, 0, -1):
                     i_tag = _get_tag(i)
-                    if i_tag is None:
-                        continue
                     _new_item(i_tag, val)
         except Exception as e:
             _mark_error(data, "unable to get tag {}".format(k))
