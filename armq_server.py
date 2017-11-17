@@ -406,7 +406,9 @@ def _get_available_tags(epoch):
 
     def _create_tag_start(tag, key):
         """Create a new tag entry."""
-        data[_PAYLOAD][tag] = {"start": key}
+        sliced = _get_epoch_as_dt(key * _REDIS_BUCKETS)
+        data[_PAYLOAD][tag] = {"start": key, "dt": sliced }
+
     for k in sorted(int_keys.keys()):
         try:
             tagged = None
