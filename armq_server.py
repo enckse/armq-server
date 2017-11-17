@@ -300,13 +300,13 @@ def get_bucket_metadata(bucket):
 
 
 @app.route("/armq/tag/<tag>/data/<bucket>/json/<start>/<end>")
-def get_tag_data_by_bucket(tag, bucket, start, end):
+def get_tag_data_by_bucket_json(tag, bucket, start, end):
     """Get tags by bucket (data)."""
     return _get_tag_data_by_bucket(tag, bucket, True, start, end)
 
 
 @app.route("/armq/tag/<tag>/data/<bucket>/raw/<start>/<end>")
-def get_tag_data_by_bucket(tag, bucket, start, end):
+def get_tag_data_by_bucket_raw(tag, bucket, start, end):
     """Get tags by bucket (data) without auto-checking for JSON."""
     return _get_tag_data_by_bucket(tag, bucket, False, start, end)
 
