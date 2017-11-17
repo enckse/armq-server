@@ -330,9 +330,10 @@ def _get_tag_data_by_bucket(tag, bucket, auto_json, start, end):
             try:
                 entries = _disect(entry)
                 entry_tag = entries[_TAG_INDEX]
-                if _is_tag(entry_tag):
-                    if entry_tag != tag:
-                        continue
+                if not _is_tag(entry_tag):
+                    continue
+                if entry_tag != tag:
+                    continue
                 jsoned = []
                 is_json = []
                 idx = 0
