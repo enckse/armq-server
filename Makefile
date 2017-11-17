@@ -3,6 +3,11 @@ SRC=$(shell find . -type f | grep ".py$$")
 
 all: analyze
 
+update: pull install
+
+pull:
+	git pull
+
 install:
 	install -Dm755 armq_server.py $(INSTALL)armq_server
 	install -Dm755 armq_admin $(INSTALL)armq_admin
