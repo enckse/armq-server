@@ -378,62 +378,45 @@ def get_tags_after(after):
 def _get_available_tags(epoch):
     """Get tags available (after an epoch time?)."""
     r = _redis()
-    int_keys = {}
-    first_keys = {}
     data = _new_response()
     data[_PAYLOAD] = {}
-    for k in _get_buckets(r, after=epoch):
-        val = None
-        try:
-            val = int(k)
-        except ValueError:
-            continue
-        int_keys[val] = k
-        try:
-            first = r.lrange(k, 0, 0)[0]
-            disected = _disect(first)
-            if len(disected) > 1:
-                tag = _get_tag(first)
-                if tag is None:
-                    continue
-                first_keys[val] = tag
-        except Exception as e:
-            _mark_error(data, "unable to get tag {}".format(k))
-            log.warn(e)
-            continue
-    last_tag = None
-    interrogate = []
+    
+    def _disect_tag(key, element):
+        """disect a tag."""
+        obj = r.lindex(key, element)
+        vals = _disect(obj)
+        if len(vals) > 1:
+            return _get_tag(obj)
+        return None
 
-    def _create_tag_start(tag, key):
+    def _new_item(tag, key):
         """Create a new tag entry."""
         if tag not in data[_PAYLOAD]:
             sliced = _get_epoch_as_dt(key * _REDIS_BUCKETS)
             data[_PAYLOAD][tag] = {"start": key, "dt": sliced }
 
-    for k in sorted(int_keys.keys()):
+    for k in sorted(list(_get_buckets(r, after=epoch))):
+        val = None
         try:
-            tagged = None
-            if k in first_keys:
-                tagged = first_keys[k]
-                if tagged == last_tag:
-                    interrogate.pop()
-                interrogate.append(k)
-                _create_tag_start(tagged, k)
-                last_tag = tagged
+            val = int(k)
+        except ValueError:
+            continue
+        try:
+            first_tag = _disect_tag(k, 0)
+            last_tag = _disect_tag(k, -1)
+            for t in [first_tag, last_tag]:
+                _new_item(t, val)
+            if first_tag != last_tag:
+                # must scan...
+                for i in r.lrange(k, 0, -1):
+                    i_tag = _get_tag(i)
+                    if i_tag is None:
+                        continue
+                    _new_item(i_tag, val)
         except Exception as e:
-            _mark_error(data, "unable to prefetch {}".format(k))
+            _mark_error(data, "unable to get tag {}".format(k))
             log.warn(e)
-    while len(interrogate) > 0:
-        current = interrogate.pop()
-        for item in r.lrange(int_keys[current], 0, -1):
-            try:
-                tag = _get_tag(item)
-                if tag is None:
-                    continue
-                _create_tag_start(tag, current)
-            except Exception as e:
-                _mark_error(data, "unable to interrogate {}".format(k))
-                log.warn(e)
+            continue
     return jsonify(data)
 
 
