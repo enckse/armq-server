@@ -51,6 +51,7 @@ _ERRORS = "errors"
 _NEXT = "next"
 _META = "meta"
 _JSON = "json"
+_COUNT = "count"
 
 # payload information
 _TAG_INDEX = 1
@@ -318,6 +319,7 @@ def _get_tag_data_by_bucket(tag, bucket, auto_json, start, end):
     data[_PAYLOAD] = []
     start_idx = int(start)
     end_idx = int(end)
+    data_count = 0
     if b is not None:
         is_next = False
         for scan in sorted(list(_get_buckets(r))):
@@ -352,10 +354,12 @@ def _get_tag_data_by_bucket(tag, bucket, auto_json, start, end):
                 if auto_json:
                     jsoned.append({_JSON: is_json})
                 data[_PAYLOAD].append(jsoned)
+                data_count += 1
             except Exception as e:
                 _mark_error(data,
                             "parse error {}".format(entry.decode("utf-8")))
                 log.warn(e)
+    _new_meta(data, _COUNT, data_count)
     return jsonify(data)
 
 
