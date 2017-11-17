@@ -395,7 +395,9 @@ def _get_available_tags(epoch):
             sliced = _get_epoch_as_dt(key * _REDIS_BUCKETS)
             data[_PAYLOAD][tag] = {"start": key, "dt": sliced }
 
-    for k in sorted(list(_get_buckets(r, after=epoch))):
+    buckets = sorted(list(_get_buckets(r, after=epoch)))
+    print("HERE")
+    for k in buckets:
         val = None
         try:
             val = int(k)
