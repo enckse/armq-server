@@ -57,6 +57,7 @@ _COUNT = "count"
 _TAG_INDEX = 1
 
 # flask
+_ENDPOINTS = "/armq/"
 app = Flask(__name__)
 
 
@@ -241,13 +242,13 @@ def _get_buckets(server, match=None, after=None):
             continue
 
 
-@app.route("/armq/buckets")
+@app.route(_ENDPOINTS + "buckets")
 def get_buckets():
     """Get all buckets."""
     return _get_available_buckets(None)
 
 
-@app.route("/armq/buckets/<after>")
+@app.route(_ENDPOINTS + "buckets/<after>")
 def get_buckets_after(after):
     """Get buckets after a specific time (epoch)."""
     return _get_available_buckets(int(after))
@@ -283,7 +284,7 @@ def _get_one_bucket(server, bucket):
         return None
 
 
-@app.route("/armq/<bucket>/metadata")
+@app.route(_ENDPOINTS + "<bucket>/metadata")
 def get_bucket_metadata(bucket):
     """Get bucket metadata."""
     r = _redis()
@@ -299,13 +300,13 @@ def get_bucket_metadata(bucket):
     return jsonify(data)
 
 
-@app.route("/armq/tag/<tag>/data/<bucket>/json/<start>/<end>")
+@app.route(_ENDPOINTS + "tag/<tag>/data/<bucket>/json/<start>/<end>")
 def get_tag_data_by_bucket_json(tag, bucket, start, end):
     """Get tags by bucket (data)."""
     return _get_tag_data_by_bucket(tag, bucket, True, start, end)
 
 
-@app.route("/armq/tag/<tag>/data/<bucket>/raw/<start>/<end>")
+@app.route(_ENDPOINTS + "tag/<tag>/data/<bucket>/raw/<start>/<end>")
 def get_tag_data_by_bucket_raw(tag, bucket, start, end):
     """Get tags by bucket (data) without auto-checking for JSON."""
     return _get_tag_data_by_bucket(tag, bucket, False, start, end)
@@ -363,13 +364,13 @@ def _get_tag_data_by_bucket(tag, bucket, auto_json, start, end):
     return jsonify(data)
 
 
-@app.route("/armq/tags")
+@app.route(_ENDPOINTS + "tags")
 def get_tags():
     """Get all tags."""
     return _get_available_tags(None)
 
 
-@app.route("/armq/tags/<after>")
+@app.route(_ENDPOINTS + "tags/<after>")
 def get_tags_after(after):
     """Get tags after a epoch time."""
     return _get_available_tags(int(after))
