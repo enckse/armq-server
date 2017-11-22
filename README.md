@@ -16,9 +16,14 @@ make install
 
 # Usage
 
-to run the server
+to run the server to collect data
 ```
 armq_server
+```
+
+to run the command server
+```
+armq_command
 ```
 
 [![Build Status](https://travis-ci.org/enckse/armq-server.svg?branch=master)](https://travis-ci.org/enckse/armq-server)
@@ -40,6 +45,11 @@ armq_admin kill
 to enable the receiving endpoint
 ```
 systemctl start armqserver.service
+```
+
+to enable the command endpoint
+```
+systemctl start armqcommand.service
 ```
 
 to enable the web API to query data received
