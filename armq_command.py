@@ -19,7 +19,7 @@ def _go(command):
 def main():
     """Main entry."""
     serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    serversocket.bind(("127.0.0.1", 5001)) 
+    serversocket.bind(("127.0.0.1", 5001))
     serversocket.listen(5)
     while 1:
         (clientsocket, address) = serversocket.accept()
