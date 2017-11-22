@@ -1,5 +1,8 @@
+#!/usr/bin/python
+"""Handles simple commands sent via the adc extension."""
 import socket
 import subprocess
+
 
 def _go(command):
     """Run a command."""
@@ -27,6 +30,7 @@ def main():
                 run = False
             else:
                 _go(recvd.decode("utf-8"))
+
 
 if __name__ == '__main__':
     main()
