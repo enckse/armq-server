@@ -14,7 +14,7 @@ install:
 	install -Dm755 armq_admin $(INSTALL)armq_admin
 	install -Dm644 service/armqserver.service /usr/lib/systemd/system/armqserver.service
 	install -Dm644 service/armqapi.service /usr/lib/systemd/system/armqapi.service
-	install -Dm644 service/armqcommand.service /usr/lib/systemd/system/armqcomand.service
+	install -Dm644 service/armqcommand.service /usr/lib/systemd/system/armqcommand.service
 	install -Dm755 armq_api $(INSTALL)armq_api
 	install -Dm755 armq_command.py $(INSTALL)armq_command
 
