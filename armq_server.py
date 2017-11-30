@@ -343,13 +343,14 @@ def _get_tag_data_by_bucket(tag, bucket, auto_json, start, end):
                 for item in _disect(entry):
                     append = item
                     if auto_json:
-                        try:
-                            clean = item.strip()
-                            if clean.startswith("{") or clean.startswith("["):
+                        clean = item.strip()
+                        if clean.startswith("{") or clean.startswith("["):
+                            try:
                                 append = json.loads(clean)
                                 is_json.append(idx)
-                        except Exception as e:
-                            pass
+                            except Exception as e:
+                                _mark_error(data, "invalid json")
+                                log.warn(e)
                     jsoned.append(append)
                     idx += 1
                 if auto_json:
