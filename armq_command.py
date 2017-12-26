@@ -8,7 +8,7 @@ def _go(command):
     """Run a command."""
     try:
         if command == "start":
-            subprocess.call(["/usr/bin/didumumble-multibeep"])
+            subprocess.call(["/usr/bin/didumumble-signal"])
         else:
             print("unknown command: {}".format(command))
     except Exception as e:
