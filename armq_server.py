@@ -353,6 +353,7 @@ def get_bucket_metadata(bucket):
                 data[_PAYLOAD].append(_disect(entry))
     return jsonify(data)
 
+
 @app.route(_ENDPOINTS + _P_TAG_DATA_BUCKET + "/json/" + _P_START_END)
 def get_tag_data_by_bucket_json(tag, bucket, start, end):
     """Get tags by bucket (data)."""
@@ -419,8 +420,10 @@ def _get_tag_data_by_bucket(tag, bucket, auto_json, start, end):
 
 
 def _api_doc(add_to, tag, text):
+    """Simple api doc string output."""
     html_string = "<{}>{}</{}>".format(tag, html.escape(text), tag)
     add_to.append(html_string)
+
 
 @app.route("/")
 def index():
