@@ -431,9 +431,13 @@ def index():
     segments = []
     _api_doc(segments, "h1", "armq api")
     _api_doc(segments, "div", "api to query the armq collections")
+    rules = {}
     for r in current_app.url_map.iter_rules():
         if r.rule == "/" or r.rule.startswith("/static/"):
             continue
+        rules[r.rule.replace("<", "").replace(">", "")] = r
+    for rule in sorted(rules.keys()):
+        r = rules[rule]
         desc = current_app.view_functions.get(r.endpoint).__doc__
         if desc is None or len(desc) == 0:
             desc = "no description"
