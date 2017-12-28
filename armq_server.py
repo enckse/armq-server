@@ -69,6 +69,12 @@ _P_TAG = "<tag>"
 _P_START_END = _P_START + "/" + _P_END
 _P_TAG_DATA_BUCKET = "tag/" + _P_TAG + "/data/" + _P_BUCKET
 app = Flask(__name__)
+_API_PAR = {}
+_API_PAR[_P_AFTER] = "after epoch time"
+_API_PAR[_P_START] = "starting from"
+_API_PAR[_P_END] = "ending at"
+_API_PAR[_P_TAG] = "tag identifier"
+_API_PAR[_P_BUCKET] = "bucket"
 
 
 def admin(args):
@@ -412,8 +418,6 @@ def _get_tag_data_by_bucket(tag, bucket, auto_json, start, end):
     return jsonify(data)
 
 
-_API_PAR = {}
-
 def _api_doc(add_to, tag, text):
     html_string = "<{}>{}</{}>".format(tag, html.escape(text), tag)
     add_to.append(html_string)
@@ -442,7 +446,8 @@ def index():
                 param = "no parameter description"
                 if p in _API_PAR:
                     param = _API_PAR[p]
-
+                _api_doc(segments, "small", "{} ({})".format(p, param))
+                segments.append("<br />")
     segment_html = "".join(segments)
     return "<html><body>{}</body></html>".format(segment_html)
 
