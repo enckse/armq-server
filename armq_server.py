@@ -66,6 +66,8 @@ _P_START = "<start>"
 _P_END = "<end>"
 _P_BUCKET = "<bucket>"
 _P_TAG = "<tag>"
+_P_START_END = _P_START + "/" + _P_END
+_P_TAG_DATA_BUCKET = "tag/" + _P_TAG + "/data/" + _P_BUCKET
 app = Flask(__name__)
 
 
@@ -294,7 +296,7 @@ def get_buckets():
     return _get_available_buckets(None)
 
 
-@app.route(_ENDPOINTS + "buckets/<after>")
+@app.route(_ENDPOINTS + "buckets/" + _P_AFTER)
 def get_buckets_after(after):
     """Get buckets after a specific time (epoch)."""
     return _get_available_buckets(int(after))
@@ -330,7 +332,7 @@ def _get_one_bucket(server, bucket):
         return None
 
 
-@app.route(_ENDPOINTS + "<bucket>/metadata")
+@app.route(_ENDPOINTS + _P_BUCKET + "/metadata")
 def get_bucket_metadata(bucket):
     """Get bucket metadata."""
     r = _redis()
@@ -345,14 +347,13 @@ def get_bucket_metadata(bucket):
                 data[_PAYLOAD].append(_disect(entry))
     return jsonify(data)
 
-
-@app.route(_ENDPOINTS + "tag/<tag>/data/<bucket>/json/<start>/<end>")
+@app.route(_ENDPOINTS + _P_TAG_DATA_BUCKET + "/json/" + _P_START_END)
 def get_tag_data_by_bucket_json(tag, bucket, start, end):
     """Get tags by bucket (data)."""
     return _get_tag_data_by_bucket(tag, bucket, True, start, end)
 
 
-@app.route(_ENDPOINTS + "tag/<tag>/data/<bucket>/raw/<start>/<end>")
+@app.route(_ENDPOINTS + _P_TAG_DATA_BUCKET + "/raw/" + _P_START_END)
 def get_tag_data_by_bucket_raw(tag, bucket, start, end):
     """Get tags by bucket (data) without auto-checking for JSON."""
     return _get_tag_data_by_bucket(tag, bucket, False, start, end)
