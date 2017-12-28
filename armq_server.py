@@ -192,6 +192,8 @@ def server(args):
     global lock
     global RUNNING
     q = queue.Queue()
+    i = queue.Queue()
+    queued = [q, i]
     thread = threading.Thread(target=process, args=(q,
                                                     _REDIS_HOST,
                                                     _REDIS_PORT,
@@ -218,7 +220,8 @@ def server(args):
                     rcv.append(recvd)
             if len(rcv) == 0:
                 continue
-            q.put(rcv)
+            for qs in queued:
+                qs.put(rcv)
         except Exception as e:
             log.warn("socket error")
             log.warn(e)
