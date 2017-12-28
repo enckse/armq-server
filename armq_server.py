@@ -15,6 +15,7 @@ import time
 import argparse
 import json
 from flask import Flask, jsonify, url_for
+import subprocess
 
 RUNNING = True
 lock = threading.RLock()
@@ -78,6 +79,39 @@ def admin(args):
     s.shutdown(socket.SHUT_WR)
 
 
+def _get_object(obj):
+    if obj is not None and len(obj) > 0:
+        log.debug(obj)
+        return "".join([x.decode("utf-8").strip() for x in obj])
+    else:
+        return None
+
+
+def interrogate(q):
+    """Interrogate commands."""
+    global lock
+    global RUNNING
+    run = True
+    tracked = []
+    while run:
+        try:
+            obj_str = _get_object(q.get())
+            if obj_str is not None:
+                log.debug(obj_str)
+                if _DELIMITER in obj_str:
+                    parts = obj_str.split(_DELIMITER)
+                    if len(parts) >= 1:
+                        tag = parts[1]
+                        if tag not in tracked:
+                            subprocess.call(["/usr/bin/didumumble-signal"])
+                            tracked.append(tag)
+        except Exception as e:
+            log.warn("interrogation error")
+            log.warn(e)
+        with lock:
+            run = RUNNING
+
+
 def process(q, host, port, bucketing):
     """process data."""
     global lock
@@ -88,12 +122,11 @@ def process(q, host, port, bucketing):
     count = 0
     while run:
         try:
-            obj = q.get()
-            if obj is not None and len(obj) > 0:
+            obj_str = _get_object(q.get())
+            if obj_str is not None:
                 bucket = int(time.time() / bucketing)
                 log.debug(bucket)
-                log.debug(obj)
-                obj_str = "".join([x.decode("utf-8").strip() for x in obj])
+                log.debug(obj_str)
                 if obj_str == STOP:
                     log.info("stop request")
                     with lock:
@@ -165,6 +198,9 @@ def server(args):
                                                     _REDIS_BUCKETS))
     thread.daemon = True
     thread.start()
+    interrogate = threading.Thread(target=interrogate, args=(i))
+    interrogate.daemon = True
+    interrogate.start()
     run = True
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.bind(("127.0.0.1", args.port))
