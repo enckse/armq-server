@@ -55,39 +55,4 @@ to execute the api, run the armq_api script
 armq_api
 ```
 
-### endpoints
-
-to retrieve (non-data information from a bucket)
-```
-/armq/<bucket>/metadata
-```
-
-to retrieve the list of all buckets stored
-```
-/armq/buckets
-```
-
-to filter (`<after>` == epoch time)
-```
-/armq/buckets/<after>
-```
-
-to list the tags
-```
-/armq/tags
-```
-
-to filter (`<after>` == epoch time)
-```
-/armq/tags/<after>
-```
-
-to get tag data from a bucket (including next available bucket that _might_ have tag data) within the range given
-```
-/armq/tag/<tag>/data/<bucket>/json/<start>/<end>
-```
-
-without auto-json detection of fields from ^
-```
-/armq/tag/<tag>/data/<bucket>/raw/<start>/<end>
-```
+navigate to server root (e.g. "http://localhost:port/" for documentation)
