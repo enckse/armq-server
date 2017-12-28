@@ -14,8 +14,10 @@ import redis
 import time
 import argparse
 import json
-from flask import Flask, jsonify, url_for
+import html
+from flask import Flask, jsonify, url_for, current_app
 import subprocess
+
 
 RUNNING = True
 lock = threading.RLock()
@@ -402,6 +404,41 @@ def _get_tag_data_by_bucket(tag, bucket, auto_json, start, end):
                 log.warn(e)
     _new_meta(data, _COUNT, data_count)
     return jsonify(data)
+
+
+_API_PAR = {}
+
+def _api_doc(add_to, tag, text):
+    html_string = "<{}>{}</{}>".format(tag, html.escape(text), tag)
+    add_to.append(html_string)
+
+@app.route("/")
+def index():
+    """Index page."""
+    segments = []
+    _api_doc(segments, "h1", "armq api")
+    _api_doc(segments, "div", "api to query the armq collections")
+    for r in current_app.url_map.iter_rules():
+        if r.rule == "/" or r.rule.startswith("/static/"):
+            continue
+        desc = current_app.view_functions.get(r.endpoint).__doc__
+        if desc is None or len(desc) == 0:
+            desc = "no description"
+        segments.append("<hr />")
+        _api_doc(segments, "div", desc)
+        _api_doc(segments, "pre", r.rule)
+        has_params = False
+        for p in r.rule.split("/"):
+            if p.startswith("<") and p.endswith(">"):
+                if not has_params:
+                    _api_doc(segments, "div", "parameters")
+                    has_params = True
+                param = "no parameter description"
+                if p in _API_PAR:
+                    param = _API_PAR[p]
+
+    segment_html = "".join(segments)
+    return "<html><body>{}</body></html>".format(segment_html)
 
 
 @app.route(_ENDPOINTS + "tags")
