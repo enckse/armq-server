@@ -61,6 +61,11 @@ _TAG_INDEX = 1
 
 # flask
 _ENDPOINTS = "/armq/"
+_P_AFTER = "<after>"
+_P_START = "<start>"
+_P_END = "<end>"
+_P_BUCKET = "<bucket>"
+_P_TAG = "<tag>"
 app = Flask(__name__)
 
 
