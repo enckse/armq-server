@@ -453,7 +453,7 @@ def get_tags():
     return _get_available_tags(None)
 
 
-@app.route(_ENDPOINTS + "tags/<after>")
+@app.route(_ENDPOINTS + "tags/" + _P_AFTER)
 def get_tags_after(after):
     """Get tags after a epoch time."""
     return _get_available_tags(int(after))
