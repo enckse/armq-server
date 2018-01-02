@@ -215,7 +215,7 @@ def server(args):
                                                     _REDIS_BUCKETS))
     thread.daemon = True
     thread.start()
-    read = threading.Thread(target=interrogate, args=(i))
+    read = threading.Thread(target=interrogate, args=(i,))
     read.daemon = True
     read.start()
     run = True
