@@ -118,9 +118,12 @@ def interrogate(q):
                     if len(parts) >= 1:
                         tag = parts[1]
                         if tag not in tracked:
-                            log.info("new tag detected ({})".format(tag))
-                            subprocess.call(["/usr/bin/didumumble-signal"])
-                            tracked.append(tag)
+                            t = "".join([x for x in tag \
+                                         if x >= 'a' and x <= 'z'])
+                            if len(t) == 4 and t == tag:
+                                log.info("new tag detected ({})".format(tag))
+                                subprocess.call(["/usr/bin/didumumble-signal"])
+                                tracked.append(tag)
         except Exception as e:
             log.warn("interrogation error")
             log.warn(e)
