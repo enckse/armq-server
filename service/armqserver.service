@@ -1,5 +1,6 @@
 [Unit]
 Description=armq receiving server
+After=redis.service
 
 [Service]
 Type=simple
@@ -8,4 +9,3 @@ Restart=always
 
 [Install]
 WantedBy=multi-user.target
-After=redis.service
