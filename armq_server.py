@@ -215,9 +215,9 @@ def server(args):
                                                     _REDIS_BUCKETS))
     thread.daemon = True
     thread.start()
-    interrogate = threading.Thread(target=interrogate, args=(i))
-    interrogate.daemon = True
-    interrogate.start()
+    read = threading.Thread(target=interrogate, args=(i))
+    read.daemon = True
+    read.start()
     run = True
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.bind(("127.0.0.1", args.port))
