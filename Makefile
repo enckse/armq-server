@@ -9,7 +9,6 @@ pull:
 	git pull
 
 install:
-	test -s /usr/bin/grumble
 	install -Dm755 armq_server.py $(INSTALL)armq_server
 	install -Dm755 armq_admin $(INSTALL)armq_admin
 	install -Dm644 service/armqserver.service /usr/lib/systemd/system/armqserver.service
