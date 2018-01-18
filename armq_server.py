@@ -120,7 +120,8 @@ def interrogate(q):
                         if tag not in tracked:
                             if _is_tag(tag):
                                 log.info("new tag detected ({})".format(tag))
-                                subprocess.call(["/usr/bin/didumumble-signal"])
+                                subprocess.call(["touch",
+                                                 "/var/cache/grumble/signal"])
                                 tracked.append(tag)
         except Exception as e:
             log.warn("interrogation error")
