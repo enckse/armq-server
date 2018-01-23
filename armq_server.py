@@ -122,6 +122,7 @@ def interrogate(q):
                                 log.info("new tag detected ({})".format(tag))
                                 subprocess.call(["touch",
                                                  "/var/cache/grumble/signal"])
+                                log.info("signaled")
                                 tracked.append(tag)
         except Exception as e:
             log.warn("interrogation error")
