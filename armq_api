@@ -1,2 +1,0 @@
-#!/bin/bash
-armq_server --mode api
