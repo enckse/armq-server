@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"flag"
+	"io"
 	"net"
 
 	"github.com/epiphyte/goutils"
@@ -32,13 +34,24 @@ func payload(data string, debug bool) {
 
 func handleRequest(conn net.Conn, debug bool) {
 	defer conn.Close()
-	buf := make([]byte, 65535)
-	n, err := conn.Read(buf)
-	if err != nil {
-		goutils.WriteError("unable to read", err)
-		return
+	buffer := bytes.Buffer{}
+	datum := false
+	for {
+		buf := make([]byte, 65535)
+		n, err := conn.Read(buf)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			goutils.WriteError("unable to read", err)
+			break
+		}
+		datum = true
+		buffer.Write(buf[0:n])
 	}
-	go payload(string(buf[0:n]), debug)
+	if datum {
+		go payload(string(buffer.Bytes()), debug)
+	}
 }
 
 func main() {
