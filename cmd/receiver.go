@@ -5,8 +5,14 @@ import (
 	"flag"
 	"io"
 	"net"
+	"sync"
 
 	"github.com/epiphyte/goutils"
+)
+
+var (
+	indexing  bool = false
+	indexLock      = &sync.Mutex{}
 )
 
 func serve(bind string, debug bool) {
@@ -30,6 +36,24 @@ func payload(data string, debug bool) {
 	if debug {
 		goutils.WriteDebug("data payload", data)
 	}
+	go index()
+}
+
+func index() {
+	returning := true
+	indexLock.Lock()
+	if !indexing {
+		returning = false
+		indexing = true
+	}
+	indexLock.Unlock()
+	if returning {
+		return
+	}
+	goutils.WriteDebug("indexing")
+	indexLock.Lock()
+	indexing = false
+	indexLock.Unlock()
 }
 
 func handleRequest(conn net.Conn, debug bool) {
