@@ -7,7 +7,7 @@ import (
 	"github.com/epiphyte/goutils"
 )
 
-func serve(bind string) {
+func serve(bind string, debug bool) {
 	l, err := net.Listen("tcp", bind)
 	if err != nil {
 		goutils.WriteError("unable to listen", err)
@@ -20,11 +20,17 @@ func serve(bind string) {
 			goutils.WriteError("unable to accept client", err)
 			continue
 		}
-		go handleRequest(conn)
+		go handleRequest(conn, debug)
 	}
 }
 
-func handleRequest(conn net.Conn) {
+func payload(data string, debug bool) {
+	if debug {
+		goutils.WriteDebug("data payload", data)
+	}
+}
+
+func handleRequest(conn net.Conn, debug bool) {
 	defer conn.Close()
 	buf := make([]byte, 65535)
 	n, err := conn.Read(buf)
@@ -32,11 +38,15 @@ func handleRequest(conn net.Conn) {
 		goutils.WriteError("unable to read", err)
 		return
 	}
-	goutils.WriteDebug("content", string(buf[0:n]))
+	go payload(string(buf[0:n]), debug)
 }
 
 func main() {
 	bind := flag.String("bind", "127.0.0.1:5000", "binding address")
+	debug := flag.Bool("debug", false, "enable debugging")
 	flag.Parse()
-	serve(*bind)
+	opts := goutils.NewLogOptions()
+	opts.Debug = *debug
+	goutils.ConfigureLogging(opts)
+	serve(*bind, *debug)
 }
