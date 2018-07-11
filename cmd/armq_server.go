@@ -1,26 +1,25 @@
 package main
 
 import (
-	"fmt"
+	"flag"
 	"net"
-	"os"
+
+	"github.com/epiphyte/goutils"
 )
 
-func serve() {
-	l, err := net.Listen("tcp", "127.0.0.1:5000")
+func serve(bind string) {
+	l, err := net.Listen("tcp", bind)
 	if err != nil {
-		fmt.Println("Error listening:", err.Error())
-		os.Exit(1)
+		goutils.WriteError("unable to listen", err)
+		panic("unable to start server")
 	}
 	defer l.Close()
 	for {
-		// Listen for an incoming connection.
 		conn, err := l.Accept()
 		if err != nil {
-			fmt.Println("Error accepting: ", err.Error())
-			os.Exit(1)
+			goutils.WriteError("unable to accept client", err)
+			continue
 		}
-		// Handle connections in a new goroutine.
 		go handleRequest(conn)
 	}
 }
@@ -30,12 +29,14 @@ func handleRequest(conn net.Conn) {
 	buf := make([]byte, 65535)
 	n, err := conn.Read(buf)
 	if err != nil {
-		fmt.Println("Error reading:", err.Error())
+		goutils.WriteError("unable to read", err)
+		return
 	}
-	fmt.Println(string(buf[0:n]))
-	conn.Close()
+	goutils.WriteDebug("content", string(buf[0:n]))
 }
 
 func main() {
-	serve()
+	bind := flag.String("bind", "127.0.0.1:5000", "binding address")
+	flag.Parse()
+	serve(*bind)
 }
