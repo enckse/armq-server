@@ -14,6 +14,7 @@ func (r *receiver) Consume(d []byte) {
 }
 
 func socketReceiver(ctx *context) {
+	goutils.WriteInfo("socket mode enabled")
 	socket := goutils.SocketSettings()
 	socket.Bind = ctx.binding
 	onReceive := &receiver{}

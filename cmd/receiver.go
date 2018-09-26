@@ -144,7 +144,7 @@ func createWorker(id int, ctx *context) {
 				garbage(obj)
 			}
 		}
-		if !ctx.repeater {
+		if !ok {
 			time.Sleep(50 * time.Millisecond)
 		}
 	}
@@ -157,23 +157,23 @@ func main() {
 	debug := flag.Bool("debug", false, "enable debugging")
 	workers := flag.Int("workers", 4, "worker routines")
 	now := time.Now()
+	op := *mode
 	flag.Parse()
 	ctx := &context{}
 	ctx.directory = *dir
 	ctx.debug = *debug
 	ctx.binding = *bind
 	ctx.start = now
-	ctx.repeater = *mode == repeatMode
+	ctx.repeater = op == repeatMode
 	ctx.timeFormat = now.Format("2006-01-02T15-04-05")
 	opts := goutils.NewLogOptions()
 	opts.Debug = ctx.debug
 	goutils.ConfigureLogging(opts)
-	goutils.WriteInfo("starting", vers)
-	switch *mode {
+	goutils.WriteInfo("starting", vers, op)
+	switch op {
 	case sockMode:
 		go socketReceiver(ctx)
-	case fileMode:
-	case repeatMode:
+	case fileMode, repeatMode:
 		go fileReceive(ctx)
 	default:
 		goutils.Fatal("unknown mode", nil)

@@ -72,6 +72,7 @@ func scan(dir string) {
 }
 
 func fileReceive(ctx *context) {
+	goutils.WriteInfo("file mode enabled")
 	err := os.Mkdir(ctx.directory, 0777)
 	if err != nil {
 		goutils.WriteError("unable to create directory (not aborting)", err)
