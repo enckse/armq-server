@@ -1,10 +1,9 @@
 [Unit]
 Description=armq receiving server
-After=redis.service
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/armq_server
+ExecStart=/usr/bin/armq-receiver
 Restart=always
 
 [Install]
