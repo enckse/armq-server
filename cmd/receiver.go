@@ -4,12 +4,8 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-
-	// TODO: needed for output
-	/*
-		"io/ioutil"
-		"path/filepath"
-	*/
+	"io/ioutil"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -166,15 +162,13 @@ func writerWorker(id, count int, obj *object, ctx *context) bool {
 	}
 	j = []byte(fmt.Sprintf("{\"meta\": %s, \"fields\": %s}", j, fields))
 	goutils.WriteDebug(string(j))
-	// TODO: write the result here
-	/*
-		p := filepath.Join(ctx.output, obj.id)
-		err := ioutil.WriteFile(p, j, 0644)
-		if err != nil {
-			goutils.WriteWarn("error saving results", p)
-			goutils.WriteError("unable to save file", err)
-			return false
-		}*/
+	p := filepath.Join(ctx.output, datum.Id)
+	err := ioutil.WriteFile(p, j, 0644)
+	if err != nil {
+		goutils.WriteWarn("error saving results", p)
+		goutils.WriteError("unable to save file", err)
+		return false
+	}
 	return true
 }
 
