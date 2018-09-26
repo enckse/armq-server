@@ -4,6 +4,12 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+
+	// TODO: needed for output
+	/*
+		"io/ioutil"
+		"path/filepath"
+	*/
 	"strconv"
 	"strings"
 	"sync"
@@ -36,6 +42,7 @@ type context struct {
 	start      time.Time
 	timeFormat string
 	repeater   bool
+	output     string
 }
 
 type object struct {
@@ -103,6 +110,7 @@ func writerWorker(id, count int, obj *object, ctx *context) bool {
 	datum.Version = parts[1]
 	datum.File = obj.id
 	datum.Id = fmt.Sprintf("%s.%s.%d", ctx.timeFormat, datum.Timestamp, count)
+	// TODO: recursively parse json for things that look like...json
 	j, e := json.Marshal(datum)
 	if e != nil {
 		goutils.WriteWarn("unable to handle file", obj.id)
@@ -110,6 +118,15 @@ func writerWorker(id, count int, obj *object, ctx *context) bool {
 		return false
 	}
 	goutils.WriteDebug(string(j))
+	// TODO: write the result here
+	/*
+		p := filepath.Join(ctx.output, obj.id)
+		err := ioutil.WriteFile(p, j, 0644)
+		if err != nil {
+			goutils.WriteWarn("error saving results", p)
+			goutils.WriteError("unable to save file", err)
+			return false
+		}*/
 	return true
 }
 
@@ -190,6 +207,7 @@ func run(config *goutils.Config) {
 	ctx.start = now
 	ctx.repeater = op == repeatMode
 	ctx.timeFormat = now.Format("2006-01-02T15-04-05")
+	ctx.output = config.GetStringOrDefault("output", "/var/lib/armq/")
 	opts := goutils.NewLogOptions()
 	opts.Debug = ctx.debug
 	goutils.ConfigureLogging(opts)
