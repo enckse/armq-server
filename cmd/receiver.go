@@ -119,7 +119,7 @@ func detectJSON(segment string, level int) string {
 			goutils.WriteError("unable to pack json", err)
 			return "{}"
 		}
-		return fmt.Sprintf("{%s, \"data\": %s}", string(b), j)
+		return fmt.Sprintf("{\"object\": %s, \"data\": %s}", string(b), j)
 	} else {
 		obj := []string{}
 		for idx, p := range parts {
@@ -134,9 +134,9 @@ func detectJSON(segment string, level int) string {
 			if idx < len(obj)-1 {
 				add = ","
 			}
-			resulting = fmt.Sprintf("%s{%s}%s", resulting, k, add)
+			resulting = fmt.Sprintf("%s%s%s", resulting, k, add)
 		}
-		return fmt.Sprintf("{\"level%d\": %s}", level, resulting)
+		return fmt.Sprintf("{\"level%d\": {%s}}", level, resulting)
 	}
 }
 
