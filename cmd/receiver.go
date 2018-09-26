@@ -29,6 +29,9 @@ const (
 	delimiter     = "`"
 	sleepCycleMin = 90
 	sleepCycleMax = 108
+	notJSON  = 0
+	isJSON   = 1
+	skipJSON = 2
 )
 
 type context struct {
@@ -108,13 +111,13 @@ func detectJSON(segment string, level int) string {
 	parts := strings.Split(segment, delimiter)
 	if len(parts) <= 1 {
 		var out map[string]json.RawMessage
-		valid := 0
+		valid := notJSON
 		if json.Unmarshal([]byte(segment), &out) == nil {
-			valid = 1
+			valid = isJSON
 		}
 		entry := &Entry{Valid: valid, Raw: segment}
 		j := segment
-		if valid == 0 {
+		if valid == isJSON {
 			j = "\"\""
 		}
 		b, err := json.Marshal(entry)
@@ -144,7 +147,7 @@ func detectJSON(segment string, level int) string {
 }
 
 func writerWorker(id, count int, obj *object, ctx *context) bool {
-	dump := &Entry{Raw: string(obj.data), Valid: 0}
+	dump := &Entry{Raw: string(obj.data), Valid: skipJSON}
 	datum := &Datum{}
 	parts := strings.Split(dump.Raw, delimiter)
 	datum.Timestamp = parts[0]
