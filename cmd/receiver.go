@@ -67,9 +67,13 @@ func garbage(obj *object) {
 }
 
 func queue(id string, data []byte, gc bool) {
+	requeue(&object{id: id, data: data, gc: gc})
+}
+
+func requeue(obj *object) {
 	readLock.Lock()
 	defer readLock.Unlock()
-	objcache = append(objcache, &object{id: id, data: data, gc: gc})
+	objcache = append(objcache, obj)
 }
 
 func next() (*object, bool) {
@@ -204,6 +208,8 @@ func createWorker(id int, ctx *context) {
 			}
 			if ok {
 				garbage(obj)
+			} else {
+				requeue(obj)
 			}
 		}
 		if ok {
