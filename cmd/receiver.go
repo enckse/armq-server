@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"sync"
+	"time"
 
 	"github.com/epiphyte/goutils"
 )
@@ -10,9 +11,9 @@ import (
 var (
 	gcLock   = &sync.Mutex{}
 	readLock = &sync.Mutex{}
-	memcache = make(map[string]struct{})
 	objcache = []*object{}
 	gc       = []string{}
+	vers     = "master"
 )
 
 const (
@@ -51,11 +52,6 @@ func garbage(obj *object) {
 func queue(id string, data []byte, gc bool) {
 	readLock.Lock()
 	defer readLock.Unlock()
-	if _, ok := memcache[id]; ok {
-		goutils.WriteWarn("system error? trying to re-add id", id)
-		return
-	}
-	memcache[id] = struct{}{}
 	objcache = append(objcache, &object{id: id, data: data, gc: gc})
 }
 
@@ -78,11 +74,15 @@ func main() {
 	opts := goutils.NewLogOptions()
 	opts.Debug = *debug
 	goutils.ConfigureLogging(opts)
+	goutils.WriteInfo("starting", vers)
 	switch *mode {
 	case sockMode:
-		go socketReceiver(*bind, *debug)
+		go socketReceiver(*bind)
 	case fileMode:
 	default:
 		goutils.Fatal("unknown mode", nil)
+	}
+	for {
+		time.Sleep(1)
 	}
 }
