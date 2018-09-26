@@ -12,8 +12,8 @@ arch:
     - unset GOROOT
     - export GOPATH=$HOME/go
     - mkdir -p $GOPATH/src
-    - ln -rTsf $PWD $GOPATH/src/radiucal
-    - cd $GOPATH/src/radiucal
+    - ln -rTsf $PWD $GOPATH/src/armq-server
+    - cd $GOPATH/src/armq-server
     - dep ensure
     - make
 
