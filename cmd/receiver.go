@@ -88,12 +88,15 @@ func next() (*object, bool) {
 }
 
 type Datum struct {
-	Id        string `json:"id"`
-	Timestamp string `json:"ts"`
-	Version   string `json:"vers"`
-	Raw       string `json:"raw"`
-	File      string `json:"file"`
-	Date      string `json:"datetime"`
+	Id        string
+	Timestamp string
+	Version   string
+	File      string
+	Date      string
+}
+
+func (d *Datum) toJSON() string {
+	return fmt.Sprintf("\"id\": \"%s\", \"ts\": \"%s\", \"vers\": \"%s\", \"file\": \"%s\", \"dt\": \"%s\"", d.Id, d.Timestamp, d.Version, d.File, d.Date)
 }
 
 type Entry struct {
@@ -141,9 +144,9 @@ func detectJSON(segment string, level int) string {
 }
 
 func writerWorker(id, count int, obj *object, ctx *context) bool {
+	dump := &Entry{Raw: string(obj.data), Valid: 0}
 	datum := &Datum{}
-	datum.Raw = string(obj.data)
-	parts := strings.Split(datum.Raw, delimiter)
+	parts := strings.Split(dump.Raw, delimiter)
 	datum.Timestamp = parts[0]
 	i, e := strconv.ParseInt(datum.Timestamp, 10, 64)
 	if e != nil {
@@ -154,7 +157,7 @@ func writerWorker(id, count int, obj *object, ctx *context) bool {
 	datum.Version = parts[1]
 	datum.File = obj.id
 	datum.Id = fmt.Sprintf("%s.%s.%d", ctx.timeFormat, datum.Timestamp, count)
-	j, e := json.Marshal(datum)
+	j, e := json.Marshal(dump)
 	if e != nil {
 		goutils.WriteWarn("unable to handle file", obj.id)
 		goutils.WriteError("unable to read object to json", e)
@@ -164,7 +167,7 @@ func writerWorker(id, count int, obj *object, ctx *context) bool {
 	if fields == "" {
 		fields = "{}"
 	}
-	j = []byte(fmt.Sprintf("{\"meta\": %s, \"fields\": %s}", j, fields))
+	j = []byte(fmt.Sprintf("{%s, \"dump\": %s, \"fields\": %s}", datum.toJSON(), j, fields))
 	goutils.WriteDebug(string(j))
 	p := filepath.Join(ctx.output, datum.Id)
 	err := ioutil.WriteFile(p, j, 0644)
