@@ -48,7 +48,7 @@ func scan(dir string) {
 	}
 	lock.Lock()
 	defer lock.Unlock()
-	requiredTime := time.Now().Add(-5 * time.Second)
+	requiredTime := time.Now().Add(-10 * time.Second)
 	for _, f := range files {
 		n := f.Name()
 		// if we already read this file we certainly should not read it again
