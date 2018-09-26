@@ -71,8 +71,8 @@ func scan(dir string) {
 	}
 }
 
-func fileReceive(directory string) {
-	err := os.Mkdir(directory, 0777)
+func fileReceive(ctx *context) {
+	err := os.Mkdir(ctx.directory, 0777)
 	if err != nil {
 		goutils.WriteError("unable to create directory (not aborting)", err)
 	}
@@ -80,10 +80,10 @@ func fileReceive(directory string) {
 	for {
 		if lastCollected > gcNow {
 			goutils.WriteInfo("collecting garbage")
-			runCollector(directory)
+			runCollector(ctx.directory)
 			lastCollected = 0
 		}
-		scan(directory)
+		scan(ctx.directory)
 		time.Sleep(100 * time.Millisecond)
 		lastCollected += 1
 	}

@@ -13,9 +13,9 @@ func (r *receiver) Consume(d []byte) {
 	queue("", d, false)
 }
 
-func socketReceiver(bind string) {
+func socketReceiver(ctx *context) {
 	socket := goutils.SocketSettings()
-	socket.Bind = bind
+	socket.Bind = ctx.binding
 	onReceive := &receiver{}
 	goutils.WriteInfo("ready to receive socket information")
 	goutils.SocketReceiveOnly(socket, onReceive)

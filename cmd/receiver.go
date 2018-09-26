@@ -21,9 +21,18 @@ var (
 )
 
 const (
-	fileMode = "file"
-	sockMode = "socket"
+	fileMode  = "file"
+	sockMode  = "socket"
+	delimiter = "`"
 )
+
+type context struct {
+	directory  string
+	binding    string
+	debug      bool
+	start      time.Time
+	timeFormat string
+}
 
 type object struct {
 	id   string
@@ -76,7 +85,7 @@ type Datum struct {
 	Date      string `json:"datetime"`
 }
 
-func createWorker(id int, now string) {
+func createWorker(id int, ctx *context) {
 	count := 0
 	for {
 		obj, ok := next()
@@ -84,7 +93,7 @@ func createWorker(id int, now string) {
 			goutils.WriteDebug(fmt.Sprintf("%d -> %s", id, obj.id))
 			datum := &Datum{}
 			datum.Raw = string(obj.data)
-			parts := strings.Split(datum.Raw, "`")
+			parts := strings.Split(datum.Raw, delimiter)
 			datum.Timestamp = parts[0]
 			i, e := strconv.ParseInt(datum.Timestamp, 10, 64)
 			if e != nil {
@@ -94,7 +103,7 @@ func createWorker(id int, now string) {
 			datum.Date = time.Unix(i/1000, 0).Format("2006-01-02T15:04:05")
 			datum.Version = parts[1]
 			datum.File = obj.id
-			datum.Id = fmt.Sprintf("%s.%s.%d", now, datum.Timestamp, count)
+			datum.Id = fmt.Sprintf("%s.%s.%d", ctx.timeFormat, datum.Timestamp, count)
 			count += 1
 			j, e := json.Marshal(datum)
 			if e != nil {
@@ -115,23 +124,29 @@ func main() {
 	dir := flag.String("directory", "/dev/shm/armq/", "location to scan for files to read")
 	debug := flag.Bool("debug", false, "enable debugging")
 	workers := flag.Int("workers", 4, "worker routines")
-	now := time.Now().Format("2006-01-02T15-04-05")
+	now := time.Now()
 	flag.Parse()
+	ctx := &context{}
+	ctx.directory = *dir
+	ctx.debug = *debug
+	ctx.binding = *bind
+	ctx.start = now
+	ctx.timeFormat = now.Format("2006-01-02T15-04-05")
 	opts := goutils.NewLogOptions()
-	opts.Debug = *debug
+	opts.Debug = ctx.debug
 	goutils.ConfigureLogging(opts)
 	goutils.WriteInfo("starting", vers)
 	switch *mode {
 	case sockMode:
-		go socketReceiver(*bind)
+		go socketReceiver(ctx)
 	case fileMode:
-		go fileReceive(*dir)
+		go fileReceive(ctx)
 	default:
 		goutils.Fatal("unknown mode", nil)
 	}
 	i := 0
 	for i < *workers {
-		go createWorker(i, now)
+		go createWorker(i, ctx)
 		i += 1
 	}
 	for {
