@@ -1,8 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -64,16 +67,45 @@ func next() (*object, bool) {
 	return obj, true
 }
 
-func createWorker(id int) {
+type Datum struct {
+	Id        string `json:"id"`
+	Timestamp string `json:"ts"`
+	Version   string `json:"vers"`
+	Raw       string `json:"raw"`
+	File      string `json:"file"`
+	Date      string `json:"datetime"`
+}
+
+func createWorker(id int, now string) {
 	count := 0
 	for {
 		obj, ok := next()
 		if ok {
 			goutils.WriteDebug(fmt.Sprintf("%d -> %s", id, obj.id))
+			datum := &Datum{}
+			datum.Raw = string(obj.data)
+			parts := strings.Split(datum.Raw, "`")
+			datum.Timestamp = parts[0]
+			i, e := strconv.ParseInt(datum.Timestamp, 10, 64)
+			if e != nil {
+				goutils.WriteWarn("unable to parse timestamp (not critical)", obj.id)
+				goutils.WriteError("parse error was", e)
+			}
+			datum.Date = time.Unix(i/1000, 0).Format("2006-01-02T15:04:05")
+			datum.Version = parts[1]
+			datum.File = obj.id
+			datum.Id = fmt.Sprintf("%s.%s.%d", now, datum.Timestamp, count)
 			count += 1
+			j, e := json.Marshal(datum)
+			if e != nil {
+				goutils.WriteWarn("unable to handle file", obj.id)
+				goutils.WriteError("unable to read object to json", e)
+				continue
+			}
+			goutils.WriteDebug(string(j))
 			garbage(obj)
 		}
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(50 * time.Millisecond)
 	}
 }
 
@@ -83,6 +115,7 @@ func main() {
 	dir := flag.String("directory", "/dev/shm/armq/", "location to scan for files to read")
 	debug := flag.Bool("debug", false, "enable debugging")
 	workers := flag.Int("workers", 4, "worker routines")
+	now := time.Now().Format("2006-01-02T15-04-05")
 	flag.Parse()
 	opts := goutils.NewLogOptions()
 	opts.Debug = *debug
@@ -98,7 +131,7 @@ func main() {
 	}
 	i := 0
 	for i < *workers {
-		go createWorker(i)
+		go createWorker(i, now)
 		i += 1
 	}
 	for {
