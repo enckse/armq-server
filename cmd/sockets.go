@@ -4,6 +4,10 @@ import (
 	"github.com/epiphyte/goutils"
 )
 
+type socketReader struct {
+	reader
+}
+
 func payload(data string, debug bool) {
 	if debug {
 		goutils.WriteDebug("data payload", data)
