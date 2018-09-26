@@ -117,6 +117,7 @@ func writerWorker(id, count int, obj *object, ctx *context) bool {
 		goutils.WriteError("unable to read object to json", e)
 		return false
 	}
+	j = []byte(fmt.Sprintf("{\"meta\": %s}", j))
 	goutils.WriteDebug(string(j))
 	// TODO: write the result here
 	/*

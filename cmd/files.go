@@ -80,7 +80,7 @@ func fileReceive(ctx *context) {
 	lastCollected := 0
 	for {
 		if lastCollected > gcNow {
-			goutils.WriteInfo("collecting garbage")
+			goutils.WriteDebug("collecting garbage")
 			runCollector(ctx.directory)
 			lastCollected = 0
 		}
