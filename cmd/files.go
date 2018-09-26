@@ -27,6 +27,7 @@ func runCollector(dir string) {
 	defer lock.Unlock()
 	for _, f := range files {
 		p := filepath.Join(dir, f)
+		goutils.WriteDebug("collecting", p)
 		_, e := goutils.RunBashCommand(fmt.Sprintf("rm -f %s", p))
 		if e != nil {
 			goutils.WriteWarn("file error on gc", p)
@@ -53,6 +54,7 @@ func scan(dir string) {
 		if _, ok := cache[n]; ok {
 			continue
 		}
+		goutils.WriteDebug("reading", n)
 		cache[n] = struct{}{}
 		p := filepath.Join(dir, n)
 		d, e := ioutil.ReadFile(p)

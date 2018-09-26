@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"sync"
 	"time"
 
@@ -63,11 +64,25 @@ func next() (*object, bool) {
 	return obj, true
 }
 
+func createWorker(id int) {
+	count := 0
+	for {
+		obj, ok := next()
+		if ok {
+			goutils.WriteInfo(fmt.Sprintf("%d -> %s", id, obj.id))
+			garbage(obj)
+		}
+		count += 1
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+
 func main() {
 	bind := flag.String("bind", "127.0.0.1:5000", "binding address")
 	mode := flag.String("mode", fileMode, "receiving mode")
 	dir := flag.String("directory", "/dev/shm/armq/", "location to scan for files to read")
 	debug := flag.Bool("debug", false, "enable debugging")
+	workers := flag.Int("workers", 4, "worker routines")
 	flag.Parse()
 	opts := goutils.NewLogOptions()
 	opts.Debug = *debug
@@ -80,6 +95,11 @@ func main() {
 		go fileReceive(*dir)
 	default:
 		goutils.Fatal("unknown mode", nil)
+	}
+	i := 0
+	for i < *workers {
+		go createWorker(i)
+		i += 1
 	}
 	for {
 		time.Sleep(1)
