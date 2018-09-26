@@ -21,9 +21,10 @@ var (
 )
 
 const (
-	fileMode  = "file"
-	sockMode  = "socket"
-	delimiter = "`"
+	fileMode   = "file"
+	sockMode   = "socket"
+	repeatMode = "repeat"
+	delimiter  = "`"
 )
 
 type context struct {
@@ -32,6 +33,7 @@ type context struct {
 	debug      bool
 	start      time.Time
 	timeFormat string
+	repeater   bool
 }
 
 type object struct {
@@ -85,36 +87,66 @@ type Datum struct {
 	Date      string `json:"datetime"`
 }
 
+func writerWorker(id, count int, obj *object, ctx *context) bool {
+	datum := &Datum{}
+	datum.Raw = string(obj.data)
+	parts := strings.Split(datum.Raw, delimiter)
+	datum.Timestamp = parts[0]
+	i, e := strconv.ParseInt(datum.Timestamp, 10, 64)
+	if e != nil {
+		goutils.WriteWarn("unable to parse timestamp (not critical)", obj.id)
+		goutils.WriteError("parse error was", e)
+	}
+	datum.Date = time.Unix(i/1000, 0).Format("2006-01-02T15:04:05")
+	datum.Version = parts[1]
+	datum.File = obj.id
+	datum.Id = fmt.Sprintf("%s.%s.%d", ctx.timeFormat, datum.Timestamp, count)
+	j, e := json.Marshal(datum)
+	if e != nil {
+		goutils.WriteWarn("unable to handle file", obj.id)
+		goutils.WriteError("unable to read object to json", e)
+		return false
+	}
+	goutils.WriteDebug(string(j))
+	return true
+}
+
+func repeaterWorker(socket *goutils.SocketSetup, obj *object) bool {
+	err := goutils.SocketSendOnly(socket, obj.data)
+	if err != nil {
+		goutils.WriteError("unable to send data over socket", err)
+		return false
+	}
+	return true
+}
+
 func createWorker(id int, ctx *context) {
 	count := 0
+	var socket *goutils.SocketSetup
+	if ctx.repeater {
+		socket = goutils.SocketSettings()
+		socket.Bind = ctx.binding
+	}
 	for {
 		obj, ok := next()
 		if ok {
 			goutils.WriteDebug(fmt.Sprintf("%d -> %s", id, obj.id))
-			datum := &Datum{}
-			datum.Raw = string(obj.data)
-			parts := strings.Split(datum.Raw, delimiter)
-			datum.Timestamp = parts[0]
-			i, e := strconv.ParseInt(datum.Timestamp, 10, 64)
-			if e != nil {
-				goutils.WriteWarn("unable to parse timestamp (not critical)", obj.id)
-				goutils.WriteError("parse error was", e)
+			if ctx.repeater {
+				ok = repeaterWorker(socket, obj)
+			} else {
+				if writerWorker(id, count, obj, ctx) {
+					count += 1
+				} else {
+					ok = false
+				}
 			}
-			datum.Date = time.Unix(i/1000, 0).Format("2006-01-02T15:04:05")
-			datum.Version = parts[1]
-			datum.File = obj.id
-			datum.Id = fmt.Sprintf("%s.%s.%d", ctx.timeFormat, datum.Timestamp, count)
-			count += 1
-			j, e := json.Marshal(datum)
-			if e != nil {
-				goutils.WriteWarn("unable to handle file", obj.id)
-				goutils.WriteError("unable to read object to json", e)
-				continue
+			if ok {
+				garbage(obj)
 			}
-			goutils.WriteDebug(string(j))
-			garbage(obj)
 		}
-		time.Sleep(50 * time.Millisecond)
+		if !ctx.repeater {
+			time.Sleep(50 * time.Millisecond)
+		}
 	}
 }
 
@@ -131,6 +163,7 @@ func main() {
 	ctx.debug = *debug
 	ctx.binding = *bind
 	ctx.start = now
+	ctx.repeater = *mode == repeatMode
 	ctx.timeFormat = now.Format("2006-01-02T15-04-05")
 	opts := goutils.NewLogOptions()
 	opts.Debug = ctx.debug
@@ -140,12 +173,20 @@ func main() {
 	case sockMode:
 		go socketReceiver(ctx)
 	case fileMode:
+	case repeatMode:
 		go fileReceive(ctx)
 	default:
 		goutils.Fatal("unknown mode", nil)
 	}
+	worker := *workers
+	if ctx.repeater {
+		if worker != 1 {
+			goutils.WriteWarn("setting workers back to 1 for repeater")
+			worker = 1
+		}
+	}
 	i := 0
-	for i < *workers {
+	for i < worker {
 		go createWorker(i, ctx)
 		i += 1
 	}
