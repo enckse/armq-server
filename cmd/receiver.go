@@ -69,7 +69,7 @@ func createWorker(id int) {
 	for {
 		obj, ok := next()
 		if ok {
-			goutils.WriteInfo(fmt.Sprintf("%d -> %s", id, obj.id))
+			goutils.WriteDebug(fmt.Sprintf("%d -> %s", id, obj.id))
 			garbage(obj)
 		}
 		count += 1
