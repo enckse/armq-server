@@ -5,4 +5,4 @@ In conjunction with [armq](https://github.com/enckse/armq) - provides a receivin
 
 # Description
 
-armq-server works by using a socket receiver (for general TCP traffic from armq). It takes this data and background saves to redis
+armq-server works by using a reader over `/dev/shm/armq/` or a socket receiver (for general TCP traffic from armq)
