@@ -96,6 +96,39 @@ type Datum struct {
 	Date      string `json:"datetime"`
 }
 
+func detectJSON(segment string, level int) string {
+	parts := strings.Split(segment, delimiter)
+	if len(parts) <= 1 {
+		var out map[string]json.RawMessage
+		valid := 0
+		if json.Unmarshal([]byte(segment), &out) == nil {
+			valid = 1
+		}
+		j := segment
+		if valid == 0 {
+			j = "\"\""
+		}
+		return fmt.Sprintf("{\"valid\": %d, \"data\": %s}", valid, j)
+	} else {
+		obj := []string{}
+		for idx, p := range parts {
+			key := fmt.Sprintf("field%d", idx)
+			goutils.WriteInfo(strconv.Itoa(len(strings.Split(p, delimiter))))
+			res := detectJSON(p, level+1)
+			j := fmt.Sprintf("\"%s\": %s", key, res)
+			obj = append(obj, j)
+		}
+		resulting := ""
+		for idx, k := range obj {
+			if idx > 0 {
+				resulting = "," + resulting
+			}
+			resulting = fmt.Sprintf("{%s}", k)
+		}
+		return fmt.Sprintf("{\"level%d\": %s}", level, resulting)
+	}
+}
+
 func writerWorker(id, count int, obj *object, ctx *context) bool {
 	datum := &Datum{}
 	datum.Raw = string(obj.data)
@@ -110,14 +143,17 @@ func writerWorker(id, count int, obj *object, ctx *context) bool {
 	datum.Version = parts[1]
 	datum.File = obj.id
 	datum.Id = fmt.Sprintf("%s.%s.%d", ctx.timeFormat, datum.Timestamp, count)
-	// TODO: recursively parse json for things that look like...json
 	j, e := json.Marshal(datum)
 	if e != nil {
 		goutils.WriteWarn("unable to handle file", obj.id)
 		goutils.WriteError("unable to read object to json", e)
 		return false
 	}
-	j = []byte(fmt.Sprintf("{\"meta\": %s}", j))
+	fields := detectJSON(strings.Join(parts[2:], delimiter), 0)
+	if fields == "" {
+		fields = "{}"
+	}
+	j = []byte(fmt.Sprintf("{\"meta\": %s, \"fields\": %s}", j, fields))
 	goutils.WriteDebug(string(j))
 	// TODO: write the result here
 	/*
