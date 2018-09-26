@@ -170,18 +170,23 @@ func createWorker(id int, ctx *context) {
 }
 
 func main() {
-	bind := flag.String("bind", "127.0.0.1:5000", "binding address")
-	mode := flag.String("mode", fileMode, "receiving mode")
-	dir := flag.String("directory", "/dev/shm/armq/", "location to scan for files to read")
-	debug := flag.Bool("debug", false, "enable debugging")
-	workers := flag.Int("workers", 4, "worker routines")
-	now := time.Now()
-	op := *mode
+	conf := flag.String("config", "/etc/armq.conf", "configuration file")
 	flag.Parse()
+	c, e := goutils.LoadConfigDefaults(*conf)
+	if e != nil {
+		goutils.WriteError("unable to read config", e)
+		return
+	}
+	run(c)
+}
+
+func run(config *goutils.Config) {
+	now := time.Now()
+	op := config.GetStringOrDefault("mode", fileMode)
 	ctx := &context{}
-	ctx.directory = *dir
-	ctx.debug = *debug
-	ctx.binding = *bind
+	ctx.directory = config.GetStringOrDefault("directory", "/dev/shm/armq/")
+	ctx.debug = config.GetTrue("debug")
+	ctx.binding = config.GetStringOrDefault("bind", "127.0.0.1:5000")
 	ctx.start = now
 	ctx.repeater = op == repeatMode
 	ctx.timeFormat = now.Format("2006-01-02T15-04-05")
@@ -197,7 +202,11 @@ func main() {
 	default:
 		goutils.Fatal("unknown mode", nil)
 	}
-	worker := *workers
+	worker, err := config.GetIntOrDefault("workers", 4)
+	if err != nil {
+		goutils.WriteError("invalid worker settings", err)
+		worker = 4
+	}
 	if ctx.repeater {
 		if worker != 1 {
 			goutils.WriteWarn("setting workers back to 1 for repeater")
