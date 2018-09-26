@@ -27,9 +27,6 @@ type object struct {
 	gc   bool
 }
 
-type reader struct {
-}
-
 func collect() []string {
 	gcLock.Lock()
 	defer gcLock.Unlock()
@@ -69,6 +66,7 @@ func next() (*object, bool) {
 func main() {
 	bind := flag.String("bind", "127.0.0.1:5000", "binding address")
 	mode := flag.String("mode", fileMode, "receiving mode")
+	dir := flag.String("directory", "/dev/shm/armq/", "location to scan for files to read")
 	debug := flag.Bool("debug", false, "enable debugging")
 	flag.Parse()
 	opts := goutils.NewLogOptions()
@@ -79,6 +77,7 @@ func main() {
 	case sockMode:
 		go socketReceiver(*bind)
 	case fileMode:
+		go fileReceive(*dir)
 	default:
 		goutils.Fatal("unknown mode", nil)
 	}

@@ -4,10 +4,6 @@ import (
 	"github.com/epiphyte/goutils"
 )
 
-type socketReader struct {
-	reader
-}
-
 type receiver struct {
 	goutils.SocketReceive
 }
