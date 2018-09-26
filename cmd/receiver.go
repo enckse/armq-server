@@ -21,10 +21,12 @@ var (
 )
 
 const (
-	fileMode   = "file"
-	sockMode   = "socket"
-	repeatMode = "repeat"
-	delimiter  = "`"
+	fileMode      = "file"
+	sockMode      = "socket"
+	repeatMode    = "repeat"
+	delimiter     = "`"
+	sleepCycleMin = 90
+	sleepCycleMax = 108
 )
 
 type context struct {
@@ -127,6 +129,7 @@ func createWorker(id int, ctx *context) {
 		socket = goutils.SocketSettings()
 		socket.Bind = ctx.binding
 	}
+	lastWorked := 0
 	for {
 		obj, ok := next()
 		if ok {
@@ -144,8 +147,24 @@ func createWorker(id int, ctx *context) {
 				garbage(obj)
 			}
 		}
-		if !ok {
-			time.Sleep(50 * time.Millisecond)
+		if ok {
+			lastWorked = 0
+		} else {
+			cooldown := 1
+			switch {
+			case lastWorked < sleepCycleMin:
+				cooldown = 1
+			case lastWorked >= sleepCycleMin && lastWorked < sleepCycleMax:
+				cooldown = 5
+			case id > 0 && lastWorked >= sleepCycleMax:
+				// initial worker can never go this slow
+				cooldown = 30
+			}
+			if lastWorked < sleepCycleMax {
+				lastWorked += 1
+			}
+			sleepFor := time.Duration(cooldown) * time.Second
+			time.Sleep(sleepFor)
 		}
 	}
 }
