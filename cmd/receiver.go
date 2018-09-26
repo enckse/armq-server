@@ -96,6 +96,11 @@ type Datum struct {
 	Date      string `json:"datetime"`
 }
 
+type Entry struct {
+	Valid int    `json:"isjson"`
+	Raw   string `json:"raw"`
+}
+
 func detectJSON(segment string, level int) string {
 	parts := strings.Split(segment, delimiter)
 	if len(parts) <= 1 {
@@ -104,26 +109,32 @@ func detectJSON(segment string, level int) string {
 		if json.Unmarshal([]byte(segment), &out) == nil {
 			valid = 1
 		}
+		entry := &Entry{Valid: valid, Raw: segment}
 		j := segment
 		if valid == 0 {
 			j = "\"\""
 		}
-		return fmt.Sprintf("{\"valid\": %d, \"data\": %s}", valid, j)
+		b, err := json.Marshal(entry)
+		if err != nil {
+			goutils.WriteError("unable to pack json", err)
+			return "{}"
+		}
+		return fmt.Sprintf("{%s, \"data\": %s}", string(b), j)
 	} else {
 		obj := []string{}
 		for idx, p := range parts {
 			key := fmt.Sprintf("field%d", idx)
-			goutils.WriteInfo(strconv.Itoa(len(strings.Split(p, delimiter))))
 			res := detectJSON(p, level+1)
 			j := fmt.Sprintf("\"%s\": %s", key, res)
 			obj = append(obj, j)
 		}
 		resulting := ""
 		for idx, k := range obj {
-			if idx > 0 {
-				resulting = "," + resulting
+			add := ""
+			if idx < len(obj)-1 {
+				add = ","
 			}
-			resulting = fmt.Sprintf("{%s}", k)
+			resulting = fmt.Sprintf("%s{%s}%s", resulting, k, add)
 		}
 		return fmt.Sprintf("{\"level%d\": %s}", level, resulting)
 	}
