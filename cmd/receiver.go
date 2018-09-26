@@ -70,9 +70,9 @@ func createWorker(id int) {
 		obj, ok := next()
 		if ok {
 			goutils.WriteDebug(fmt.Sprintf("%d -> %s", id, obj.id))
+			count += 1
 			garbage(obj)
 		}
-		count += 1
 		time.Sleep(100 * time.Millisecond)
 	}
 }
