@@ -29,9 +29,9 @@ const (
 	delimiter     = "`"
 	sleepCycleMin = 90
 	sleepCycleMax = 108
-	notJSON  = 0
-	isJSON   = 1
-	skipJSON = 2
+	notJSON       = 0
+	isJSON        = 1
+	skipJSON      = 2
 )
 
 type context struct {
