@@ -12,7 +12,7 @@ import (
 
 const (
 	notJSON   = "raw"
-	objJSON   = "obj"
+	objJSON   = "object"
 	arrayJSON = "array"
 	delimiter = "`"
 )
