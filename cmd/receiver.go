@@ -107,9 +107,8 @@ type Entry struct {
 	Raw   string `json:"raw"`
 }
 
-func detectJSON(segment string, level int) string {
-	parts := strings.Split(segment, delimiter)
-	if len(parts) <= 1 {
+func detectJSON(segment string, child bool) string {
+	if child {
 		var out map[string]json.RawMessage
 		valid := notJSON
 		if json.Unmarshal([]byte(segment), &out) == nil {
@@ -127,10 +126,11 @@ func detectJSON(segment string, level int) string {
 		}
 		return fmt.Sprintf("{\"dump\": %s, \"data\": %s}", string(b), j)
 	} else {
+		parts := strings.Split(segment, delimiter)
 		obj := []string{}
 		for idx, p := range parts {
 			key := fmt.Sprintf("field%d", idx)
-			res := detectJSON(p, level+1)
+			res := detectJSON(p, true)
 			j := fmt.Sprintf("\"%s\": %s", key, res)
 			obj = append(obj, j)
 		}
@@ -142,7 +142,7 @@ func detectJSON(segment string, level int) string {
 			}
 			resulting = fmt.Sprintf("%s%s%s", resulting, k, add)
 		}
-		return fmt.Sprintf("{\"level%d\": {%s}}", level, resulting)
+		return fmt.Sprintf("{%s}", resulting)
 	}
 }
 
@@ -166,7 +166,7 @@ func writerWorker(id, count int, obj *object, ctx *context) bool {
 		goutils.WriteError("unable to read object to json", e)
 		return false
 	}
-	fields := detectJSON(strings.Join(parts[2:], delimiter), 0)
+	fields := detectJSON(strings.Join(parts[2:], delimiter), false)
 	if fields == "" {
 		fields = "{}"
 	}
