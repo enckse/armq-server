@@ -79,17 +79,6 @@ func detectJSON(segment []string) string {
 		buffer.Write(j)
 	}
 	return fmt.Sprintf("{%s}", buffer.String())
-	/*
-		resulting := ""
-		for idx, k := range obj {
-			add := ""
-			if idx < len(obj)-1 {
-				add = ","
-			}
-			resulting = fmt.Sprintf("%s%s%s", resulting, k, add)
-		}
-		return fmt.Sprintf("{%s}", resulting)
-	}*/
 }
 
 // This is where we can rewrite field designations depending on our inputs
