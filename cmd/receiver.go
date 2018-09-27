@@ -98,7 +98,7 @@ func (d *Datum) toJSON() string {
 }
 
 func writerWorker(id, count int, obj *object, ctx *context) bool {
-	dump := &Entry{Raw: string(obj.data), Type: skipJSON}
+	dump := &Entry{Raw: string(obj.data), Type: notJSON}
 	datum := &Datum{}
 	parts := strings.Split(dump.Raw, delimiter)
 	datum.Timestamp = parts[0]

@@ -14,13 +14,11 @@ const (
 	notJSON   = "raw"
 	objJSON   = "obj"
 	arrayJSON = "array"
-	skipJSON  = "na"
 	delimiter = "`"
-	emptyJSON = "{\"jsontype\": \"" + skipJSON + "\"}"
 )
 
 var (
-	emptyObject = []byte(emptyJSON)
+	emptyObject = []byte("{}")
 )
 
 type Entry struct {
