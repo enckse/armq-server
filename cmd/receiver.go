@@ -31,7 +31,6 @@ const (
 )
 
 type context struct {
-	directory  string
 	binding    string
 	debug      bool
 	start      time.Time
@@ -207,7 +206,6 @@ func run(config *goutils.Config) {
 	now := time.Now()
 	op := config.GetStringOrDefault("mode", fileMode)
 	ctx := &context{}
-	ctx.directory = config.GetStringOrDefault("directory", "/dev/shm/armq/")
 	ctx.debug = config.GetTrue("debug")
 	ctx.binding = config.GetStringOrDefault("bind", "127.0.0.1:5000")
 	ctx.start = now
@@ -218,19 +216,16 @@ func run(config *goutils.Config) {
 	opts.Debug = ctx.debug
 	goutils.ConfigureLogging(opts)
 	goutils.WriteInfo("starting", vers, op)
+	section := fmt.Sprintf("[%s]", op)
 	switch op {
 	case sockMode:
 		go socketReceiver(ctx)
 	case fileMode, repeatMode:
-		go fileReceive(ctx)
+		go fileReceive(config.GetSection(section))
 	default:
 		goutils.Fatal("unknown mode", nil)
 	}
-	worker, err := config.GetIntOrDefault("workers", 4)
-	if err != nil {
-		goutils.WriteError("invalid worker settings", err)
-		worker = 4
-	}
+	worker := config.GetIntOrDefaultOnly("workers", 4)
 	if ctx.repeater {
 		if worker != 1 {
 			goutils.WriteWarn("setting workers back to 1 for repeater")

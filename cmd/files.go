@@ -11,22 +11,17 @@ import (
 	"github.com/epiphyte/goutils"
 )
 
-const (
-	// 50 = 5 seconds
-	gcNow = 50
-)
-
 var (
 	lock  = &sync.Mutex{}
 	cache = make(map[string]struct{})
 )
 
-func runCollector(dir string) {
+func runCollector(conf *fileConfig) {
 	files := collect()
 	lock.Lock()
 	defer lock.Unlock()
 	for _, f := range files {
-		p := filepath.Join(dir, f)
+		p := filepath.Join(conf.directory, f)
 		goutils.WriteDebug("collecting", p)
 		_, e := goutils.RunBashCommand(fmt.Sprintf("rm -f %s", p))
 		if e != nil {
@@ -40,15 +35,22 @@ func runCollector(dir string) {
 	}
 }
 
-func scan(dir string) {
-	files, e := ioutil.ReadDir(dir)
+type fileConfig struct {
+	directory string
+	after     time.Duration
+	gc        int
+	sleep     time.Duration
+}
+
+func scan(conf *fileConfig) {
+	files, e := ioutil.ReadDir(conf.directory)
 	if e != nil {
 		goutils.WriteError("unable to scan files", e)
 		return
 	}
 	lock.Lock()
 	defer lock.Unlock()
-	requiredTime := time.Now().Add(-10 * time.Second)
+	requiredTime := time.Now().Add(conf.after * time.Second)
 	for _, f := range files {
 		n := f.Name()
 		// if we already read this file we certainly should not read it again
@@ -60,7 +62,7 @@ func scan(dir string) {
 		}
 		goutils.WriteDebug("reading", n)
 		cache[n] = struct{}{}
-		p := filepath.Join(dir, n)
+		p := filepath.Join(conf.directory, n)
 		d, e := ioutil.ReadFile(p)
 		if e != nil {
 			goutils.WriteWarn("file read error", p)
@@ -71,21 +73,26 @@ func scan(dir string) {
 	}
 }
 
-func fileReceive(ctx *context) {
+func fileReceive(config *goutils.Config) {
+	conf := &fileConfig{}
+	conf.directory = config.GetStringOrDefault("directory", "/dev/shm/armq/")
+	conf.gc = config.GetIntOrDefaultOnly("gc", 50)
+	conf.sleep = time.Duration(config.GetIntOrDefaultOnly("sleep", 100))
+	conf.after = time.Duration(config.GetIntOrDefaultOnly("after", -10))
 	goutils.WriteInfo("file mode enabled")
-	err := os.Mkdir(ctx.directory, 0777)
+	err := os.Mkdir(conf.directory, 0777)
 	if err != nil {
 		goutils.WriteError("unable to create directory (not aborting)", err)
 	}
 	lastCollected := 0
 	for {
-		if lastCollected > gcNow {
+		if lastCollected > conf.gc {
 			goutils.WriteDebug("collecting garbage")
-			runCollector(ctx.directory)
+			runCollector(conf)
 			lastCollected = 0
 		}
-		scan(ctx.directory)
-		time.Sleep(100 * time.Millisecond)
+		scan(conf)
+		time.Sleep(conf.sleep * time.Millisecond)
 		lastCollected += 1
 	}
 }
