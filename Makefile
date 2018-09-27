@@ -7,7 +7,7 @@ FLAGS   := -ldflags '-s -w -X main.vers=$(VERSION)' -buildmode=pie
 all: clean server format
 
 server:
-	go build -o $(BIN)armq-receiver $(FLAGS) $(MAIN) $(CMD)receiver.go $(CMD)sockets.go $(CMD)files.go
+	go build -o $(BIN)armq-receiver $(FLAGS) $(MAIN) $(CMD)receiver.go $(CMD)sockets.go $(CMD)files.go $(CMD)messages.go
 
 format:
 	@echo $(SRC)

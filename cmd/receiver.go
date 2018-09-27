@@ -26,12 +26,8 @@ const (
 	fileMode      = "file"
 	sockMode      = "socket"
 	repeatMode    = "repeat"
-	delimiter     = "`"
 	sleepCycleMin = 90
 	sleepCycleMax = 108
-	notJSON       = 0
-	isJSON        = 1
-	skipJSON      = 2
 )
 
 type context struct {
@@ -102,52 +98,8 @@ func (d *Datum) toJSON() string {
 	return fmt.Sprintf("\"id\": \"%s\", \"ts\": \"%s\", \"vers\": \"%s\", \"file\": \"%s\", \"dt\": \"%s\"", d.Id, d.Timestamp, d.Version, d.File, d.Date)
 }
 
-type Entry struct {
-	Valid int    `json:"isjson"`
-	Raw   string `json:"raw"`
-}
-
-func detectJSON(segment string, child bool) string {
-	if child {
-		var out map[string]json.RawMessage
-		valid := notJSON
-		if json.Unmarshal([]byte(segment), &out) == nil {
-			valid = isJSON
-		}
-		entry := &Entry{Valid: valid, Raw: segment}
-		j := segment
-		if valid == isJSON {
-			j = "\"\""
-		}
-		b, err := json.Marshal(entry)
-		if err != nil {
-			goutils.WriteError("unable to pack json", err)
-			return "{}"
-		}
-		return fmt.Sprintf("{\"dump\": %s, \"data\": %s}", string(b), j)
-	} else {
-		parts := strings.Split(segment, delimiter)
-		obj := []string{}
-		for idx, p := range parts {
-			key := fmt.Sprintf("field%d", idx)
-			res := detectJSON(p, true)
-			j := fmt.Sprintf("\"%s\": %s", key, res)
-			obj = append(obj, j)
-		}
-		resulting := ""
-		for idx, k := range obj {
-			add := ""
-			if idx < len(obj)-1 {
-				add = ","
-			}
-			resulting = fmt.Sprintf("%s%s%s", resulting, k, add)
-		}
-		return fmt.Sprintf("{%s}", resulting)
-	}
-}
-
 func writerWorker(id, count int, obj *object, ctx *context) bool {
-	dump := &Entry{Raw: string(obj.data), Valid: skipJSON}
+	dump := &Entry{Raw: string(obj.data), Type: skipJSON}
 	datum := &Datum{}
 	parts := strings.Split(dump.Raw, delimiter)
 	datum.Timestamp = parts[0]
@@ -166,7 +118,7 @@ func writerWorker(id, count int, obj *object, ctx *context) bool {
 		goutils.WriteError("unable to read object to json", e)
 		return false
 	}
-	fields := detectJSON(strings.Join(parts[2:], delimiter), false)
+	fields := detectJSON(parts[2:])
 	if fields == "" {
 		fields = "{}"
 	}
