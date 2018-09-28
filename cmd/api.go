@@ -167,6 +167,7 @@ func timeFilter(op, value string, mapping map[string]typeConv) *dataFilter {
 func run(ctx *context, w http.ResponseWriter, r *http.Request) {
 	dataFilters := []*dataFilter{}
 	limited := ctx.limit
+	skip := 0
 	fileRead := ""
 	for k, p := range r.URL.Query() {
 		goutils.WriteDebug(k, p...)
@@ -196,6 +197,11 @@ func run(ctx *context, w http.ResponseWriter, r *http.Request) {
 			i, err := strconv.Atoi(p[0])
 			if err == nil && i > 0 {
 				limited = i
+			}
+		case "skip":
+			i, err := strconv.Atoi(p[0])
+			if err == nil && i > 0 {
+				skip = i
 			}
 		case "files":
 			fileRead = strings.TrimSpace(p[0])
@@ -234,6 +240,7 @@ func run(ctx *context, w http.ResponseWriter, r *http.Request) {
 			goutils.WriteWarn("unable to marshal object", p)
 			goutils.WriteError("unable to parse json", err)
 			continue
+
 		}
 		if len(dataFilters) > 0 {
 			valid := false
@@ -267,6 +274,10 @@ func run(ctx *context, w http.ResponseWriter, r *http.Request) {
 			if !valid {
 				continue
 			}
+		}
+		if skip > 0 {
+			skip += -1
+			continue
 		}
 		goutils.WriteDebug("passed", p)
 		if has {
