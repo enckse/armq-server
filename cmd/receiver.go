@@ -91,7 +91,7 @@ type Datum struct {
 }
 
 func (d *Datum) toJSON() string {
-	return fmt.Sprintf("\"id\": \"%s\", \"ts\": %d, \"vers\": \"%s\", \"file\": \"%s\", \"dt\": \"%s\"", d.Id, d.Timestamp, d.Version, d.File, d.Date)
+	return fmt.Sprintf("\"id\": \"%s\", \"%s\": %d, \"vers\": \"%s\", \"file\": \"%s\", \"dt\": \"%s\"", d.Id, tsJSON, d.Timestamp, d.Version, d.File, d.Date)
 }
 
 func writerWorker(id, count int, obj *object, ctx *context) bool {

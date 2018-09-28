@@ -10,6 +10,7 @@ var (
 	vers    = "master"
 	dataDir = "/var/lib/armq/"
 	outKey  = "output"
+	tsJSON  = "ts"
 )
 
 func startup() *goutils.Config {

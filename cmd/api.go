@@ -29,6 +29,8 @@ const (
 	nEquals         opType   = maxOp
 	invalidOp       opType   = minOp
 	filterDelimiter          = ":"
+	startStringOp            = "ge"
+	endStringOp              = "le"
 )
 
 type dataFilter struct {
@@ -99,9 +101,9 @@ func stringToOp(op string) opType {
 		return greatThan
 	case "lt":
 		return lessThan
-	case "le":
+	case endStringOp:
 		return lessTE
-	case "ge":
+	case startStringOp:
 		return greatTE
 	}
 	return invalidOp
@@ -158,6 +160,10 @@ func parseFilter(filter string, mapping map[string]typeConv) *dataFilter {
 	return f
 }
 
+func timeFilter(op, value string, mapping map[string]typeConv) *dataFilter {
+	return parseFilter(fmt.Sprintf("%s%s%s%s%s", tsJSON, filterDelimiter, op, filterDelimiter, value), mapping)
+}
+
 func run(ctx *context, w http.ResponseWriter, r *http.Request) {
 	dataFilters := []*dataFilter{}
 	limited := ctx.limit
@@ -175,6 +181,17 @@ func run(ctx *context, w http.ResponseWriter, r *http.Request) {
 					dataFilters = append(dataFilters, f)
 				}
 			}
+		case "start":
+			fallthrough
+		case "end":
+			mode := endStringOp
+			if k == "start" {
+				mode = startStringOp
+			}
+			f := timeFilter(mode, p[0], ctx.convert)
+			if f != nil {
+				dataFilters = append(dataFilters, f)
+			}
 		case "limit":
 			i, err := strconv.Atoi(p[0])
 			if err == nil && i > 0 {
@@ -191,6 +208,8 @@ func run(ctx *context, w http.ResponseWriter, r *http.Request) {
 	}
 	goutils.WriteDebug("file filter", fileRead)
 	count := 0
+	has := false
+	w.Write([]byte("{\"data\": ["))
 	for _, file := range f {
 		if count > limited {
 			break
@@ -250,8 +269,14 @@ func run(ctx *context, w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		goutils.WriteDebug("passed", p)
+		if has {
+			w.Write([]byte(","))
+		}
+		w.Write(b)
+		has = true
 		count += 1
 	}
+	w.Write([]byte("]}"))
 }
 
 func main() {
