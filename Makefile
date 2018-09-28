@@ -16,7 +16,7 @@ receiver:
 
 api:
 	./converters.sh
-	$(GO)api $(COMMON) $(CMD)api.go $(CMD)messages.go $(CMD)generated.go
+	$(GO)api $(COMMON) $(CMD)api.go $(CMD)generated.go
 
 format:
 	@echo $(SRC)
