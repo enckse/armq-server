@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -19,7 +18,6 @@ var (
 	readLock = &sync.Mutex{}
 	objcache = []*object{}
 	gc       = []string{}
-	vers     = "master"
 )
 
 const (
@@ -32,7 +30,6 @@ const (
 
 type context struct {
 	binding    string
-	debug      bool
 	start      time.Time
 	timeFormat string
 	repeater   bool
@@ -87,26 +84,28 @@ func next() (*object, bool) {
 
 type Datum struct {
 	Id        string
-	Timestamp string
+	Timestamp int64
 	Version   string
 	File      string
 	Date      string
 }
 
 func (d *Datum) toJSON() string {
-	return fmt.Sprintf("\"id\": \"%s\", \"ts\": \"%s\", \"vers\": \"%s\", \"file\": \"%s\", \"dt\": \"%s\"", d.Id, d.Timestamp, d.Version, d.File, d.Date)
+	return fmt.Sprintf("\"id\": \"%s\", \"ts\": %d, \"vers\": \"%s\", \"file\": \"%s\", \"dt\": \"%s\"", d.Id, d.Timestamp, d.Version, d.File, d.Date)
 }
 
 func writerWorker(id, count int, obj *object, ctx *context) bool {
 	dump := &Entry{Raw: string(obj.data), Type: notJSON}
 	datum := &Datum{}
 	parts := strings.Split(dump.Raw, delimiter)
-	datum.Timestamp = parts[0]
-	i, e := strconv.ParseInt(datum.Timestamp, 10, 64)
+	ts := parts[0]
+	i, e := strconv.ParseInt(ts, 10, 64)
 	if e != nil {
 		goutils.WriteWarn("unable to parse timestamp (not critical)", obj.id)
 		goutils.WriteError("parse error was", e)
+		i = -1
 	}
+	datum.Timestamp = i
 	datum.Date = time.Unix(i/1000, 0).Format("2006-01-02T15:04:05")
 	datum.Version = parts[1]
 	datum.File = obj.id
@@ -192,30 +191,18 @@ func createWorker(id int, ctx *context) {
 }
 
 func main() {
-	conf := flag.String("config", "/etc/armq.conf", "configuration file")
-	flag.Parse()
-	c, e := goutils.LoadConfigDefaults(*conf)
-	if e != nil {
-		goutils.WriteError("unable to read config", e)
-		return
-	}
-	run(c)
+	run(startup())
 }
 
 func run(config *goutils.Config) {
 	now := time.Now()
 	op := config.GetStringOrDefault("mode", fileMode)
 	ctx := &context{}
-	ctx.debug = config.GetTrue("debug")
 	ctx.binding = config.GetStringOrDefault("bind", "127.0.0.1:5000")
 	ctx.start = now
 	ctx.repeater = op == repeatMode
 	ctx.timeFormat = now.Format("2006-01-02T15-04-05")
-	ctx.output = config.GetStringOrDefault("output", "/var/lib/armq/")
-	opts := goutils.NewLogOptions()
-	opts.Debug = ctx.debug
-	goutils.ConfigureLogging(opts)
-	goutils.WriteInfo("starting", vers, op)
+	ctx.output = config.GetStringOrDefault("output", dataDir)
 	section := fmt.Sprintf("[%s]", op)
 	switch op {
 	case sockMode:

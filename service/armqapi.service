@@ -3,7 +3,7 @@ Description=armq api server
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/armq_api
+ExecStart=/usr/bin/armq-api
 Restart=always
 
 [Install]

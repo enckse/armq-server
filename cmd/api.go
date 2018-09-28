@@ -1,0 +1,274 @@
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"path/filepath"
+	"strconv"
+	"strings"
+
+	"github.com/epiphyte/goutils"
+)
+
+type typeConv int
+type opType int
+
+const (
+	maxOp                    = 5
+	minOp                    = -1
+	int64Conv       typeConv = 1
+	strConv         typeConv = 2
+	intConv         typeConv = 3
+	lessThan        opType   = 0
+	equals          opType   = 1
+	lessTE          opType   = 2
+	greatThan       opType   = 3
+	greatTE         opType   = 4
+	nEquals         opType   = maxOp
+	invalidOp       opType   = minOp
+	filterDelimiter          = ":"
+)
+
+type dataFilter struct {
+	field    string
+	op       opType
+	int64Val int64
+	strVal   string
+	intVal   int
+	fxn      typeConv
+}
+
+func (f *dataFilter) check(d []byte) bool {
+	switch f.fxn {
+	case int64Conv:
+		return int64Converter(f.int64Val, d, f.op)
+	case intConv:
+		return intConverter(f.intVal, d, f.op)
+	case strConv:
+		return stringConverter(f.strVal, d, f.op)
+	}
+	return false
+}
+
+type context struct {
+	limit     int
+	directory string
+	convert   map[string]typeConv
+}
+
+func prepare(dir, defs string, fields []string, limit int) *context {
+	c := &context{}
+	c.directory = dir
+	c.limit = limit
+	conf, err := goutils.LoadConfigDefaults(defs)
+	if err != nil {
+		goutils.Fatal("unable to read definitions config", err)
+	}
+	c.convert = make(map[string]typeConv)
+	for _, field := range fields {
+		key := fmt.Sprintf("[%s]", field)
+		sect := conf.GetSection(key)
+		t := sect.GetStringOrEmpty("type")
+		p := sect.GetStringOrEmpty("path")
+		if len(t) == 0 || len(p) == 0 {
+			goutils.Fatal("type and path required", nil)
+		}
+		switch t {
+		case "int":
+			c.convert[p] = intConv
+		case "int64":
+			c.convert[p] = int64Conv
+		case "string":
+			c.convert[p] = strConv
+		default:
+			goutils.Fatal(fmt.Sprintf("%s is an unknown type", t), nil)
+		}
+	}
+	return c
+}
+
+func stringToOp(op string) opType {
+	switch op {
+	case "eq":
+		return equals
+	case "neq":
+		return nEquals
+	case "gt":
+		return greatThan
+	case "lt":
+		return lessThan
+	case "le":
+		return lessTE
+	case "ge":
+		return greatTE
+	}
+	return invalidOp
+}
+
+func parseFilter(filter string, mapping map[string]typeConv) *dataFilter {
+	parts := strings.Split(filter, filterDelimiter)
+	if len(parts) < 3 {
+		goutils.WriteWarn("filter missing components")
+		return nil
+	}
+	val := strings.Join(parts[2:], filterDelimiter)
+	f := &dataFilter{}
+	f.field = parts[0]
+	t, ok := mapping[f.field]
+	if !ok {
+		goutils.WriteWarn("filter field unknown", f.field)
+		return nil
+	}
+	f.op = stringToOp(parts[1])
+	if f.op == invalidOp {
+		goutils.WriteWarn("filter op invalid")
+		return nil
+	}
+	f.fxn = t
+	switch t {
+	case intConv:
+		i, e := strconv.Atoi(val)
+		if e != nil {
+			goutils.WriteWarn("filter is not an int")
+			return nil
+		} else {
+			f.intVal = i
+		}
+	case int64Conv:
+		i, e := strconv.ParseInt(val, 10, 64)
+		if e != nil {
+			goutils.WriteWarn("filter is not an int")
+			return nil
+		} else {
+			f.int64Val = i
+		}
+	case strConv:
+		if f.op == equals || f.op == nEquals {
+			f.strVal = val
+		} else {
+			goutils.WriteWarn("filter string op is invalid")
+			return nil
+		}
+	default:
+		goutils.WriteWarn("unknown filter type")
+		return nil
+	}
+	return f
+}
+
+func run(ctx *context, w http.ResponseWriter, r *http.Request) {
+	dataFilters := []*dataFilter{}
+	limited := ctx.limit
+	fileRead := ""
+	for k, p := range r.URL.Query() {
+		goutils.WriteDebug(k, p...)
+		if len(p) == 0 {
+			continue
+		}
+		switch k {
+		case "filter":
+			for _, val := range p {
+				f := parseFilter(val, ctx.convert)
+				if f != nil {
+					dataFilters = append(dataFilters, f)
+				}
+			}
+		case "limit":
+			i, err := strconv.Atoi(p[0])
+			if err == nil && i > 0 {
+				limited = i
+			}
+		case "files":
+			fileRead = strings.TrimSpace(p[0])
+		}
+	}
+	f, e := ioutil.ReadDir(ctx.directory)
+	if e != nil {
+		goutils.WriteError("unable to read dir", e)
+		return
+	}
+	goutils.WriteDebug("file filter", fileRead)
+	count := 0
+	for _, file := range f {
+		if count > limited {
+			break
+		}
+		name := file.Name()
+		if len(fileRead) > 0 {
+			if !strings.HasPrefix(name, fileRead) {
+				continue
+			}
+		}
+		p := filepath.Join(ctx.directory, name)
+		goutils.WriteDebug("reading", p)
+		b, err := ioutil.ReadFile(p)
+		if err != nil {
+			goutils.WriteWarn("error reading file", p)
+			goutils.WriteError("unable to read file", err)
+			continue
+		}
+		var obj map[string]json.RawMessage
+		err = json.Unmarshal(b, &obj)
+		if err != nil {
+			goutils.WriteWarn("unable to marshal object", p)
+			goutils.WriteError("unable to parse json", err)
+			continue
+		}
+		if len(dataFilters) > 0 {
+			valid := false
+			for _, d := range dataFilters {
+				filterObj := obj
+				parts := strings.Split(d.field, ".")
+				fieldLen := len(parts) - 1
+				for i, p := range parts {
+					v, ok := filterObj[p]
+					if !ok {
+						break
+					}
+					if i == fieldLen {
+						valid = d.check(v)
+						break
+					} else {
+						var sub map[string]json.RawMessage
+						err = json.Unmarshal(v, &sub)
+						if err != nil {
+							goutils.WriteWarn("unable to unmarshal obj", p, d.field)
+							goutils.WriteError("unmarshal error", err)
+							break
+						}
+						filterObj = sub
+					}
+				}
+				if !valid {
+					break
+				}
+			}
+			if !valid {
+				continue
+			}
+		}
+		goutils.WriteDebug("passed", p)
+		count += 1
+	}
+}
+
+func main() {
+	conf := startup()
+	dir := conf.GetStringOrDefault(outKey, dataDir)
+	c := conf.GetSection("[api]")
+	bind := c.GetStringOrDefault("bind", ":8080")
+	limit := c.GetIntOrDefaultOnly("limit", 1000)
+	fields := c.GetArrayOrEmpty("fields")
+	defs := c.GetStringOrDefault("definitions", "/etc/armq.api.conf")
+	goutils.WriteDebug("api ready")
+	ctx := prepare(dir, defs, fields, limit)
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		run(ctx, w, r)
+	})
+	err := http.ListenAndServe(bind, nil)
+	if err != nil {
+		goutils.Fatal("unable to do http serve", err)
+	}
+}
