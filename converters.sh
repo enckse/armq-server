@@ -2,7 +2,7 @@ _converters() {
     echo "package main"
     echo
     echo "import \"encoding/json\""
-    for o in $(echo "int:0 int64:0 string:\"\""); do
+    for o in $(echo "int:0 int64:0 string:\"\" float64:0"); do
         f=$(echo "$o" | cut -d ":" -f 1)
         d=$(echo "$o" | cut -d ":" -f 2)
         echo "

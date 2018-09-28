@@ -21,6 +21,7 @@ const (
 	int64Conv       typeConv = 1
 	strConv         typeConv = 2
 	intConv         typeConv = 3
+	float64Conv     typeConv = 4
 	lessThan        opType   = 0
 	equals          opType   = 1
 	lessTE          opType   = 2
@@ -34,12 +35,13 @@ const (
 )
 
 type dataFilter struct {
-	field    string
-	op       opType
-	int64Val int64
-	strVal   string
-	intVal   int
-	fxn      typeConv
+	field      string
+	op         opType
+	int64Val   int64
+	strVal     string
+	intVal     int
+	float64Val float64
+	fxn        typeConv
 }
 
 func (f *dataFilter) check(d []byte) bool {
@@ -50,6 +52,8 @@ func (f *dataFilter) check(d []byte) bool {
 		return intConverter(f.intVal, d, f.op)
 	case strConv:
 		return stringConverter(f.strVal, d, f.op)
+	case float64Conv:
+		return float64Converter(f.float64Val, d, f.op)
 	}
 	return false
 }
@@ -84,6 +88,8 @@ func prepare(dir, defs string, fields []string, limit int) *context {
 			c.convert[p] = int64Conv
 		case "string":
 			c.convert[p] = strConv
+		case "float64":
+			c.convert[p] = float64Conv
 		default:
 			goutils.Fatal(fmt.Sprintf("%s is an unknown type", t), nil)
 		}
@@ -135,17 +141,21 @@ func parseFilter(filter string, mapping map[string]typeConv) *dataFilter {
 		if e != nil {
 			goutils.WriteWarn("filter is not an int")
 			return nil
-		} else {
-			f.intVal = i
 		}
+		f.intVal = i
 	case int64Conv:
 		i, e := strconv.ParseInt(val, 10, 64)
 		if e != nil {
-			goutils.WriteWarn("filter is not an int")
+			goutils.WriteWarn("filter is not an int64")
 			return nil
-		} else {
-			f.int64Val = i
 		}
+		f.int64Val = i
+	case float64Conv:
+		i, e := strconv.ParseFloat(val, 64)
+		if e != nil {
+			goutils.WriteWarn("filter is not a float64")
+		}
+		f.float64Val = i
 	case strConv:
 		if f.op == equals || f.op == nEquals {
 			f.strVal = val
