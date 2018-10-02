@@ -75,7 +75,7 @@ func scan(conf *fileConfig) {
 
 func fileReceive(config *goutils.Config) {
 	conf := &fileConfig{}
-	conf.directory = config.GetStringOrDefault("directory", "/dev/shm/armq/")
+	conf.directory = config.GetStringOrDefault("directory", "/opt/armq/")
 	conf.gc = config.GetIntOrDefaultOnly("gc", 50)
 	conf.sleep = time.Duration(config.GetIntOrDefaultOnly("sleep", 100))
 	conf.after = time.Duration(config.GetIntOrDefaultOnly("after", -10))
