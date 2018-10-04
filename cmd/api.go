@@ -250,7 +250,6 @@ func run(ctx *context, w http.ResponseWriter, r *http.Request) {
 			goutils.WriteWarn("unable to marshal object", p)
 			goutils.WriteError("unable to parse json", err)
 			continue
-
 		}
 		if len(dataFilters) > 0 {
 			valid := false

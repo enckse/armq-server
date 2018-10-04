@@ -94,7 +94,7 @@ func (d *Datum) toJSON() string {
 	return fmt.Sprintf("\"id\": \"%s\", \"%s\": %d, \"vers\": \"%s\", \"file\": \"%s\", \"dt\": \"%s\"", d.Id, tsJSON, d.Timestamp, d.Version, d.File, d.Date)
 }
 
-func writerWorker(id, count int, obj *object, ctx *context) bool {
+func writerWorker(id, count int, now string, obj *object, ctx *context) bool {
 	dump := &Entry{Raw: string(obj.data), Type: notJSON}
 	datum := &Datum{}
 	parts := strings.Split(dump.Raw, delimiter)
@@ -141,8 +141,15 @@ func repeaterWorker(socket *goutils.SocketSetup, obj *object) bool {
 	return true
 }
 
+func (c *context) resetWorker() (int, string) {
+	now := time.Now().Format("2006-01-02")
+	p := filepath.Join(c.output, now)
+	goutils.RunBashCommand(fmt.Sprintf("mkdir -p %s", p))
+	return 0, now
+}
+
 func createWorker(id int, ctx *context) {
-	count := 0
+	count, now := ctx.resetWorker()
 	var socket *goutils.SocketSetup
 	if ctx.repeater {
 		socket = goutils.SocketSettings()
@@ -156,7 +163,7 @@ func createWorker(id int, ctx *context) {
 			if ctx.repeater {
 				ok = repeaterWorker(socket, obj)
 			} else {
-				if writerWorker(id, count, obj, ctx) {
+				if writerWorker(id, count, now, obj, ctx) {
 					count += 1
 				} else {
 					ok = false
@@ -177,7 +184,7 @@ func createWorker(id int, ctx *context) {
 				cooldown = 1
 			case lastWorked >= sleepCycleMin && lastWorked < sleepCycleMax:
 				cooldown = 5
-				count = 0
+				count, now = ctx.resetWorker()
 			case id > 0 && lastWorked >= sleepCycleMax:
 				// initial worker can never go this slow
 				cooldown = 30
