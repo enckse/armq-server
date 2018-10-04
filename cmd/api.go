@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/epiphyte/goutils"
 )
@@ -174,10 +175,11 @@ func timeFilter(op, value string, mapping map[string]typeConv) *dataFilter {
 	return parseFilter(fmt.Sprintf("%s%s%s%s%s", tsJSON, filterDelimiter, op, filterDelimiter, value), mapping)
 }
 
-func run(ctx *context, w http.ResponseWriter, r *http.Request) {
+func run(ctx *context, w http.ResponseWriter, r *http.Request) bool {
 	dataFilters := []*dataFilter{}
 	limited := ctx.limit
 	skip := 0
+	startDate := ""
 	fileRead := ""
 	for k, p := range r.URL.Query() {
 		goutils.WriteDebug(k, p...)
@@ -215,18 +217,34 @@ func run(ctx *context, w http.ResponseWriter, r *http.Request) {
 			}
 		case "files":
 			fileRead = strings.TrimSpace(p[0])
+		case "date":
+			startDate = strings.TrimSpace(p[0])
 		}
+	}
+	var modtime time.Time
+	if startDate == "" {
+		modtime = time.Now().Add(-10 * 24 * time.Hour)
+	} else {
+		m, err := time.Parse("2006-01-02", startDate)
+		if err != nil {
+			goutils.WriteError("invalid start dir mod time", err)
+			return false
+		}
+		modtime = m
 	}
 	dirs, e := ioutil.ReadDir(ctx.directory)
 	if e != nil {
 		goutils.WriteError("unable to read dir", e)
-		return
+		return false
 	}
 	filterFiles := len(fileRead) > 0
 	goutils.WriteDebug("file filter", fileRead)
 	files := []string{}
 	for _, d := range dirs {
 		if d.IsDir() {
+			if d.ModTime().Before(modtime) {
+				continue
+			}
 			dname := d.Name()
 			p := filepath.Join(ctx.directory, dname)
 			f, e := ioutil.ReadDir(p)
@@ -249,6 +267,8 @@ func run(ctx *context, w http.ResponseWriter, r *http.Request) {
 
 	count := 0
 	has := false
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte("{\"data\": ["))
 	for _, p := range files {
 		if count > limited {
@@ -314,6 +334,7 @@ func run(ctx *context, w http.ResponseWriter, r *http.Request) {
 		count += 1
 	}
 	w.Write([]byte("]}"))
+	return true
 }
 
 func main() {
@@ -327,7 +348,9 @@ func main() {
 	goutils.WriteDebug("api ready")
 	ctx := prepare(dir, defs, fields, limit)
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		run(ctx, w, r)
+		if !run(ctx, w, r) {
+			w.WriteHeader(http.StatusBadRequest)
+		}
 	})
 	err := http.ListenAndServe(bind, nil)
 	if err != nil {
