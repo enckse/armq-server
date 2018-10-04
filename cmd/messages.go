@@ -16,6 +16,7 @@ const (
 	arrayJSON = "array"
 	delimiter = "`"
 	fieldKey  = "fields"
+	dumpKey   = "dump"
 )
 
 var (
@@ -114,6 +115,7 @@ func handleAll(entries []*Entry, h entityHandler) []*Entry {
 
 type handlerSettings struct {
 	allowEvent bool
+	allowDump  bool
 }
 
 func handleEntries(entries []*Entry, settings *handlerSettings) []*Entry {

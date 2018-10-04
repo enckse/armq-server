@@ -200,6 +200,12 @@ func loadFile(path string, h *handlerSettings) (map[string]json.RawMessage, []by
 		goutils.WriteError("unable to parse json", err)
 		return nil, nil
 	}
+	if !h.allowDump {
+		_, ok := obj[dumpKey]
+		if ok {
+			delete(obj, dumpKey)
+		}
+	}
 	v, ok := obj[fieldKey]
 	if ok {
 		var fields map[string]*Entry
@@ -376,8 +382,12 @@ func main() {
 	ctx := prepare(dir, defs, fields, limit)
 	h := &handlerSettings{}
 	h.allowEvent = true
+	h.allowDump = true
 	if c.GetFalse("eventHander") {
 		h.allowEvent = false
+	}
+	if c.GetFalse("dumpHandler") {
+		h.allowDump = false
 	}
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if !run(ctx, w, r, h) {
