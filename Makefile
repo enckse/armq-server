@@ -4,7 +4,7 @@ SRC     := $(shell find $(CMD) -type f -name "*.go" | grep -v "vendor/")
 VERSION ?= $(shell git describe --long | sed "s/\([^-]*-g\)/r\1/;s/-/./g")
 FLAGS   := -ldflags '-s -w -X main.vers=$(VERSION)' -buildmode=pie
 APPS    := receiver api
-COMMON  := $(CMD)common.go
+COMMON  := $(CMD)common.go $(CMD)messages.go
 GO      := go build $(FLAGS) -o $(BIN)armq-
 
 all: clean server format
@@ -12,7 +12,7 @@ all: clean server format
 server: receiver api
 
 receiver:
-	$(GO)receiver $(CMD)receiver.go $(CMD)sockets.go $(CMD)files.go $(CMD)messages.go $(COMMON)
+	$(GO)receiver $(CMD)receiver.go $(CMD)sockets.go $(CMD)files.go $(COMMON)
 
 api:
 	./converters.sh

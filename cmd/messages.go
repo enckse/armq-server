@@ -15,6 +15,7 @@ const (
 	objJSON   = "object"
 	arrayJSON = "array"
 	delimiter = "`"
+	fieldKey  = "fields"
 )
 
 var (
@@ -83,7 +84,7 @@ func detectJSON(segment []string) string {
 		entries = append(entries, p)
 	}
 	var buffer bytes.Buffer
-	for idx, e := range handleEntries(entries) {
+	for idx, e := range entries {
 		if idx > 0 {
 			buffer.WriteString(",")
 		}

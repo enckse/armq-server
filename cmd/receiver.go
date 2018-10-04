@@ -124,7 +124,7 @@ func writerWorker(id, count int, outdir string, obj *object, ctx *context) bool 
 			return false
 		}
 	}
-	j = []byte(fmt.Sprintf("{%s, \"dump\": %s, \"fields\": %s}", datum.toJSON(), j, fields))
+	j = []byte(fmt.Sprintf("{%s, \"dump\": %s, \"%s\": %s}", datum.toJSON(), j, fieldKey, fields))
 	goutils.WriteDebug(string(j))
 	p := filepath.Join(outdir, datum.Id)
 	err := ioutil.WriteFile(p, j, 0644)

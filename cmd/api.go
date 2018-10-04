@@ -185,6 +185,41 @@ func getDate(in string, adding time.Duration) time.Time {
 	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.Local)
 }
 
+func loadFile(path string) (map[string]json.RawMessage, []byte) {
+	goutils.WriteDebug("reading", path)
+	b, err := ioutil.ReadFile(path)
+	if err != nil {
+		goutils.WriteWarn("error reading file", path)
+		goutils.WriteError("unable to read file", err)
+		return nil, nil
+	}
+	var obj map[string]json.RawMessage
+	err = json.Unmarshal(b, &obj)
+	if err != nil {
+		goutils.WriteWarn("unable to marshal object", path)
+		goutils.WriteError("unable to parse json", err)
+		return nil, nil
+	}
+	v, ok := obj[fieldKey]
+	if ok {
+		var fields map[string]*Entry
+		err = json.Unmarshal(v, &fields)
+		if err == nil {
+			rewrite := []*Entry{}
+			for k, v := range fields {
+				v.name = k
+				rewrite = append(rewrite, v)
+			}
+			rewrite = handleEntries(rewrite)
+			r, err := json.Marshal(rewrite)
+			if err == nil {
+				obj[fieldKey] = r
+			}
+		}
+	}
+	return obj, b
+}
+
 func run(ctx *context, w http.ResponseWriter, r *http.Request) bool {
 	dataFilters := []*dataFilter{}
 	limited := ctx.limit
@@ -278,20 +313,7 @@ func run(ctx *context, w http.ResponseWriter, r *http.Request) bool {
 		if count > limited {
 			break
 		}
-		goutils.WriteDebug("reading", p)
-		b, err := ioutil.ReadFile(p)
-		if err != nil {
-			goutils.WriteWarn("error reading file", p)
-			goutils.WriteError("unable to read file", err)
-			continue
-		}
-		var obj map[string]json.RawMessage
-		err = json.Unmarshal(b, &obj)
-		if err != nil {
-			goutils.WriteWarn("unable to marshal object", p)
-			goutils.WriteError("unable to parse json", err)
-			continue
-		}
+		obj, b := loadFile(p)
 		if len(dataFilters) > 0 {
 			valid := false
 			for _, d := range dataFilters {
@@ -308,7 +330,7 @@ func run(ctx *context, w http.ResponseWriter, r *http.Request) bool {
 						break
 					} else {
 						var sub map[string]json.RawMessage
-						err = json.Unmarshal(v, &sub)
+						err := json.Unmarshal(v, &sub)
 						if err != nil {
 							goutils.WriteWarn("unable to unmarshal obj", p, d.field)
 							goutils.WriteError("unmarshal error", err)
