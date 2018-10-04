@@ -37,6 +37,14 @@ func (e *Entry) isArray() bool {
 	return e.Type == arrayJSON
 }
 
+func (e *Entry) isObject() bool {
+	return e.Type == objJSON
+}
+
+func (e *Entry) isNotRaw() bool {
+	return e.isObject() || e.isArray()
+}
+
 func (e *Entry) isTag() bool {
 	if e.isRaw() && len(e.Raw) == 4 {
 		for _, r := range e.Raw {
