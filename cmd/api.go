@@ -217,26 +217,43 @@ func run(ctx *context, w http.ResponseWriter, r *http.Request) {
 			fileRead = strings.TrimSpace(p[0])
 		}
 	}
-	f, e := ioutil.ReadDir(ctx.directory)
+	dirs, e := ioutil.ReadDir(ctx.directory)
 	if e != nil {
 		goutils.WriteError("unable to read dir", e)
 		return
 	}
+	filterFiles := len(fileRead) > 0
 	goutils.WriteDebug("file filter", fileRead)
+	files := []string{}
+	for _, d := range dirs {
+		if d.IsDir() {
+			dname := d.Name()
+			p := filepath.Join(ctx.directory, dname)
+			f, e := ioutil.ReadDir(p)
+			if e != nil {
+				goutils.WriteWarn("unable to read subdir", dname)
+				goutils.WriteError("reading subdir failed", e)
+				continue
+			}
+			for _, file := range f {
+				name := file.Name()
+				if filterFiles {
+					if !strings.HasPrefix(name, fileRead) {
+						continue
+					}
+				}
+				files = append(files, filepath.Join(p, name))
+			}
+		}
+	}
+
 	count := 0
 	has := false
 	w.Write([]byte("{\"data\": ["))
-	for _, file := range f {
+	for _, p := range files {
 		if count > limited {
 			break
 		}
-		name := file.Name()
-		if len(fileRead) > 0 {
-			if !strings.HasPrefix(name, fileRead) {
-				continue
-			}
-		}
-		p := filepath.Join(ctx.directory, name)
 		goutils.WriteDebug("reading", p)
 		b, err := ioutil.ReadFile(p)
 		if err != nil {
