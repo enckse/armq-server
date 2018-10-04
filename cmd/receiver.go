@@ -122,7 +122,7 @@ func writerWorker(id, count int, obj *object, ctx *context) bool {
 	}
 	j = []byte(fmt.Sprintf("{%s, \"dump\": %s, \"fields\": %s}", datum.toJSON(), j, fields))
 	goutils.WriteDebug(string(j))
-	p := filepath.Join(ctx.output, datum.Id)
+	p := filepath.Join(ctx.output, now, datum.Id)
 	err := ioutil.WriteFile(p, j, 0644)
 	if err != nil {
 		goutils.WriteWarn("error saving results", p)
@@ -177,6 +177,7 @@ func createWorker(id int, ctx *context) {
 				cooldown = 1
 			case lastWorked >= sleepCycleMin && lastWorked < sleepCycleMax:
 				cooldown = 5
+				count = 0
 			case id > 0 && lastWorked >= sleepCycleMax:
 				// initial worker can never go this slow
 				cooldown = 30
