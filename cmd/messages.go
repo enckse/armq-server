@@ -112,15 +112,21 @@ func handleAll(entries []*Entry, h entityHandler) []*Entry {
 	return h.handle(len(entries), entries)
 }
 
-func handleEntries(entries []*Entry) []*Entry {
+type handlerSettings struct {
+	allowEvent bool
+}
+
+func handleEntries(entries []*Entry, settings *handlerSettings) []*Entry {
 	if len(entries) == 0 {
 		return entries
 	}
 	var handler entityHandler
 	handler = &defaultHandler{}
 	first := entries[0]
-	if first.isRaw() && first.Raw == "event" {
-		handler = &eventHandler{}
+	if settings.allowEvent {
+		if first.isRaw() && first.Raw == "event" {
+			handler = &eventHandler{}
+		}
 	}
 	return handleAll(entries, handler)
 }

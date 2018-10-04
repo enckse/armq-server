@@ -185,7 +185,7 @@ func getDate(in string, adding time.Duration) time.Time {
 	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.Local)
 }
 
-func loadFile(path string) (map[string]json.RawMessage, []byte) {
+func loadFile(path string, h *handlerSettings) (map[string]json.RawMessage, []byte) {
 	goutils.WriteDebug("reading", path)
 	b, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -210,7 +210,7 @@ func loadFile(path string) (map[string]json.RawMessage, []byte) {
 				v.name = k
 				rewrite = append(rewrite, v)
 			}
-			rewrite = handleEntries(rewrite)
+			rewrite = handleEntries(rewrite, h)
 			r, err := json.Marshal(rewrite)
 			if err == nil {
 				obj[fieldKey] = r
@@ -220,7 +220,7 @@ func loadFile(path string) (map[string]json.RawMessage, []byte) {
 	return obj, b
 }
 
-func run(ctx *context, w http.ResponseWriter, r *http.Request) bool {
+func run(ctx *context, w http.ResponseWriter, r *http.Request, h *handlerSettings) bool {
 	dataFilters := []*dataFilter{}
 	limited := ctx.limit
 	skip := 0
@@ -313,7 +313,7 @@ func run(ctx *context, w http.ResponseWriter, r *http.Request) bool {
 		if count > limited {
 			break
 		}
-		obj, b := loadFile(p)
+		obj, b := loadFile(p, h)
 		if len(dataFilters) > 0 {
 			valid := false
 			for _, d := range dataFilters {
@@ -374,8 +374,13 @@ func main() {
 	defs := c.GetStringOrDefault("definitions", "/etc/armq.api.conf")
 	goutils.WriteDebug("api ready")
 	ctx := prepare(dir, defs, fields, limit)
+	h := &handlerSettings{}
+	h.allowEvent = true
+	if c.GetFalse("eventHander") {
+		h.allowEvent = false
+	}
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if !run(ctx, w, r) {
+		if !run(ctx, w, r, h) {
 			w.WriteHeader(http.StatusBadRequest)
 		}
 	})
