@@ -34,6 +34,7 @@ type context struct {
 	timeFormat string
 	repeater   bool
 	output     string
+	dump       bool
 }
 
 type object struct {
@@ -110,15 +111,18 @@ func writerWorker(id, count int, outdir string, obj *object, ctx *context) bool 
 	datum.Version = parts[1]
 	datum.File = obj.id
 	datum.Id = fmt.Sprintf("%s.%d.%d.%d", ctx.timeFormat, datum.Timestamp, id, count)
-	j, e := json.Marshal(dump)
-	if e != nil {
-		goutils.WriteWarn("unable to handle file", obj.id)
-		goutils.WriteError("unable to read object to json", e)
-		return false
-	}
 	fields := detectJSON(parts[2:])
 	if fields == "" {
 		fields = "{}"
+	}
+	j := emptyObject
+	if ctx.dump {
+		j, e = json.Marshal(dump)
+		if e != nil {
+			goutils.WriteWarn("unable to handle file", obj.id)
+			goutils.WriteError("unable to read object to json", e)
+			return false
+		}
 	}
 	j = []byte(fmt.Sprintf("{%s, \"dump\": %s, \"fields\": %s}", datum.toJSON(), j, fields))
 	goutils.WriteDebug(string(j))
@@ -211,6 +215,7 @@ func run(config *goutils.Config) {
 	ctx.repeater = op == repeatMode
 	ctx.timeFormat = now.Format("2006-01-02T15-04-05")
 	ctx.output = config.GetStringOrDefault("output", dataDir)
+	ctx.dump = config.GetTrue("dump")
 	section := fmt.Sprintf("[%s]", op)
 	switch op {
 	case sockMode:
