@@ -235,7 +235,7 @@ func run(ctx *context, w http.ResponseWriter, r *http.Request) bool {
 		}
 	}
 	stime := getDate(startDate, -10*24*time.Hour)
-	etime := getDate(endDate, 0*time.Hour)
+	etime := getDate(endDate, 24*time.Hour)
 	dirs, e := ioutil.ReadDir(ctx.directory)
 	if e != nil {
 		goutils.WriteError("unable to read dir", e)
@@ -272,7 +272,6 @@ func run(ctx *context, w http.ResponseWriter, r *http.Request) bool {
 
 	count := 0
 	has := false
-	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte("{\"data\": ["))
 	for _, p := range files {
@@ -339,6 +338,7 @@ func run(ctx *context, w http.ResponseWriter, r *http.Request) bool {
 		count += 1
 	}
 	w.Write([]byte("]}"))
+	w.WriteHeader(http.StatusOK)
 	return true
 }
 
