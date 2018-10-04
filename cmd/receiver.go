@@ -109,7 +109,7 @@ func writerWorker(id, count int, obj *object, ctx *context) bool {
 	datum.Date = time.Unix(i/1000, 0).Format("2006-01-02T15:04:05")
 	datum.Version = parts[1]
 	datum.File = obj.id
-	datum.Id = fmt.Sprintf("%s.%s.%d.%d", ctx.timeFormat, datum.Timestamp, id, count)
+	datum.Id = fmt.Sprintf("%s.%d.%d.%d", ctx.timeFormat, datum.Timestamp, id, count)
 	j, e := json.Marshal(dump)
 	if e != nil {
 		goutils.WriteWarn("unable to handle file", obj.id)
