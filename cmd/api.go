@@ -314,6 +314,7 @@ func run(ctx *context, w http.ResponseWriter, r *http.Request, h *handlerSetting
 	count := 0
 	has := false
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("{\"data\": ["))
 	for _, p := range files {
 		if count > limited {
@@ -366,7 +367,6 @@ func run(ctx *context, w http.ResponseWriter, r *http.Request, h *handlerSetting
 		count += 1
 	}
 	w.Write([]byte("]}"))
-	w.WriteHeader(http.StatusOK)
 	return true
 }
 
