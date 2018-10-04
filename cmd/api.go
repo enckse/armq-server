@@ -175,11 +175,22 @@ func timeFilter(op, value string, mapping map[string]typeConv) *dataFilter {
 	return parseFilter(fmt.Sprintf("%s%s%s%s%s", tsJSON, filterDelimiter, op, filterDelimiter, value), mapping)
 }
 
+func getDate(in string, adding time.Duration) time.Time {
+	var t time.Time
+	if in == "" {
+		t = time.Now().Add(adding)
+	} else {
+		t, _ = time.Parse("2006-01-02", in)
+	}
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.Local)
+}
+
 func run(ctx *context, w http.ResponseWriter, r *http.Request) bool {
 	dataFilters := []*dataFilter{}
 	limited := ctx.limit
 	skip := 0
 	startDate := ""
+	endDate := ""
 	fileRead := ""
 	for k, p := range r.URL.Query() {
 		goutils.WriteDebug(k, p...)
@@ -217,21 +228,14 @@ func run(ctx *context, w http.ResponseWriter, r *http.Request) bool {
 			}
 		case "files":
 			fileRead = strings.TrimSpace(p[0])
-		case "date":
+		case "startdate":
 			startDate = strings.TrimSpace(p[0])
+		case "enddate":
+			endDate = strings.TrimSpace(p[0])
 		}
 	}
-	var modtime time.Time
-	if startDate == "" {
-		modtime = time.Now().Add(-10 * 24 * time.Hour)
-	} else {
-		m, err := time.Parse("2006-01-02", startDate)
-		if err != nil {
-			goutils.WriteError("invalid start dir mod time", err)
-			return false
-		}
-		modtime = m
-	}
+	stime := getDate(startDate, -10*24*time.Hour)
+	etime := getDate(endDate, 0*time.Hour)
 	dirs, e := ioutil.ReadDir(ctx.directory)
 	if e != nil {
 		goutils.WriteError("unable to read dir", e)
@@ -242,7 +246,8 @@ func run(ctx *context, w http.ResponseWriter, r *http.Request) bool {
 	files := []string{}
 	for _, d := range dirs {
 		if d.IsDir() {
-			if d.ModTime().Before(modtime) {
+			mtime := d.ModTime()
+			if mtime.Before(stime) || mtime.After(etime) {
 				continue
 			}
 			dname := d.Name()
