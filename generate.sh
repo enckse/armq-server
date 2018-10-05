@@ -45,7 +45,7 @@ func ${f}FromJSON(d []byte) ($f, bool) {
 CMD=cmd/
 _apps() {
     local f n
-    for f in $(echo "Api Receiver Test"); do
+    for f in $(echo "Api Receiver"); do
         n=$(echo "$f" | tr '[:upper:]' '[:lower:]')
         echo "package main
 

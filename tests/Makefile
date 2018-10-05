@@ -1,5 +1,9 @@
-DIFFS :=
-all:
+DIFFS := normal
+all: run $(DIFFS)
+
+run:
 	./setup.sh
 	./armq-test
-	diff -u $(DIFFS)
+
+$(DIFFS):
+	diff -u bin/$@ $@.expected

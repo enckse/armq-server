@@ -23,7 +23,7 @@ api:
 	$(GO)api $(COMMON) $(API) $(GEND)api.go
 
 test: api
-	$(GO)test $(COMMON) $(API) $(CMD)harness.go $(GEND)test.go
+	$(GO)test $(COMMON) $(API) $(CMD)harness.go
 	make -C tests FLAGS="$(FLAGS)"
 
 format:

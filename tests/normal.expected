@@ -1,0 +1,133 @@
+{
+  "data": [
+    {
+      "dt": "2018-10-04T12:44:55",
+      "dump": {
+        "jsontype": "raw",
+        "raw": "1538671495161`1.1.0`event`jzml`76561198374003042`player_connected`\n{\n\"id\": \"76561198374003042\",\n\"name\": \"unitname\"\n}`4194.53"
+      },
+      "fields": {
+        "data": {
+          "jsontype": "object",
+          "object": {
+            "id": "76561198374003042",
+            "name": "unitname"
+          }
+        },
+        "event": {
+          "jsontype": "raw",
+          "raw": "event"
+        },
+        "field6": {
+          "jsontype": "empty"
+        },
+        "playerid": {
+          "jsontype": "raw",
+          "raw": "76561198374003042"
+        },
+        "simtime": {
+          "jsontype": "raw",
+          "raw": "4194.53"
+        },
+        "tag": {
+          "jsontype": "raw",
+          "raw": "jzml"
+        },
+        "type": {
+          "jsontype": "raw",
+          "raw": "player_connected"
+        }
+      },
+      "file": "1538671495161.2983250317.msg",
+      "id": "2018-10-04T12-43-25.1538671495161.2.0",
+      "ts": 1538671495161,
+      "vers": "1.1.0"
+    },
+    {
+      "dt": "2018-10-04T12:44:55",
+      "dump": {
+        "jsontype": "raw",
+        "raw": "1538671495200`1.1.0`event`jzml`76561198374003042`player_connected`\n{\n\"id\": \"76561198374003042\",\n\"name\": \"unitname\"\n}`4194.53"
+      },
+      "fields": {
+        "data": {
+          "jsontype": "object",
+          "object": {
+            "id": "76561198374003042",
+            "name": "unitname"
+          }
+        },
+        "event": {
+          "jsontype": "raw",
+          "raw": "event"
+        },
+        "field6": {
+          "jsontype": "empty"
+        },
+        "playerid": {
+          "jsontype": "raw",
+          "raw": "76561198374003042"
+        },
+        "simtime": {
+          "jsontype": "raw",
+          "raw": "4.53"
+        },
+        "tag": {
+          "jsontype": "raw",
+          "raw": "jzml"
+        },
+        "type": {
+          "jsontype": "raw",
+          "raw": "player_connected"
+        }
+      },
+      "file": "1538671495200.2983250317.msg",
+      "id": "2018-10-04T12-43-25.1538671495200.2.0",
+      "ts": 1538671495200,
+      "vers": "1.1.0"
+    },
+    {
+      "dt": "2018-10-04T12:44:55",
+      "dump": {
+        "jsontype": "raw",
+        "raw": "1538671495300`1.1.0`event`jzml`76561198374003042`player_connected`\n{\n\"id\": \"76561198374003042\",\n\"name\": \"unitname\"\n}`4194.53"
+      },
+      "fields": {
+        "data": {
+          "jsontype": "object",
+          "object": {
+            "id": "76561198374003042",
+            "name": "unitname"
+          }
+        },
+        "event": {
+          "jsontype": "raw",
+          "raw": "event"
+        },
+        "field6": {
+          "jsontype": "empty"
+        },
+        "playerid": {
+          "jsontype": "raw",
+          "raw": "76561198374003042"
+        },
+        "simtime": {
+          "jsontype": "raw",
+          "raw": "4194.53"
+        },
+        "tag": {
+          "jsontype": "raw",
+          "raw": "jzml"
+        },
+        "type": {
+          "jsontype": "raw",
+          "raw": "player_connected"
+        }
+      },
+      "file": "1538671495300.2983250317.msg",
+      "id": "2018-10-04T12-43-25.1538671495300.2.0",
+      "ts": 1538671495300,
+      "vers": "1.1.0"
+    }
+  ]
+}
