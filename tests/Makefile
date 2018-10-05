@@ -1,4 +1,4 @@
-DIFFS := normal nohandlers limit
+DIFFS := normal nohandlers limit skip
 
 .PHONY: $(DIFFS)
 

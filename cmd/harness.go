@@ -52,4 +52,7 @@ func mainTest() {
 	runTest(c, "nohandlers", nil, &handlerSettings{}, true)
 	c.limit = 1
 	runTest(c, "limit", nil, nil, true)
+	m := make(map[string][]string)
+	m["skip"] = []string{"1"}
+	runTest(c, "skip", m, nil, true)
 }
