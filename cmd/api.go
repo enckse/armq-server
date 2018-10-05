@@ -185,45 +185,6 @@ func getDate(in string, adding time.Duration) time.Time {
 	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.Local)
 }
 
-func loadFile(path string, h *handlerSettings) (map[string]json.RawMessage, []byte) {
-	goutils.WriteDebug("reading", path)
-	b, err := ioutil.ReadFile(path)
-	if err != nil {
-		goutils.WriteWarn("error reading file", path)
-		goutils.WriteError("unable to read file", err)
-		return nil, nil
-	}
-	var obj map[string]json.RawMessage
-	err = json.Unmarshal(b, &obj)
-	if err != nil {
-		goutils.WriteWarn("unable to marshal object", path)
-		goutils.WriteError("unable to parse json", err)
-		return nil, nil
-	}
-	if h.enabled {
-		if !h.allowDump {
-			_, ok := obj[dumpKey]
-			if ok {
-				delete(obj, dumpKey)
-			}
-		}
-		v, ok := obj[fieldKey]
-		if ok {
-			var fields map[string]*Entry
-			err = json.Unmarshal(v, &fields)
-			if err == nil {
-				rewrite := handleEntries(fields, h)
-				r, err := json.Marshal(rewrite)
-				if err == nil {
-					obj[fieldKey] = r
-					b, _ = json.Marshal(obj)
-				}
-			}
-		}
-	}
-	return obj, b
-}
-
 func run(ctx *context, w http.ResponseWriter, r *http.Request, h *handlerSettings) bool {
 	dataFilters := []*dataFilter{}
 	limited := ctx.limit
