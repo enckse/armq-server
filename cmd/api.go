@@ -211,15 +211,11 @@ func loadFile(path string, h *handlerSettings) (map[string]json.RawMessage, []by
 		var fields map[string]*Entry
 		err = json.Unmarshal(v, &fields)
 		if err == nil {
-			rewrite := []*Entry{}
-			for k, v := range fields {
-				v.name = k
-				rewrite = append(rewrite, v)
-			}
-			rewrite = handleEntries(rewrite, h)
+			rewrite := handleEntries(fields, h)
 			r, err := json.Marshal(rewrite)
 			if err == nil {
 				obj[fieldKey] = r
+				b, _ = json.Marshal(obj)
 			}
 		}
 	}

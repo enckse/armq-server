@@ -17,6 +17,13 @@ const (
 	delimiter = "`"
 	fieldKey  = "fields"
 	dumpKey   = "dump"
+	fKey      = "field"
+	field0Key = fKey + "0"
+	field1Key = fKey + "1"
+	field2Key = fKey + "2"
+	field3Key = fKey + "3"
+	field4Key = fKey + "4"
+	field5Key = fKey + "5"
 )
 
 var (
@@ -31,24 +38,24 @@ type Entry struct {
 	name   string
 }
 
-func (e *Entry) isRaw() bool {
+func isRaw(e *Entry) bool {
 	return e.Type == notJSON
 }
 
-func (e *Entry) isArray() bool {
+func isArray(e *Entry) bool {
 	return e.Type == arrayJSON
 }
 
-func (e *Entry) isObject() bool {
+func isObject(e *Entry) bool {
 	return e.Type == objJSON
 }
 
-func (e *Entry) isNotRaw() bool {
-	return e.isObject() || e.isArray()
+func isNotRaw(e *Entry) bool {
+	return isObject(e) || isArray(e)
 }
 
-func (e *Entry) isTag() bool {
-	if e.isRaw() && len(e.Raw) == 4 {
+func isTag(e *Entry) bool {
+	if isRaw(e) && len(e.Raw) == 4 {
 		for _, r := range e.Raw {
 			if r >= 'a' && r <= 'z' {
 				continue
@@ -81,7 +88,7 @@ func detectJSON(segment []string) string {
 				p.Object = obj
 			}
 		}
-		p.name = fmt.Sprintf("field%d", idx)
+		p.name = fmt.Sprintf("%s%d", fKey, idx)
 		entries = append(entries, p)
 	}
 	var buffer bytes.Buffer
@@ -109,7 +116,7 @@ func detectJSON(segment []string) string {
 	return fmt.Sprintf("{%s}", buffer.String())
 }
 
-func handleAll(entries []*Entry, h entityHandler) []*Entry {
+func handleAll(entries map[string]*Entry, h entityHandler) map[string]*Entry {
 	return h.handle(len(entries), entries)
 }
 
@@ -118,23 +125,29 @@ type handlerSettings struct {
 	allowDump  bool
 }
 
-func handleEntries(entries []*Entry, settings *handlerSettings) []*Entry {
+func handleEntries(entries map[string]*Entry, settings *handlerSettings) map[string]*Entry {
 	if len(entries) == 0 {
 		return entries
 	}
 	var handler entityHandler
 	handler = &defaultHandler{}
-	first := entries[0]
-	if settings.allowEvent {
-		if first.isRaw() && first.Raw == "event" {
-			handler = &eventHandler{}
+	first, ok := entries[field0Key]
+	if ok {
+		if settings.allowEvent {
+			if isRaw(first) && first.Raw == "event" {
+				handler = &eventHandler{}
+			}
 		}
 	}
-	return handleAll(entries, handler)
+	r := make(map[string]*Entry)
+	for _, v := range handleAll(entries, handler) {
+		r[v.name] = v
+	}
+	return r
 }
 
 type entityHandler interface {
-	handle(int, []*Entry) []*Entry
+	handle(int, map[string]*Entry) map[string]*Entry
 }
 
 type defaultHandler struct {
@@ -142,7 +155,7 @@ type defaultHandler struct {
 }
 
 // default handler is a noop, we don't know what to do with this entity
-func (h *defaultHandler) handle(count int, entries []*Entry) []*Entry {
+func (h *defaultHandler) handle(count int, entries map[string]*Entry) map[string]*Entry {
 	return entries
 }
 
@@ -151,19 +164,31 @@ type eventHandler struct {
 	entityHandler
 }
 
-func (h *eventHandler) handle(count int, entries []*Entry) []*Entry {
-	entries[0].name = "event"
-	if count > 1 && entries[1].isTag() {
-		entries[1].name = "tag"
-		if count > 2 && entries[2].isRaw() {
-			entries[2].name = "playerid"
-			if count > 3 && entries[3].isRaw() {
-				entries[3].name = "type"
-				if count > 4 && entries[4].isNotRaw() {
-					entries[4].name = "data"
-					if count > 5 && entries[5].isRaw() {
-						entries[5].name = "simtime"
-					}
+type entityCheck func(e *Entry) bool
+
+func rewriteName(name, field string, check entityCheck, entries map[string]*Entry) bool {
+	v, ok := entries[field]
+	if !ok {
+		return false
+	}
+	ok = check(v)
+	if ok {
+		v.name = name
+	}
+	return ok
+}
+
+func set(e *Entry) bool {
+	return true
+}
+
+func (h *eventHandler) handle(count int, entries map[string]*Entry) map[string]*Entry {
+	rewriteName("event", field0Key, set, entries)
+	if rewriteName("tag", field1Key, isTag, entries) {
+		if rewriteName("playerid", field2Key, isRaw, entries) {
+			if rewriteName("type", field3Key, isRaw, entries) {
+				if rewriteName("data", field4Key, isNotRaw, entries) {
+					rewriteName("simtime", field5Key, isRaw, entries)
 				}
 			}
 		}
