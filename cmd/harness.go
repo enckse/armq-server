@@ -50,4 +50,6 @@ func mainTest() {
 	c.limit = 10
 	runTest(c, "normal", nil, nil, true)
 	runTest(c, "nohandlers", nil, &handlerSettings{}, true)
+	c.limit = 1
+	runTest(c, "limit", nil, nil, true)
 }

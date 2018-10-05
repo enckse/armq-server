@@ -1,4 +1,6 @@
-DIFFS := normal nohandlers
+DIFFS := normal nohandlers limit
+
+.PHONY: $(DIFFS)
 
 all: run $(DIFFS)
 
