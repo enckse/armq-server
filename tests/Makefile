@@ -1,4 +1,5 @@
-DIFFS := normal
+DIFFS := normal nohandlers
+
 all: run $(DIFFS)
 
 run:

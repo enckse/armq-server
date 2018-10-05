@@ -49,4 +49,5 @@ func mainTest() {
 	c.directory = "bin/"
 	c.limit = 10
 	runTest(c, "normal", nil, nil, true)
+	runTest(c, "nohandlers", nil, &handlerSettings{}, true)
 }
