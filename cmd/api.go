@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
@@ -185,14 +186,14 @@ func getDate(in string, adding time.Duration) time.Time {
 	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.Local)
 }
 
-func run(ctx *context, w http.ResponseWriter, r *http.Request, h *handlerSettings) bool {
+func handle(ctx *context, w io.Writer, req map[string][]string, h *handlerSettings, headers func()) bool {
 	dataFilters := []*dataFilter{}
 	limited := ctx.limit
 	skip := 0
 	startDate := ""
 	endDate := ""
 	fileRead := ""
-	for k, p := range r.URL.Query() {
+	for k, p := range req {
 		goutils.WriteDebug(k, p...)
 		if len(p) == 0 {
 			continue
@@ -272,8 +273,7 @@ func run(ctx *context, w http.ResponseWriter, r *http.Request, h *handlerSetting
 
 	count := 0
 	has := false
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
+	headers()
 	w.Write([]byte("{\"data\": ["))
 	for _, p := range files {
 		if count > limited {
@@ -329,7 +329,7 @@ func run(ctx *context, w http.ResponseWriter, r *http.Request, h *handlerSetting
 	return true
 }
 
-func main() {
+func run() {
 	conf := startup()
 	dir := conf.GetStringOrDefault(outKey, dataDir)
 	c := conf.GetSection("[api]")
@@ -354,7 +354,11 @@ func main() {
 		h.allowEmpty = false
 	}
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if !run(ctx, w, r, h) {
+		success := handle(ctx, w, r.URL.Query(), h, func() {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+		})
+		if !success {
 			w.WriteHeader(http.StatusBadRequest)
 		}
 	})

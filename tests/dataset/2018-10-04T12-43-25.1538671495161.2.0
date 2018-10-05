@@ -1,0 +1,44 @@
+{
+    "id": "2018-10-04T12-43-25.1538671495161.2.0",
+    "ts": 1538671495161,
+    "vers": "1.1.0",
+    "file": "1538671495161.2983250317.msg",
+    "dt": "2018-10-04T12:44:55",
+    "dump": {
+        "jsontype": "raw",
+        "raw": "1538671495161`1.1.0`event`jzml`76561198374003042`player_connected`\n{\n\"id\": \"76561198374003042\",\n\"name\": \"unitname\"\n}`4194.53"
+    },
+    "fields": {
+        "field0": {
+            "jsontype": "raw",
+            "raw": "event"
+        },
+        "field1": {
+            "jsontype": "raw",
+            "raw": "jzml"
+        },
+        "field2": {
+            "jsontype": "raw",
+            "raw": "76561198374003042"
+        },
+        "field3": {
+            "jsontype": "raw",
+            "raw": "player_connected"
+        },
+        "field4": {
+            "jsontype": "object",
+            "object": {
+                "id": "76561198374003042",
+                "name": "unitname"
+            }
+        },
+        "field5": {
+            "jsontype": "raw",
+            "raw": "4194.53"
+        },
+        "field6": {
+            "jsontype": "raw",
+            "raw": ""
+        }
+    }
+}

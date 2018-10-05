@@ -202,11 +202,8 @@ func createWorker(id int, ctx *context) {
 	}
 }
 
-func main() {
-	run(startup())
-}
-
-func run(config *goutils.Config) {
+func run() {
+	config := startup()
 	now := time.Now()
 	op := config.GetStringOrDefault("mode", fileMode)
 	ctx := &context{}
