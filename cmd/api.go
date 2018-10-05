@@ -313,6 +313,7 @@ func mainApi() {
 	ctx := &context{}
 	ctx.limit = limit
 	ctx.directory = dir
+	ctx.convert = conversions()
 	h := &handlerSettings{}
 	h.enabled = c.GetTrue("handlers")
 	h.allowEvent = true
