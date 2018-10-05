@@ -38,7 +38,7 @@ func runTest(c *context, output string, req map[string][]string, h *handlerSetti
 	if err != nil {
 		panic("unable to adjust output")
 	}
-	err = ioutil.WriteFile(c.directory + output, indent.Bytes(), 0644)
+	err = ioutil.WriteFile(c.directory+output, indent.Bytes(), 0644)
 	if err != nil {
 		panic("unable to complete test")
 	}
