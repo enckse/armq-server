@@ -1,3 +1,4 @@
 vendor/
 bin/
-generated.go
+generated*
+tests/armq-test

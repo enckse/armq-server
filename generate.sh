@@ -42,4 +42,18 @@ func ${f}FromJSON(d []byte) ($f, bool) {
     done
 }
 
-_converters | sed "s/    /\t/g" > cmd/generated.go
+CMD=cmd/
+_apps() {
+    local f n
+    for f in $(echo "Api Receiver Test"); do
+        n=$(echo "$f" | tr '[:upper:]' '[:lower:]')
+        echo "package main
+
+func main() {
+    main$f()
+}" | sed "s/    /\t/g" > ${CMD}generated_$n.go
+    done
+}
+
+_apps
+_converters | sed "s/    /\t/g" > ${CMD}generated.go

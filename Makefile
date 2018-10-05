@@ -3,24 +3,27 @@ CMD     := cmd/
 SRC     := $(shell find $(CMD) -type f -name "*.go" | grep -v "vendor/")
 VERSION ?= $(shell git describe --long | sed "s/\([^-]*-g\)/r\1/;s/-/./g")
 FLAGS   := -ldflags '-s -w -X main.vers=$(VERSION)' -buildmode=pie
-APPS    := receiver api
-COMMON  := $(CMD)common.go $(CMD)messages.go $(CMD)main.go
+COMMON  := $(CMD)common.go $(CMD)messages.go
 API     := $(CMD)api.go $(CMD)generated.go
 GO      := go build $(FLAGS) -o $(BIN)armq-
+APPS    := receiver_app api_app test_app
+GEND    := $(CMD)generated_
 
 all: clean server format
 
-server: receiver api test
+server: $(APPS) receiver api test
+
+$(APPS):
+	./generate.sh
 
 receiver:
-	$(GO)receiver $(CMD)receiver.go $(CMD)sockets.go $(CMD)files.go $(COMMON)
+	$(GO)receiver $(GEND)receiver.go $(CMD)receiver.go $(CMD)sockets.go $(CMD)files.go $(COMMON)
 
 api:
-	./converters.sh
-	$(GO)api $(COMMON) $(API)
+	$(GO)api $(COMMON) $(API) $(GEND)api.go
 
 test: api
-	$(GO)test $(COMMON) $(CMD)harness.go 
+	$(GO)test $(COMMON) $(API) $(CMD)harness.go $(GEND)test.go
 	make -C tests FLAGS="$(FLAGS)"
 
 format:

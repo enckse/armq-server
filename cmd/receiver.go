@@ -202,7 +202,7 @@ func createWorker(id int, ctx *context) {
 	}
 }
 
-func run() {
+func mainReceiver() {
 	config := startup()
 	now := time.Now()
 	op := config.GetStringOrDefault("mode", fileMode)

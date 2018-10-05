@@ -1,4 +1,5 @@
 package main
 
-func run() {
+func mainTest() {
+	c := &context{}
 }

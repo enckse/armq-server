@@ -329,7 +329,7 @@ func handle(ctx *context, w io.Writer, req map[string][]string, h *handlerSettin
 	return true
 }
 
-func run() {
+func mainApi() {
 	conf := startup()
 	dir := conf.GetStringOrDefault(outKey, dataDir)
 	c := conf.GetSection("[api]")
