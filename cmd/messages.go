@@ -20,6 +20,8 @@ const (
 	fieldKey  = "fields"
 	dumpKey   = "dump"
 	fKey      = "field"
+	tsKey     = "ts"
+	idKey     = "id"
 	field0Key = fKey + "0"
 	field1Key = fKey + "1"
 	field2Key = fKey + "2"

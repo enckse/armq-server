@@ -66,37 +66,11 @@ type context struct {
 	convert   map[string]typeConv
 }
 
-func prepare(dir, defs string, fields []string, limit int) *context {
-	c := &context{}
-	c.directory = dir
-	c.limit = limit
-	conf, err := goutils.LoadConfigDefaults(defs)
-	if err != nil {
-		goutils.Fatal("unable to read definitions config", err)
-	}
-	c.convert = make(map[string]typeConv)
-	for _, field := range fields {
-		key := fmt.Sprintf("[%s]", field)
-		sect := conf.GetSection(key)
-		t := sect.GetStringOrEmpty("type")
-		p := sect.GetStringOrEmpty("path")
-		if len(t) == 0 || len(p) == 0 {
-			goutils.Fatal("type and path required", nil)
-		}
-		switch t {
-		case "int":
-			c.convert[p] = intConv
-		case "int64":
-			c.convert[p] = int64Conv
-		case "string":
-			c.convert[p] = strConv
-		case "float64":
-			c.convert[p] = float64Conv
-		default:
-			goutils.Fatal(fmt.Sprintf("%s is an unknown type", t), nil)
-		}
-	}
-	return c
+func conversions() map[string]typeConv {
+	m := make(map[string]typeConv)
+	m[tsKey] = int64Conv
+	m[idKey] = strConv
+	return m
 }
 
 func stringToOp(op string) opType {
@@ -173,7 +147,7 @@ func parseFilter(filter string, mapping map[string]typeConv) *dataFilter {
 }
 
 func timeFilter(op, value string, mapping map[string]typeConv) *dataFilter {
-	return parseFilter(fmt.Sprintf("%s%s%s%s%s", tsJSON, filterDelimiter, op, filterDelimiter, value), mapping)
+	return parseFilter(fmt.Sprintf("%s%s%s%s%s", tsKey, filterDelimiter, op, filterDelimiter, value), mapping)
 }
 
 func getDate(in string, adding time.Duration) time.Time {
@@ -335,10 +309,10 @@ func mainApi() {
 	c := conf.GetSection("[api]")
 	bind := c.GetStringOrDefault("bind", ":8080")
 	limit := c.GetIntOrDefaultOnly("limit", 1000)
-	fields := c.GetArrayOrEmpty("fields")
-	defs := c.GetStringOrDefault("definitions", "/etc/armq.api.conf")
 	goutils.WriteDebug("api ready")
-	ctx := prepare(dir, defs, fields, limit)
+	ctx := &context{}
+	ctx.limit = limit
+	ctx.directory = dir
 	h := &handlerSettings{}
 	h.enabled = c.GetTrue("handlers")
 	h.allowEvent = true
