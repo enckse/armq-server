@@ -2,6 +2,8 @@ _converters() {
     echo "package main"
     echo
     echo "import \"encoding/json\""
+    echo
+    echo "const quoteByte = byte('\"')"
     for o in $(echo "int:0 int64:0 string:\"\" float64:0"); do
         f=$(echo "$o" | cut -d ":" -f 1)
         d=$(echo "$o" | cut -d ":" -f 2)
@@ -35,6 +37,10 @@ func ${f}FromJSON(d []byte) ($f, bool) {
     var i $f
     err := json.Unmarshal(d, &i)
     if err != nil {
+        length := len(d)
+        if length > 1 && d[0] == quoteByte && d[length-1] == quoteByte {
+            return ${f}FromJSON(d[1 : length-1])
+        }
         return $d, false
     }
     return i, true

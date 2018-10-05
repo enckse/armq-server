@@ -6,14 +6,13 @@ FLAGS   := -ldflags '-s -w -X main.vers=$(VERSION)' -buildmode=pie
 COMMON  := $(CMD)common.go $(CMD)messages.go
 API     := $(CMD)api.go $(CMD)generated.go
 GO      := go build $(FLAGS) -o $(BIN)armq-
-APPS    := receiver_app api_app test_app
 GEND    := $(CMD)generated_
 
 all: clean server format
 
-server: $(APPS) receiver api test
+server: gen receiver api test
 
-$(APPS):
+gen:
 	./generate.sh
 
 receiver:

@@ -1,4 +1,4 @@
-DIFFS := normal nohandlers limit skip
+DIFFS := $(shell ls *.expected | sed "s/\.expected//g")
 
 .PHONY: $(DIFFS)
 

@@ -50,9 +50,30 @@ func mainTest() {
 	c.limit = 10
 	runTest(c, "normal", nil, nil, true)
 	runTest(c, "nohandlers", nil, &handlerSettings{}, true)
-	c.limit = 1
-	runTest(c, "limit", nil, nil, true)
+	// limit input
 	m := make(map[string][]string)
+	m["limit"] = []string{"1"}
+	runTest(c, "limit", m, nil, true)
+	// skip input
+	delete(m, "limit")
+	c.limit = 1
 	m["skip"] = []string{"1"}
 	runTest(c, "skip", m, nil, true)
+	// start & end
+	c.limit = 10
+	c.convert = make(map[string]typeConv)
+	c.convert["ts"] = int64Conv
+	delete(m, "skip")
+	m["start"] = []string{"1538671495199"}
+	m["end"] = []string{"1538671495201"}
+	runTest(c, "startend", m, nil, true)
+	// filters
+	c.convert = make(map[string]typeConv)
+	delete(m, "start")
+	delete(m, "end")
+	c.convert["fields.simtime.raw"] = float64Conv
+	c.convert["id"] = strConv
+	filter := []string{"fields.simtime.raw:gt:100"}
+	m["filter"] = filter
+	runTest(c, "filters", m, nil, true)
 }
