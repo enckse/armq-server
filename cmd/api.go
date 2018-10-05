@@ -200,22 +200,24 @@ func loadFile(path string, h *handlerSettings) (map[string]json.RawMessage, []by
 		goutils.WriteError("unable to parse json", err)
 		return nil, nil
 	}
-	if !h.allowDump {
-		_, ok := obj[dumpKey]
-		if ok {
-			delete(obj, dumpKey)
+	if h.enabled {
+		if !h.allowDump {
+			_, ok := obj[dumpKey]
+			if ok {
+				delete(obj, dumpKey)
+			}
 		}
-	}
-	v, ok := obj[fieldKey]
-	if ok {
-		var fields map[string]*Entry
-		err = json.Unmarshal(v, &fields)
-		if err == nil {
-			rewrite := handleEntries(fields, h)
-			r, err := json.Marshal(rewrite)
+		v, ok := obj[fieldKey]
+		if ok {
+			var fields map[string]*Entry
+			err = json.Unmarshal(v, &fields)
 			if err == nil {
-				obj[fieldKey] = r
-				b, _ = json.Marshal(obj)
+				rewrite := handleEntries(fields, h)
+				r, err := json.Marshal(rewrite)
+				if err == nil {
+					obj[fieldKey] = r
+					b, _ = json.Marshal(obj)
+				}
 			}
 		}
 	}
@@ -377,6 +379,7 @@ func main() {
 	goutils.WriteDebug("api ready")
 	ctx := prepare(dir, defs, fields, limit)
 	h := &handlerSettings{}
+	h.enabled = c.GetTrue("handlers")
 	h.allowEvent = true
 	h.allowDump = true
 	if c.GetFalse("eventHander") {

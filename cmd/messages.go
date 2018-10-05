@@ -123,6 +123,7 @@ func handleAll(entries map[string]*Entry, h entityHandler) map[string]*Entry {
 type handlerSettings struct {
 	allowEvent bool
 	allowDump  bool
+	enabled    bool
 }
 
 func handleEntries(entries map[string]*Entry, settings *handlerSettings) map[string]*Entry {
