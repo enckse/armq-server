@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	//	"strings"
+	"strings"
 
 	"github.com/epiphyte/goutils"
 )
@@ -14,6 +14,7 @@ const (
 	notJSON   = "raw"
 	objJSON   = "object"
 	arrayJSON = "array"
+	emptyJSON = "empty"
 	delimiter = "`"
 	fieldKey  = "fields"
 	dumpKey   = "dump"
@@ -36,6 +37,10 @@ type Entry struct {
 	Array  []json.RawMessage          `json:"array,omitempty"`
 	Object map[string]json.RawMessage `json:"object,omitempty"`
 	name   string
+}
+
+func isEmpty(e *Entry) bool {
+	return len(e.Raw) == 0 && len(e.Array) == 0 && len(e.Object) == 0
 }
 
 func isRaw(e *Entry) bool {
@@ -123,6 +128,7 @@ func handleAll(entries map[string]*Entry, h entityHandler) map[string]*Entry {
 type handlerSettings struct {
 	allowEvent bool
 	allowDump  bool
+	allowEmpty bool
 	enabled    bool
 }
 
@@ -141,8 +147,17 @@ func handleEntries(entries map[string]*Entry, settings *handlerSettings) map[str
 		}
 	}
 	r := make(map[string]*Entry)
-	for _, v := range handleAll(entries, handler) {
-		r[v.name] = v
+	for k, v := range handleAll(entries, handler) {
+		n := strings.TrimSpace(v.name)
+		if len(n) == 0 {
+			n = k
+		}
+		if settings.allowEmpty {
+			if isEmpty(v) {
+				v.Type = emptyJSON
+			}
+		}
+		r[n] = v
 	}
 	return r
 }

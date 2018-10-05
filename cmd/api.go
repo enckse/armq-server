@@ -382,11 +382,15 @@ func main() {
 	h.enabled = c.GetTrue("handlers")
 	h.allowEvent = true
 	h.allowDump = true
+	h.allowEmpty = true
 	if c.GetFalse("eventHander") {
 		h.allowEvent = false
 	}
 	if c.GetFalse("dumpHandler") {
 		h.allowDump = false
+	}
+	if c.GetFalse("emptyHandler") {
+		h.allowEmpty = false
 	}
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if !run(ctx, w, r, h) {
