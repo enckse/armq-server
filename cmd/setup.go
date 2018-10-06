@@ -28,7 +28,17 @@ const quoteByte = byte('"')
 func {{.Name}}Converter(expect {{.Name}}, d []byte, op opType) bool {
 	i, ok := {{.Name}}FromJSON(d)
 	if ok {
-		switch op { {{.Body}}
+		switch op {
+{{if .IsNum}}
+		case lessThan:
+			return i < expect
+		case lessTE:
+			return i <= expect
+		case greatThan:
+			return i > expect
+		case greatTE:
+			return i >= expect
+{{end}}
 		case nEquals:
 			return i != expect
 		case equals:
@@ -51,22 +61,12 @@ func {{.Name}}FromJSON(d []byte) ({{.Name}}, bool) {
 	return i, true
 }
 `
-
-	numericBody = `
-		case lessThan:
-			return i < expect
-		case lessTE:
-			return i <= expect
-		case greatThan:
-			return i > expect
-		case greatTE:
-			return i >= expect`
 )
 
 type Object struct {
 	Name  string
 	Value string
-	Body  string
+	IsNum bool
 }
 
 type genCall func(int, string, *bytes.Buffer)
@@ -75,14 +75,13 @@ func genType(idx int, t string, b *bytes.Buffer) {
 	if idx == 0 {
 		b.WriteString(convHeader)
 	}
-	caseBody := ""
 	def := "0"
+	isNumeric := true
 	if t == strType {
 		def = "\"\""
-	} else {
-		caseBody = numericBody
+		isNumeric = false
 	}
-	obj := &Object{Name: t, Value: def, Body: caseBody}
+	obj := &Object{Name: t, Value: def, IsNum: isNumeric}
 	runTemplate(convBody, b, obj)
 }
 
