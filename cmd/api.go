@@ -337,6 +337,17 @@ func handle(ctx *context, req map[string][]string, h *handlerSettings, writer *d
 	return true
 }
 
+func writeSuccess(w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+}
+
+func newWebDataWriter(w http.ResponseWriter) *dataWriter {
+	return newDataWriter(w, func() {
+		writeSuccess(w)
+	})
+}
+
 func mainApi() {
 	conf := startup()
 	dir := conf.GetStringOrDefault(outKey, dataDir)
@@ -363,10 +374,7 @@ func mainApi() {
 		h.allowEmpty = false
 	}
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		d := newDataWriter(w, func() {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
-		})
+		d := newWebDataWriter(w)
 		success := handle(ctx, r.URL.Query(), h, d)
 		if !success {
 			w.WriteHeader(http.StatusBadRequest)
