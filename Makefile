@@ -5,22 +5,25 @@ VERSION ?= $(shell git describe --long | sed "s/\([^-]*-g\)/r\1/;s/-/./g")
 FLAGS   := -ldflags '-s -w -X main.vers=$(VERSION)' -buildmode=pie
 GO      := go build $(FLAGS) -o $(BIN)armq-
 GEN     := $(CMD)generated
-APPS    := receiver api
+API     := api
+TEST    := tests
+DISTRIB := $(API) $(TEST)
+APPS    := receiver $(API) $(TEST)
 
 .PHONY: $(APPS)
 
 all: clean server format
 
-server: gen $(APPS) test
+server: gen $(DISTRIB) $(APPS) test
 
 gen:
 	go generate $(CMD)setup.go
 
 $(APPS):
+	cp $(CMD)generated.go $@/
 	$(GO)$@ $@/*.go
 
-test: api
-	$(GO)test $(COMMON) $(API) $(CMD)harness.go
+test: $(TEST)
 	make -C tests FLAGS="$(FLAGS)"
 
 format:

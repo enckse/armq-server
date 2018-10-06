@@ -14,23 +14,11 @@ import (
 	"github.com/epiphyte/goutils"
 )
 
-type typeConv int
-type opType int
-
 const (
-	maxOp                    = 5
-	minOp                    = -1
 	int64Conv       typeConv = 1
 	strConv         typeConv = 2
 	intConv         typeConv = 3
 	float64Conv     typeConv = 4
-	lessThan        opType   = 0
-	equals          opType   = 1
-	lessTE          opType   = 2
-	greatThan       opType   = 3
-	greatTE         opType   = 4
-	nEquals         opType   = maxOp
-	invalidOp       opType   = minOp
 	filterDelimiter          = ":"
 	startStringOp            = "ge"
 	endStringOp              = "le"
@@ -356,7 +344,7 @@ func webRequest(ctx *context, h *handlerSettings, w http.ResponseWriter, r map[s
 	}
 }
 
-func mainApi() {
+func runApp() {
 	conf := startup()
 	dir := conf.GetStringOrDefault(outKey, dataDir)
 	c := conf.GetSection("[api]")

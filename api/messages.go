@@ -1,46 +1,12 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
-
 	"strings"
 
 	"github.com/epiphyte/goutils"
 )
-
-const (
-	notJSON   = "raw"
-	objJSON   = "object"
-	arrayJSON = "array"
-	emptyJSON = "empty"
-	delimiter = "`"
-	fieldKey  = "fields"
-	dumpKey   = "dump"
-	fKey      = "field"
-	tsKey     = "ts"
-	idKey     = "id"
-	field0Key = fKey + "0"
-	field1Key = fKey + "1"
-	field2Key = fKey + "2"
-	field3Key = fKey + "3"
-	field4Key = fKey + "4"
-	field5Key = fKey + "5"
-)
-
-var (
-	emptyObject = []byte("{}")
-)
-
-type Entry struct {
-	Type   string                     `json:"jsontype"`
-	Raw    string                     `json:"raw,omitempty"`
-	Array  []json.RawMessage          `json:"array,omitempty"`
-	Object map[string]json.RawMessage `json:"object,omitempty"`
-	name   string
-}
 
 func isEmpty(e *Entry) bool {
 	return len(e.Raw) == 0 && len(e.Array) == 0 && len(e.Object) == 0
@@ -73,55 +39,6 @@ func isTag(e *Entry) bool {
 		return true
 	}
 	return false
-}
-
-func detectJSON(segment []string) string {
-	if len(segment) == 0 {
-		return ""
-	}
-	entries := []*Entry{}
-	for idx, section := range segment {
-		p := &Entry{}
-		p.Type = notJSON
-		p.Raw = section
-		var arr []json.RawMessage
-		bytes := []byte(section)
-		if json.Unmarshal(bytes, &arr) == nil {
-			p.Array = arr
-			p.Type = arrayJSON
-		} else {
-			var obj map[string]json.RawMessage
-			if json.Unmarshal(bytes, &obj) == nil {
-				p.Type = objJSON
-				p.Object = obj
-			}
-		}
-		p.name = fmt.Sprintf("%s%d", fKey, idx)
-		entries = append(entries, p)
-	}
-	var buffer bytes.Buffer
-	for idx, e := range entries {
-		if idx > 0 {
-			buffer.WriteString(",")
-		}
-		entry := &Entry{Type: e.Type}
-		switch e.Type {
-		case notJSON:
-			entry.Raw = e.Raw
-		case arrayJSON:
-			entry.Array = e.Array
-		case objJSON:
-			entry.Object = e.Object
-		}
-		j, err := json.Marshal(entry)
-		if err != nil {
-			goutils.WriteError("unable to marshal raw object", err)
-			j = emptyObject
-		}
-		buffer.WriteString(fmt.Sprintf("\"%s\": ", e.name))
-		buffer.Write(j)
-	}
-	return fmt.Sprintf("{%s}", buffer.String())
 }
 
 func loadFile(path string, h *handlerSettings) (map[string]json.RawMessage, []byte) {

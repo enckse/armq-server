@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -202,7 +203,56 @@ func createWorker(id int, ctx *context) {
 	}
 }
 
-func mainReceiver() {
+func detectJSON(segment []string) string {
+	if len(segment) == 0 {
+		return ""
+	}
+	entries := []*Entry{}
+	for idx, section := range segment {
+		p := &Entry{}
+		p.Type = notJSON
+		p.Raw = section
+		var arr []json.RawMessage
+		bytes := []byte(section)
+		if json.Unmarshal(bytes, &arr) == nil {
+			p.Array = arr
+			p.Type = arrayJSON
+		} else {
+			var obj map[string]json.RawMessage
+			if json.Unmarshal(bytes, &obj) == nil {
+				p.Type = objJSON
+				p.Object = obj
+			}
+		}
+		p.name = fmt.Sprintf("%s%d", fKey, idx)
+		entries = append(entries, p)
+	}
+	var buffer bytes.Buffer
+	for idx, e := range entries {
+		if idx > 0 {
+			buffer.WriteString(",")
+		}
+		entry := &Entry{Type: e.Type}
+		switch e.Type {
+		case notJSON:
+			entry.Raw = e.Raw
+		case arrayJSON:
+			entry.Array = e.Array
+		case objJSON:
+			entry.Object = e.Object
+		}
+		j, err := json.Marshal(entry)
+		if err != nil {
+			goutils.WriteError("unable to marshal raw object", err)
+			j = emptyObject
+		}
+		buffer.WriteString(fmt.Sprintf("\"%s\": ", e.name))
+		buffer.Write(j)
+	}
+	return fmt.Sprintf("{%s}", buffer.String())
+}
+
+func runApp() {
 	config := startup()
 	now := time.Now()
 	op := config.GetStringOrDefault("mode", fileMode)

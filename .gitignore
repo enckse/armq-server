@@ -1,4 +1,4 @@
 vendor/
 bin/
 generated*
-tests/armq-test
+tests/armq-tests

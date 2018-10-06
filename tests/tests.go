@@ -6,10 +6,6 @@ import (
 	"io/ioutil"
 )
 
-func main() {
-	mainTest()
-}
-
 func testHandlers() *handlerSettings {
 	return &handlerSettings{allowEvent: true, allowDump: true, allowEmpty: true, enabled: true}
 }
@@ -45,7 +41,7 @@ func runTest(c *context, output string, req map[string][]string, h *handlerSetti
 	}
 }
 
-func mainTest() {
+func main() {
 	c := &context{}
 	c.directory = "bin/"
 	c.limit = 10
