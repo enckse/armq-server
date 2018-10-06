@@ -29,7 +29,8 @@ func runTest(c *context, output string, req map[string][]string, h *handlerSetti
 	check := func() {
 		called = true
 	}
-	handle(c, b, request, handlers, check)
+	d := newDataWriter(b, check)
+	handle(c, request, handlers, d)
 	if called != success {
 		panic("failed test: " + output)
 	}

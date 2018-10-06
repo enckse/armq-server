@@ -160,7 +160,41 @@ func getDate(in string, adding time.Duration) time.Time {
 	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.Local)
 }
 
-func handle(ctx *context, w io.Writer, req map[string][]string, h *handlerSettings, headers func()) bool {
+type onHeaders func()
+
+type dataWriter struct {
+	writer  io.Writer
+	write   bool
+	headers onHeaders
+	header  bool
+}
+
+func newDataWriter(w io.Writer, h onHeaders) *dataWriter {
+	o := &dataWriter{}
+	o.write = w != nil
+	o.writer = w
+	o.header = h != nil
+	o.headers = h
+	return o
+}
+
+func (d *dataWriter) setHeaders() {
+	if d.header {
+		d.headers()
+	}
+}
+
+func (d *dataWriter) add(b []byte) {
+	if d.write {
+		d.writer.Write(b)
+	}
+}
+
+func (d *dataWriter) addString(s string) {
+	d.add([]byte(s))
+}
+
+func handle(ctx *context, req map[string][]string, h *handlerSettings, writer *dataWriter) bool {
 	dataFilters := []*dataFilter{}
 	limited := ctx.limit
 	skip := 0
@@ -247,8 +281,8 @@ func handle(ctx *context, w io.Writer, req map[string][]string, h *handlerSettin
 
 	count := 0
 	has := false
-	headers()
-	w.Write([]byte("{\"data\": ["))
+	writer.setHeaders()
+	writer.addString("{\"data\": [")
 	for _, p := range files {
 		if count > limited {
 			break
@@ -293,13 +327,13 @@ func handle(ctx *context, w io.Writer, req map[string][]string, h *handlerSettin
 		}
 		goutils.WriteDebug("passed", p)
 		if has {
-			w.Write([]byte(","))
+			writer.addString(",")
 		}
-		w.Write(b)
+		writer.add(b)
 		has = true
 		count += 1
 	}
-	w.Write([]byte("]}"))
+	writer.addString("]}")
 	return true
 }
 
@@ -329,10 +363,11 @@ func mainApi() {
 		h.allowEmpty = false
 	}
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		success := handle(ctx, w, r.URL.Query(), h, func() {
+		d := newDataWriter(w, func() {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
 		})
+		success := handle(ctx, r.URL.Query(), h, d)
 		if !success {
 			w.WriteHeader(http.StatusBadRequest)
 		}
