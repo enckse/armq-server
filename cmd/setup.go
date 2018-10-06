@@ -15,7 +15,8 @@ package main
 	wrapper = `
 func main() {
 	main%s()
-}`
+}
+`
 	convHeader = `
 import "encoding/json"
 
