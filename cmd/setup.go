@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"strings"
+	"text/template"
 )
 
 const (
@@ -14,7 +15,7 @@ package main
 `
 	wrapper = `
 func main() {
-	main%s()
+	main{{.Name}}()
 }
 `
 	convHeader = `
@@ -62,6 +63,10 @@ func %sFromJSON(d []byte) (%s, bool) {
 			return i >= expect`
 )
 
+type Object struct {
+	Name string
+}
+
 type genCall func(int, string, *bytes.Buffer)
 
 func genType(idx int, t string, b *bytes.Buffer) {
@@ -87,11 +92,23 @@ func converters() {
 	write(b, "")
 }
 
+func runTemplate(text string, b *bytes.Buffer, obj *Object) {
+	tmpl, err := template.New("tmpl").Parse(text)
+	if err != nil {
+		panic(err)
+	}
+	err = tmpl.Execute(b, obj)
+	if err != nil {
+		panic(err)
+	}
+}
+
 func wrappers() {
 	for _, t := range []string{"Api", "Receiver"} {
 		var b *bytes.Buffer
 		b = genFile(0, t, b, func(idx int, t string, b *bytes.Buffer) {
-			b.WriteString(fmt.Sprintf(wrapper, t))
+			obj := &Object{Name: t}
+			runTemplate(wrapper, b, obj)
 		})
 		l := fmt.Sprintf("_%s", strings.ToLower(t))
 		write(b, l)
