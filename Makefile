@@ -13,7 +13,7 @@ all: clean server format
 server: gen receiver api test
 
 gen:
-	./generate.sh
+	go generate $(CMD)/setup.go
 
 receiver:
 	$(GO)receiver $(GEND)receiver.go $(CMD)receiver.go $(CMD)sockets.go $(CMD)files.go $(COMMON)
