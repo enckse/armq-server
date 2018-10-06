@@ -25,10 +25,10 @@ const quoteByte = byte('"')
 `
 	strType  = "string"
 	convBody = `
-func %sConverter(expect %s, d []byte, op opType) bool {
-	i, ok := %sFromJSON(d)
+func {{.Name}}Converter(expect {{.Name}}, d []byte, op opType) bool {
+	i, ok := {{.Name}}FromJSON(d)
 	if ok {
-		switch op {%s
+		switch op { {{.Body}}
 		case nEquals:
 			return i != expect
 		case equals:
@@ -38,15 +38,15 @@ func %sConverter(expect %s, d []byte, op opType) bool {
 	return false
 }
 
-func %sFromJSON(d []byte) (%s, bool) {
-	var i %s
+func {{.Name}}FromJSON(d []byte) ({{.Name}}, bool) {
+	var i {{.Name}}
 	err := json.Unmarshal(d, &i)
 	if err != nil {
 		length := len(d)
 		if length > 1 && d[0] == quoteByte && d[length-1] == quoteByte {
-			return %sFromJSON(d[1 : length-1])
+			return {{.Name}}FromJSON(d[1 : length-1])
 		}
-		return %s, false
+		return {{.Value}}, false
 	}
 	return i, true
 }
@@ -64,7 +64,9 @@ func %sFromJSON(d []byte) (%s, bool) {
 )
 
 type Object struct {
-	Name string
+	Name  string
+	Value string
+	Body  string
 }
 
 type genCall func(int, string, *bytes.Buffer)
@@ -80,8 +82,8 @@ func genType(idx int, t string, b *bytes.Buffer) {
 	} else {
 		caseBody = numericBody
 	}
-	genBody := fmt.Sprintf(convBody, t, t, t, caseBody, t, t, t, t, def)
-	b.WriteString(genBody)
+	obj := &Object{Name: t, Value: def, Body: caseBody}
+	runTemplate(convBody, b, obj)
 }
 
 func converters() {
