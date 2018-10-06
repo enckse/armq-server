@@ -348,6 +348,14 @@ func newWebDataWriter(w http.ResponseWriter) *dataWriter {
 	})
 }
 
+func webRequest(ctx *context, h *handlerSettings, w http.ResponseWriter, r map[string][]string) {
+	d := newWebDataWriter(w)
+	success := handle(ctx, r, h, d)
+	if !success {
+		w.WriteHeader(http.StatusBadRequest)
+	}
+}
+
 func mainApi() {
 	conf := startup()
 	dir := conf.GetStringOrDefault(outKey, dataDir)
@@ -374,11 +382,7 @@ func mainApi() {
 		h.allowEmpty = false
 	}
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		d := newWebDataWriter(w)
-		success := handle(ctx, r.URL.Query(), h, d)
-		if !success {
-			w.WriteHeader(http.StatusBadRequest)
-		}
+		webRequest(ctx, h, w, r.URL.Query())
 	})
 	err := http.ListenAndServe(bind, nil)
 	if err != nil {
