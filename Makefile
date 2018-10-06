@@ -6,14 +6,15 @@ FLAGS   := -ldflags '-s -w -X main.vers=$(VERSION)' -buildmode=pie
 COMMON  := $(CMD)common.go $(CMD)messages.go
 API     := $(CMD)api.go $(CMD)generated.go
 GO      := go build $(FLAGS) -o $(BIN)armq-
-GEND    := $(CMD)generated_
+GEN     := $(CMD)generated
+GEND    := $(GEN)_
 
 all: clean server format
 
 server: gen receiver api test
 
 gen:
-	go generate $(CMD)/setup.go
+	go generate $(CMD)setup.go
 
 receiver:
 	$(GO)receiver $(GEND)receiver.go $(CMD)receiver.go $(CMD)sockets.go $(CMD)files.go $(COMMON)
@@ -32,3 +33,4 @@ format:
 clean:
 	rm -rf $(BIN)
 	mkdir -p $(BIN)
+	rm -f $(GEN)*
