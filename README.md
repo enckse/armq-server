@@ -3,6 +3,8 @@ armq-server
 
 In conjunction with [armq](https://voidedtech.network/cgit/cgit.cgi/armq/about/) - provides a receiving endpoint to extension payloads
 
+![Build Status](https://git.epiphyte.network/cgit/armq-server.png)
+
 # Description
 
 armq-server works by using a reader over `/opt/armq/` or a socket receiver (for general TCP traffic from armq)
