@@ -45,6 +45,7 @@ const (
 	fKey             = "field"
 	tsKey            = "ts"
 	idKey            = "id"
+	tagKey           = "tag"
 	field0Key        = fKey + "0"
 	field1Key        = fKey + "1"
 	field2Key        = fKey + "2"

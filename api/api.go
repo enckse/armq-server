@@ -149,12 +149,15 @@ func getDate(in string, adding time.Duration) time.Time {
 }
 
 type onHeaders func()
+type objectAdder func(io.Writer, map[string]json.RawMessage)
 
 type dataWriter struct {
 	writer  io.Writer
 	write   bool
 	headers onHeaders
 	header  bool
+	objects objectAdder
+	object  bool
 }
 
 func newDataWriter(w io.Writer, h onHeaders) *dataWriter {
@@ -202,6 +205,7 @@ func handle(ctx *context, req map[string][]string, h *handlerSettings, writer *d
 					dataFilters = append(dataFilters, f)
 				}
 			}
+
 		case "start":
 			fallthrough
 		case "end":
@@ -226,6 +230,7 @@ func handle(ctx *context, req map[string][]string, h *handlerSettings, writer *d
 		case "files":
 			fileRead = strings.TrimSpace(p[0])
 		case "startdate":
+
 			startDate = strings.TrimSpace(p[0])
 		case "enddate":
 			endDate = strings.TrimSpace(p[0])
@@ -286,6 +291,7 @@ func handle(ctx *context, req map[string][]string, h *handlerSettings, writer *d
 					v, ok := filterObj[p]
 					if !ok {
 						break
+
 					}
 					if i == fieldLen {
 						valid = d.check(v)
@@ -336,12 +342,20 @@ func newWebDataWriter(w http.ResponseWriter) *dataWriter {
 	})
 }
 
-func webRequest(ctx *context, h *handlerSettings, w http.ResponseWriter, r map[string][]string) {
-	d := newWebDataWriter(w)
-	success := handle(ctx, r, h, d)
+func webRequest(ctx *context, h *handlerSettings, w http.ResponseWriter, r *http.Request, d *dataWriter) {
+	success := handle(ctx, r.URL.Query(), h, d)
 	if !success {
 		w.WriteHeader(http.StatusBadRequest)
 	}
+}
+
+func (o *dataWriter) objectWriter(adder objectAdder) {
+	o.object = true
+	o.write = false
+	o.objects = adder
+}
+
+func tagWriter(w io.Writer, j map[string]json.RawMessage) {
 }
 
 func runApp() {
@@ -370,7 +384,13 @@ func runApp() {
 		h.allowEmpty = false
 	}
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		webRequest(ctx, h, w, r.URL.Query())
+		d := newWebDataWriter(w)
+		webRequest(ctx, h, w, r, d)
+	})
+	http.HandleFunc("/tags", func(w http.ResponseWriter, r *http.Request) {
+		obj := newWebDataWriter(w)
+		obj.objectWriter(tagWriter)
+		webRequest(ctx, h, w, r, obj)
 	})
 	err := http.ListenAndServe(bind, nil)
 	if err != nil {

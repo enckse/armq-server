@@ -159,7 +159,7 @@ func set(e *Entry) bool {
 
 func (h *eventHandler) handle(count int, entries map[string]*Entry) map[string]*Entry {
 	rewriteName("event", field0Key, set, entries)
-	if rewriteName("tag", field1Key, isTag, entries) {
+	if rewriteName(tagKey, field1Key, isTag, entries) {
 		if rewriteName("playerid", field2Key, isRaw, entries) {
 			if rewriteName("type", field3Key, isRaw, entries) {
 				if rewriteName("data", field4Key, isNotRaw, entries) {
