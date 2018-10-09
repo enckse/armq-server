@@ -164,7 +164,7 @@ type objectAdder interface {
 
 type tagAdder struct {
 	objectAdder
-	tracked map[string]struct{}
+	tracked map[string]int64
 }
 
 func (t *tagAdder) add(first bool, j map[string]json.RawMessage) {
@@ -180,20 +180,35 @@ func (t *tagAdder) add(first bool, j map[string]json.RawMessage) {
 	if !ok {
 		return
 	}
-	if first {
-		t.tracked = make(map[string]struct{})
+	tsRaw, ok := j[tsKey]
+	if !ok {
+		return
 	}
-	t.tracked[string(v)] = struct{}{}
+	i, ok := int64FromJSON(tsRaw)
+	if !ok {
+		return
+	}
+	if first {
+		t.tracked = make(map[string]int64)
+	}
+	s := string(v)
+	cur, ok := t.tracked[s]
+	if ok {
+		if i <= cur {
+			return
+		}
+	}
+	t.tracked[s] = i
 }
 
 func (t *tagAdder) done(w io.Writer) {
 	w.Write(dataHeaderBytes)
 	first := true
-	for k, _ := range t.tracked {
+	for k, v := range t.tracked {
 		if !first {
 			w.Write([]byte(","))
 		}
-		w.Write([]byte(k))
+		w.Write([]byte(fmt.Sprintf("{%s: %d}", k, v)))
 		first = false
 	}
 	w.Write(dataFooterBytes)

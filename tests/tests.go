@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 )
 
@@ -58,7 +57,6 @@ func test(h *testHarness) {
 		panic("failed test: " + h.out)
 	}
 	var indent bytes.Buffer
-	fmt.Println(b.String())
 	err := json.Indent(&indent, b.Bytes(), "", "  ")
 	if err != nil {
 		panic("unable to adjust output")
