@@ -188,8 +188,13 @@ func (t *tagAdder) add(first bool, j map[string]json.RawMessage) {
 
 func (t *tagAdder) done(w io.Writer) {
 	w.Write(dataHeaderBytes)
+	first := true
 	for k, _ := range t.tracked {
+		if !first {
+			w.Write([]byte(","))
+		}
 		w.Write([]byte(k))
+		first = false
 	}
 	w.Write(dataFooterBytes)
 }
