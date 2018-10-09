@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 )
 
@@ -10,14 +11,37 @@ func testHandlers() *handlerSettings {
 	return &handlerSettings{allowEvent: true, allowDump: true, allowEmpty: true, enabled: true}
 }
 
-func runTest(c *context, output string, req map[string][]string, h *handlerSettings, success bool) {
+type writerAdjust func(*dataWriter)
+
+type testHarness struct {
+	ctx *context
+	out string
+	req map[string][]string
+	hdl *handlerSettings
+	ok  bool
+	adj writerAdjust
+}
+
+func runTest(c *context, output string, r map[string][]string, h *handlerSettings, success bool) {
+	test(&testHarness{ctx: c, out: output, req: r, hdl: h, ok: success})
+}
+
+func tagTest(c *context) {
+	h := &testHarness{ctx: c, out: "tags", req: nil, hdl: nil, ok: true}
+	h.adj = func(d *dataWriter) {
+		d.objectWriter(&tagAdder{})
+	}
+	test(h)
+}
+
+func test(h *testHarness) {
 	str := ""
 	b := bytes.NewBufferString(str)
-	request := req
+	request := h.req
 	if request == nil {
 		request = make(map[string][]string)
 	}
-	handlers := h
+	handlers := h.hdl
 	if handlers == nil {
 		handlers = testHandlers()
 	}
@@ -26,16 +50,20 @@ func runTest(c *context, output string, req map[string][]string, h *handlerSetti
 		called = true
 	}
 	d := newDataWriter(b, check)
-	handle(c, request, handlers, d)
-	if called != success {
-		panic("failed test: " + output)
+	if h.adj != nil {
+		h.adj(d)
+	}
+	handle(h.ctx, request, handlers, d)
+	if called != h.ok {
+		panic("failed test: " + h.out)
 	}
 	var indent bytes.Buffer
+	fmt.Println(b.String())
 	err := json.Indent(&indent, b.Bytes(), "", "  ")
 	if err != nil {
 		panic("unable to adjust output")
 	}
-	err = ioutil.WriteFile(c.directory+output, indent.Bytes(), 0644)
+	err = ioutil.WriteFile(h.ctx.directory+h.out, indent.Bytes(), 0644)
 	if err != nil {
 		panic("unable to complete test")
 	}
@@ -74,4 +102,6 @@ func main() {
 	filter = append(filter, "id:eq:2018-10-04T12-43-25.1538671495161.2.0")
 	m["filter"] = filter
 	runTest(c, "filtersand", m, nil, true)
+	c.convert = conversions()
+	tagTest(c)
 }

@@ -22,6 +22,13 @@ const (
 	filterDelimiter          = ":"
 	startStringOp            = "ge"
 	endStringOp              = "le"
+	dataHeader               = "{\"data\": ["
+	dataFooter               = "]}"
+)
+
+var (
+	dataHeaderBytes = []byte(dataHeader)
+	dataFooterBytes = []byte(dataFooter)
 )
 
 type dataFilter struct {
@@ -149,7 +156,43 @@ func getDate(in string, adding time.Duration) time.Time {
 }
 
 type onHeaders func()
-type objectAdder func(io.Writer, map[string]json.RawMessage)
+
+type objectAdder interface {
+	add(bool, map[string]json.RawMessage)
+	done(io.Writer)
+}
+
+type tagAdder struct {
+	objectAdder
+	tracked map[string]struct{}
+}
+
+func (t *tagAdder) add(first bool, j map[string]json.RawMessage) {
+	o, ok := getSubField(fieldKey, j)
+	if !ok {
+		return
+	}
+	o, ok = getSubField(tagKey, o)
+	if !ok {
+		return
+	}
+	v, ok := o[notJSON]
+	if !ok {
+		return
+	}
+	if first {
+		t.tracked = make(map[string]struct{})
+	}
+	t.tracked[string(v)] = struct{}{}
+}
+
+func (t *tagAdder) done(w io.Writer) {
+	w.Write(dataHeaderBytes)
+	for k, _ := range t.tracked {
+		w.Write([]byte(k))
+	}
+	w.Write(dataFooterBytes)
+}
 
 type dataWriter struct {
 	writer  io.Writer
@@ -275,7 +318,7 @@ func handle(ctx *context, req map[string][]string, h *handlerSettings, writer *d
 	count := 0
 	has := false
 	writer.setHeaders()
-	writer.addString("{\"data\": [")
+	writer.addString(dataHeader)
 	for _, p := range files {
 		if count > limited {
 			break
@@ -324,10 +367,12 @@ func handle(ctx *context, req map[string][]string, h *handlerSettings, writer *d
 			writer.addString(",")
 		}
 		writer.add(b)
+		writer.addObject(!has, obj)
 		has = true
 		count += 1
 	}
-	writer.addString("]}")
+	writer.addString(dataFooter)
+	writer.closeObjects()
 	return true
 }
 
@@ -340,6 +385,18 @@ func newWebDataWriter(w http.ResponseWriter) *dataWriter {
 	return newDataWriter(w, func() {
 		writeSuccess(w)
 	})
+}
+
+func (d *dataWriter) addObject(first bool, o map[string]json.RawMessage) {
+	if d.object {
+		d.objects.add(first, o)
+	}
+}
+
+func (d *dataWriter) closeObjects() {
+	if d.object {
+		d.objects.done(d.writer)
+	}
 }
 
 func webRequest(ctx *context, h *handlerSettings, w http.ResponseWriter, r *http.Request, d *dataWriter) {
@@ -355,7 +412,17 @@ func (o *dataWriter) objectWriter(adder objectAdder) {
 	o.objects = adder
 }
 
-func tagWriter(w io.Writer, j map[string]json.RawMessage) {
+func getSubField(key string, j map[string]json.RawMessage) (map[string]json.RawMessage, bool) {
+	v, ok := j[key]
+	if !ok {
+		return nil, false
+	}
+	var sub map[string]json.RawMessage
+	err := json.Unmarshal(v, &sub)
+	if err != nil {
+		return nil, false
+	}
+	return sub, true
 }
 
 func runApp() {
@@ -389,7 +456,7 @@ func runApp() {
 	})
 	http.HandleFunc("/tags", func(w http.ResponseWriter, r *http.Request) {
 		obj := newWebDataWriter(w)
-		obj.objectWriter(tagWriter)
+		obj.objectWriter(&tagAdder{})
 		webRequest(ctx, h, w, r, obj)
 	})
 	err := http.ListenAndServe(bind, nil)
