@@ -168,6 +168,9 @@ type tagAdder struct {
 }
 
 func (t *tagAdder) add(first bool, j map[string]json.RawMessage) {
+	if first {
+		t.tracked = make(map[string]int64)
+	}
 	o, ok := getSubField(fieldKey, j)
 	if !ok {
 		return
@@ -187,9 +190,6 @@ func (t *tagAdder) add(first bool, j map[string]json.RawMessage) {
 	i, ok := int64FromJSON(tsRaw)
 	if !ok {
 		return
-	}
-	if first {
-		t.tracked = make(map[string]int64)
 	}
 	s := string(v)
 	cur, ok := t.tracked[s]
