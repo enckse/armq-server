@@ -1,3 +1,3 @@
 _build() {
-    make
+    make VERSION=master
 }
