@@ -6,6 +6,12 @@ FLAGS   := -ldflags '-s -w -X main.vers=$(VERSION)' -buildmode=pie
 GO      := go build $(FLAGS) -o $(BIN)armq-
 APPS    := receiver api tests
 GEN     := $(shell find . -type f -name "generated.go" | grep -v "vendor/")
+API_GO  := $(CMD)api.go $(CMD)messages.go
+COMMON  := $(CMD)generated.go $(CMD)common.go
+TST_SRC := $(CMD)tests.go $(COMMON) $(API_GO)
+MAIN    := $(CMD)main.go
+API_SRC := $(COMMON) $(API_GO) $(MAIN)
+RCV_SRC := $(COMMON) $(MAIN) $(CMD)sockets.go $(CMD)files.go $(CMD)receiver.go
 
 .PHONY: $(APPS)
 
@@ -13,12 +19,17 @@ all: clean server format
 
 server: gen $(APPS) test
 
+receiver:
+	$(GO)receiver $(RCV_SRC)
+
+api:
+	$(GO)api $(API_SRC)
+
+tests:
+	$(GO)tests $(TST_SRC)
+
 gen:
 	go generate $(CMD)setup.go
-
-$(APPS):
-	cp $(CMD)generated.go $@/
-	$(GO)$@ $@/*.go
 
 test: tests
 	make -C tests FLAGS="$(FLAGS)"
