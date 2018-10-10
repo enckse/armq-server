@@ -15,9 +15,9 @@ RCV_SRC := $(COMMON) $(MAIN) $(CMD)sockets.go $(CMD)files.go $(CMD)receiver.go
 
 .PHONY: $(APPS)
 
-all: clean server format
+all: clean gen apps test format
 
-server: gen $(APPS) test
+apps: $(APPS)
 
 receiver:
 	$(GO)receiver $(RCV_SRC)
