@@ -474,6 +474,11 @@ func runApp() {
 		d := newWebDataWriter(w)
 		webRequest(ctx, h, w, r, d)
 	})
+	http.HandleFunc("/api", func(w http.ResponseWriter, r *http.Request) {
+		writeSuccess(w)
+		w.Write([]byte(dataHeader))
+		w.Write([]byte(dataFooter))
+	})
 	http.HandleFunc("/tags", func(w http.ResponseWriter, r *http.Request) {
 		obj := newWebDataWriter(w)
 		obj.objectWriter(&tagAdder{})
