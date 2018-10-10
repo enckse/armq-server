@@ -445,6 +445,10 @@ func getSubField(key string, j map[string]json.RawMessage) (map[string]json.RawM
 	return sub, true
 }
 
+func apiMeta(started string) []byte {
+	return []byte(fmt.Sprintf("%s {\"started\": \"%s\"} %s", dataHeader, started, dataFooter))
+}
+
 func runApp() {
 	conf := startup()
 	dir := conf.GetStringOrDefault(outKey, dataDir)
@@ -474,10 +478,10 @@ func runApp() {
 		d := newWebDataWriter(w)
 		webRequest(ctx, h, w, r, d)
 	})
+	apiBytes := apiMeta(time.Now().Format("2006-01-02T15:04:05"))
 	http.HandleFunc("/api", func(w http.ResponseWriter, r *http.Request) {
 		writeSuccess(w)
-		w.Write([]byte(dataHeader))
-		w.Write([]byte(dataFooter))
+		w.Write(apiBytes)
 	})
 	http.HandleFunc("/tags", func(w http.ResponseWriter, r *http.Request) {
 		obj := newWebDataWriter(w)
