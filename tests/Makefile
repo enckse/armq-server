@@ -1,4 +1,5 @@
 DIFFS := $(shell ls *.expected | sed "s/\.expected//g")
+BIN   := bin/
 
 .PHONY: $(DIFFS)
 
@@ -9,4 +10,5 @@ run:
 	./armq-tests
 
 $(DIFFS):
-	diff -u bin/$@ $@.expected
+	sed -i "s/$(VERSION)/master/g" $(BIN)$@
+	diff -u $(BIN)$@ $@.expected

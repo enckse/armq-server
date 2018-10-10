@@ -28,7 +28,7 @@ const (
 var (
 	dataHeaderBytes = []byte(dataHeader)
 	dataFooterBytes = []byte(dataFooter)
-	dataHeader      = "{\"meta\": {\"spec\": \"0.1\"}, \"data\": ["
+	dataHeader      = "{\"meta\": {\"spec\": \"0.1\", \"api\": \"" + vers + "\"}, \"data\": ["
 )
 
 type dataFilter struct {

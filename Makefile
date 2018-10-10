@@ -32,7 +32,7 @@ gen:
 	go generate $(CMD)setup.go
 
 test: tests
-	make -C tests FLAGS="$(FLAGS)"
+	make -C tests VERSION=$(VERSION)
 
 format:
 	@echo $(SRC)
