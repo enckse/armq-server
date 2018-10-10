@@ -22,13 +22,13 @@ const (
 	filterDelimiter          = ":"
 	startStringOp            = "ge"
 	endStringOp              = "le"
-	dataHeader               = "{\"data\": ["
 	dataFooter               = "]}"
 )
 
 var (
 	dataHeaderBytes = []byte(dataHeader)
 	dataFooterBytes = []byte(dataFooter)
+	dataHeader      = "{\"meta\": {\"spec\": \"0.1\"}, \"data\": ["
 )
 
 type dataFilter struct {
