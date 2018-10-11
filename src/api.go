@@ -23,7 +23,7 @@ const (
 	filterDelimiter          = ":"
 	startStringOp            = "ge"
 	endStringOp              = "le"
-	limitIndicator           = ", {\"more\": \"true\"}"
+	limitIndicator           = ", {\"limited\": \"true\"}"
 )
 
 type dataFilter struct {

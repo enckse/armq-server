@@ -92,7 +92,7 @@
       "vers": "1.1.0"
     },
     {
-      "more": "true"
+      "limited": "true"
     }
   ]
 }
