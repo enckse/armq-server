@@ -98,6 +98,7 @@ def killed(events):
             f = get_faction(e)
             if f not in factions:
                 factions[f] = 0
+            print("kill at {}".format(e.simtime))
             factions[f] += 1
     delimit()
     print("kills:\n")
