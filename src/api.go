@@ -65,6 +65,7 @@ func conversions() map[string]typeConv {
 	m := make(map[string]typeConv)
 	m[tsKey] = int64Conv
 	m[idKey] = strConv
+	m[fmt.Sprintf("%s.%s.%s", fieldKey, tagKey, notJSON)] = strConv
 	return m
 }
 

@@ -98,6 +98,7 @@ func main() {
 	m["filter"] = filter
 	runTest(c, "filters", m, nil, true)
 	filter = append(filter, "id:eq:2018-10-04T12-43-25.1538671495161.2.0")
+	filter = append(filter, "fields.tag.raw:eq:jzml")
 	m["filter"] = filter
 	runTest(c, "filtersand", m, nil, true)
 	c.convert = conversions()
