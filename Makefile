@@ -1,6 +1,6 @@
 BIN     := bin/
 CMD     := src/
-SRC     := $(shell find . -type f -name "*.go" | grep -v "vendor/")
+SRC     := $(shell find $(CMD) -type f -name "*.go")
 VERSION ?= $(shell git describe --long | sed "s/\([^-]*-g\)/r\1/;s/-/./g")
 FLAGS   := -ldflags '-s -w -X main.vers=$(VERSION)' -buildmode=pie
 GO      := go build $(FLAGS) -o $(BIN)armq-
@@ -36,7 +36,7 @@ test: tests
 
 format:
 	@echo $(SRC)
-	exit $(shell echo $(SRC) | grep "\.go$$" | goimports -l $(SRC) | wc -l)
+	exit $(shell goimports -l $(SRC) | wc -l)
 
 clean:
 	rm -rf $(BIN)
