@@ -37,6 +37,7 @@ def header(meta, tag):
     delimit()
     print("specification: {}".format(meta["spec"]))
     print("api: {}".format(meta["api"]))
+    print("server: {}".format(meta["server"]))
     print("tag: {}".format(tag))
     delimit()
 

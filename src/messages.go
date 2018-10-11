@@ -8,6 +8,14 @@ import (
 	"github.com/epiphyte/goutils"
 )
 
+const (
+	eventType    = "event"
+	startType    = "start"
+	replayType   = "replay"
+	playerType   = "player"
+	playerIdType = "playerid"
+)
+
 func isEmpty(e *Entry) bool {
 	return len(e.Raw) == 0 && len(e.Array) == 0 && len(e.Object) == 0
 }
@@ -85,10 +93,17 @@ func handleAll(entries map[string]*Entry, h entityHandler) map[string]*Entry {
 }
 
 type handlerSettings struct {
-	allowEvent bool
-	allowDump  bool
-	allowEmpty bool
-	enabled    bool
+	allowEvent  bool
+	allowDump   bool
+	allowEmpty  bool
+	allowStart  bool
+	allowPlayer bool
+	allowReplay bool
+	enabled     bool
+}
+
+func (h *handlerSettings) allowFields() bool {
+	return h.allowEvent || h.allowStart || h.allowPlayer || h.allowReplay
 }
 
 func handleEntries(entries map[string]*Entry, settings *handlerSettings) map[string]*Entry {
@@ -99,10 +114,23 @@ func handleEntries(entries map[string]*Entry, settings *handlerSettings) map[str
 	handler = &defaultHandler{}
 	first, ok := entries[field0Key]
 	if ok {
-		if settings.allowEvent {
-			if isRaw(first) && first.Raw == "event" {
-				handler = &eventHandler{}
+		firstField := ""
+		if settings.allowFields() {
+			if isRaw(first) {
+				firstField = first.Raw
 			}
+		}
+		if settings.allowEvent && firstField == eventType {
+			handler = &eventHandler{}
+		}
+		if settings.allowStart && firstField == startType {
+			handler = &startHandler{}
+		}
+		if settings.allowReplay && firstField == replayType {
+			handler = &replayHandler{}
+		}
+		if settings.allowPlayer && firstField == playerType {
+			handler = &playerHandler{}
 		}
 	}
 	r := make(map[string]*Entry)
@@ -158,13 +186,53 @@ func set(e *Entry) bool {
 }
 
 func (h *eventHandler) handle(count int, entries map[string]*Entry) map[string]*Entry {
-	rewriteName("event", field0Key, set, entries)
+	rewriteName(eventType, field0Key, set, entries)
 	if rewriteName(tagKey, field1Key, isTag, entries) {
-		if rewriteName("playerid", field2Key, isRaw, entries) {
+		if rewriteName(playerIdType, field2Key, isRaw, entries) {
 			if rewriteName("type", field3Key, isRaw, entries) {
 				if rewriteName("data", field4Key, isNotRaw, entries) {
 					rewriteName("simtime", field5Key, isRaw, entries)
 				}
+			}
+		}
+	}
+	return entries
+}
+
+// indicates a 'start'
+type startHandler struct {
+	entityHandler
+}
+
+func (h *startHandler) handle(count int, entries map[string]*Entry) map[string]*Entry {
+	rewriteName(startType, field0Key, set, entries)
+	return entries
+}
+
+// indicates a 'player'
+type playerHandler struct {
+	entityHandler
+}
+
+func (h *playerHandler) handle(count int, entries map[string]*Entry) map[string]*Entry {
+	rewriteName(playerType, field0Key, set, entries)
+	if rewriteName(playerIdType, field1Key, isRaw, entries) {
+		rewriteName("name", field2Key, isRaw, entries)
+	}
+	return entries
+}
+
+// indicates a 'replay'
+type replayHandler struct {
+	entityHandler
+}
+
+func (h *replayHandler) handle(count int, entries map[string]*Entry) map[string]*Entry {
+	rewriteName(replayType, field0Key, set, entries)
+	if rewriteName("mission", field1Key, isTag, entries) {
+		if rewriteName("world", field2Key, isRaw, entries) {
+			if rewriteName("daytime", field3Key, isRaw, entries) {
+				rewriteName("version", field4Key, isNotRaw, entries)
 			}
 		}
 	}

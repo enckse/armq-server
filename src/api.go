@@ -456,6 +456,13 @@ func (ctx *context) setMeta(version, host string) {
 	ctx.byteFooter = []byte(ctx.metaFooter)
 }
 
+func getConfigFalse(c *goutils.Config, key string) bool {
+	if c.GetFalse(key) {
+		return false
+	}
+	return true
+}
+
 func runApp() {
 	conf := startup()
 	dir := conf.GetStringOrDefault(outKey, dataDir)
@@ -474,18 +481,12 @@ func runApp() {
 	ctx.setMeta(vers, host)
 	h := &handlerSettings{}
 	h.enabled = c.GetTrue("handlers")
-	h.allowEvent = true
-	h.allowDump = true
-	h.allowEmpty = true
-	if c.GetFalse("eventHander") {
-		h.allowEvent = false
-	}
-	if c.GetFalse("dumpHandler") {
-		h.allowDump = false
-	}
-	if c.GetFalse("emptyHandler") {
-		h.allowEmpty = false
-	}
+	h.allowEvent = getConfigFalse(c, "eventHandler")
+	h.allowDump = getConfigFalse(c, "dumpHandler")
+	h.allowEmpty = getConfigFalse(c, "emptyHandler")
+	h.allowStart = getConfigFalse(c, "startHandler")
+	h.allowReplay = getConfigFalse(c, "replayHandler")
+	h.allowPlayer = getConfigFalse(c, "playerHandler")
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		d := newWebDataWriter(w)
 		webRequest(ctx, h, w, r, d)
