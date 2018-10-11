@@ -71,6 +71,7 @@ func main() {
 	c := &context{}
 	c.directory = "bin/"
 	c.limit = 10
+	c.setMeta("master", "localhost")
 	runTest(c, "normal", nil, nil, true)
 	runTest(c, "nohandlers", nil, &handlerSettings{}, true)
 	// limit input

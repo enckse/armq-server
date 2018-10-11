@@ -1,7 +1,8 @@
 {
   "meta": {
     "spec": "0.1",
-    "api": "master"
+    "api": "master",
+    "server": "localhost"
   },
   "data": [
     {

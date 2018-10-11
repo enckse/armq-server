@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -22,13 +23,6 @@ const (
 	filterDelimiter          = ":"
 	startStringOp            = "ge"
 	endStringOp              = "le"
-	dataFooter               = "]}"
-)
-
-var (
-	dataHeaderBytes = []byte(dataHeader)
-	dataFooterBytes = []byte(dataFooter)
-	dataHeader      = "{\"meta\": {\"spec\": \"0.1\", \"api\": \"" + vers + "\"}, \"data\": ["
 )
 
 type dataFilter struct {
@@ -59,6 +53,11 @@ type context struct {
 	limit     int
 	directory string
 	convert   map[string]typeConv
+	// api output data
+	metaFooter string
+	metaHeader string
+	byteHeader []byte
+	byteFooter []byte
 }
 
 func conversions() map[string]typeConv {
@@ -160,7 +159,7 @@ type onHeaders func()
 
 type objectAdder interface {
 	add(bool, map[string]json.RawMessage)
-	done(io.Writer)
+	done(*context, io.Writer)
 }
 
 type tagAdder struct {
@@ -202,8 +201,8 @@ func (t *tagAdder) add(first bool, j map[string]json.RawMessage) {
 	t.tracked[s] = i
 }
 
-func (t *tagAdder) done(w io.Writer) {
-	w.Write(dataHeaderBytes)
+func (t *tagAdder) done(ctx *context, w io.Writer) {
+	w.Write(ctx.byteHeader)
 	first := true
 	for k, v := range t.tracked {
 		if !first {
@@ -212,7 +211,7 @@ func (t *tagAdder) done(w io.Writer) {
 		w.Write([]byte(fmt.Sprintf("{%s: %d}", k, v)))
 		first = false
 	}
-	w.Write(dataFooterBytes)
+	w.Write(ctx.byteFooter)
 }
 
 type dataWriter struct {
@@ -339,7 +338,7 @@ func handle(ctx *context, req map[string][]string, h *handlerSettings, writer *d
 	count := 0
 	has := false
 	writer.setHeaders()
-	writer.addString(dataHeader)
+	writer.addString(ctx.metaHeader)
 	for _, p := range files {
 		if count > limited {
 			break
@@ -392,8 +391,8 @@ func handle(ctx *context, req map[string][]string, h *handlerSettings, writer *d
 		has = true
 		count += 1
 	}
-	writer.addString(dataFooter)
-	writer.closeObjects()
+	writer.addString(ctx.metaFooter)
+	writer.closeObjects(ctx)
 	return true
 }
 
@@ -414,9 +413,9 @@ func (d *dataWriter) addObject(first bool, o map[string]json.RawMessage) {
 	}
 }
 
-func (d *dataWriter) closeObjects() {
+func (d *dataWriter) closeObjects(ctx *context) {
 	if d.object {
-		d.objects.done(d.writer)
+		d.objects.done(ctx, d.writer)
 	}
 }
 
@@ -446,8 +445,15 @@ func getSubField(key string, j map[string]json.RawMessage) (map[string]json.RawM
 	return sub, true
 }
 
-func apiMeta(started string) []byte {
-	return []byte(fmt.Sprintf("%s {\"started\": \"%s\"} %s", dataHeader, started, dataFooter))
+func apiMeta(ctx *context, started string) []byte {
+	return []byte(fmt.Sprintf("%s {\"started\": \"%s\"} %s", ctx.metaHeader, started, ctx.metaFooter))
+}
+
+func (ctx *context) setMeta(version, host string) {
+	ctx.metaHeader = "{\"meta\": {\"spec\": \"0.1\", \"api\": \"" + version + "\", \"server\": \"" + host + "\"}, \"data\": ["
+	ctx.metaFooter = "]}"
+	ctx.byteHeader = []byte(ctx.metaHeader)
+	ctx.byteFooter = []byte(ctx.metaFooter)
 }
 
 func runApp() {
@@ -461,6 +467,11 @@ func runApp() {
 	ctx.limit = limit
 	ctx.directory = dir
 	ctx.convert = conversions()
+	host, err := os.Hostname()
+	if err != nil {
+		host = "localhost"
+	}
+	ctx.setMeta(vers, host)
 	h := &handlerSettings{}
 	h.enabled = c.GetTrue("handlers")
 	h.allowEvent = true
@@ -479,7 +490,7 @@ func runApp() {
 		d := newWebDataWriter(w)
 		webRequest(ctx, h, w, r, d)
 	})
-	apiBytes := apiMeta(time.Now().Format("2006-01-02T15:04:05"))
+	apiBytes := apiMeta(ctx, time.Now().Format("2006-01-02T15:04:05"))
 	http.HandleFunc("/api", func(w http.ResponseWriter, r *http.Request) {
 		writeSuccess(w)
 		w.Write(apiBytes)
@@ -489,7 +500,7 @@ func runApp() {
 		obj.objectWriter(&tagAdder{})
 		webRequest(ctx, h, w, r, obj)
 	})
-	err := http.ListenAndServe(bind, nil)
+	err = http.ListenAndServe(bind, nil)
 	if err != nil {
 		goutils.Fatal("unable to do http serve", err)
 	}

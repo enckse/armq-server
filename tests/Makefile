@@ -10,5 +10,4 @@ run:
 	./armq-tests
 
 $(DIFFS):
-	sed -i "s/$(VERSION)/master/g" $(BIN)$@
 	diff -u $(BIN)$@ $@.expected
