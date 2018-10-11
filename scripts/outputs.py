@@ -71,7 +71,7 @@ def check_tag(obj, tag):
         if raw:
             if tag == raw:
                 return fields
-    warn("missing tag: {}", obj)
+    warn("missing tag: ", obj)
     return None
 
 
@@ -86,9 +86,9 @@ def get_faction(e):
     k = has_key(e.data, "victim")
     if k:
         k = has_key(k, "faction")
-        if k:
+        if k is not None:
             return k
-    warn("missing victim: {}", e.data)
+    warn("missing victim: ", e.data)
 
 
 def killed(events):
@@ -103,7 +103,7 @@ def killed(events):
     print("kills:\n")
     for f in sorted(factions.keys()):
         v = factions[f]
-        name = str(f)
+        name = "unknown ({})".format(f)
         if f == 1:
             name = "blue"
         elif f == 2:

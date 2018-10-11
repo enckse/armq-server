@@ -9,7 +9,7 @@ DATA    := $(CURL)?filter=fields.tag.raw:eq:$(TAG)
 BIN     := bin/
 JSON    := $(BIN)data.json
 
-all: clean tag outputs
+all: clean data outputs
 
 tags:
 	$(TAGGED)
@@ -19,7 +19,7 @@ api:
 	$(API)
 	@echo
 
-tag:
+data:
 ifndef TAG
 	$(error no TAG given)
 endif
