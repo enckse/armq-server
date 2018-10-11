@@ -23,6 +23,7 @@ const (
 	filterDelimiter          = ":"
 	startStringOp            = "ge"
 	endStringOp              = "le"
+	limitIndicator           = ", {\"limited\": \"true\"}"
 )
 
 type dataFilter struct {
@@ -159,7 +160,7 @@ type onHeaders func()
 
 type objectAdder interface {
 	add(bool, map[string]json.RawMessage)
-	done(*context, io.Writer)
+	done(*context, io.Writer, bool)
 }
 
 type tagAdder struct {
@@ -201,7 +202,7 @@ func (t *tagAdder) add(first bool, j map[string]json.RawMessage) {
 	t.tracked[s] = i
 }
 
-func (t *tagAdder) done(ctx *context, w io.Writer) {
+func (t *tagAdder) done(ctx *context, w io.Writer, limit bool) {
 	w.Write(ctx.byteHeader)
 	first := true
 	for k, v := range t.tracked {
@@ -210,6 +211,9 @@ func (t *tagAdder) done(ctx *context, w io.Writer) {
 		}
 		w.Write([]byte(fmt.Sprintf("{%s: %d}", k, v)))
 		first = false
+	}
+	if limit {
+		w.Write([]byte(limitIndicator))
 	}
 	w.Write(ctx.byteFooter)
 }
@@ -339,8 +343,12 @@ func handle(ctx *context, req map[string][]string, h *handlerSettings, writer *d
 	has := false
 	writer.setHeaders()
 	writer.addString(ctx.metaHeader)
+	hasMore := false
 	for _, p := range files {
 		if count > limited {
+			if has {
+				hasMore = true
+			}
 			break
 		}
 		obj, b := loadFile(p, h)
@@ -391,8 +399,11 @@ func handle(ctx *context, req map[string][]string, h *handlerSettings, writer *d
 		has = true
 		count += 1
 	}
+	if hasMore {
+		writer.addString(limitIndicator)
+	}
 	writer.addString(ctx.metaFooter)
-	writer.closeObjects(ctx)
+	writer.closeObjects(ctx, hasMore)
 	return true
 }
 
@@ -413,9 +424,9 @@ func (d *dataWriter) addObject(first bool, o map[string]json.RawMessage) {
 	}
 }
 
-func (d *dataWriter) closeObjects(ctx *context) {
+func (d *dataWriter) closeObjects(ctx *context, limited bool) {
 	if d.object {
-		d.objects.done(ctx, d.writer)
+		d.objects.done(ctx, d.writer, limited)
 	}
 }
 
