@@ -133,6 +133,8 @@ def main():
         die("invalid data")
     e = list(parse_data(d, tag))
     killed(e)
+    with open("bin/pretty.json", 'w') as f:
+        f.write(json.dumps(j, indent=4, sort_keys=True))
 
 
 if __name__ == "__main__":
