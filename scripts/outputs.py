@@ -12,11 +12,14 @@ _OBJECT = "object"
 
 
 class Event():
-    def __init__(self, datum):
+    def __init__(self, datum, datetime):
         self.type = get_raw(datum, "type")
         self.player = get_raw(datum, "playerid")
         self.simtime = get_raw(datum, "simtime")
         self.data = get_data(datum)
+        self.datetime = datetime
+        if datetime is None:
+            self.datetime = "unknown time"
 
 
 def get_data(obj):
@@ -79,7 +82,7 @@ def parse_data(d, tag):
     for o in d:
         f = check_tag(o, tag)
         if f:
-            yield Event(f)
+            yield Event(f, has_key(o, "dt"))
 
 
 def get_faction(e):
@@ -95,23 +98,23 @@ def killed(events):
     factions = {}
     for e in events:
         if e.type == "unit_killed":
-            f = get_faction(e)
+            v = get_faction(e)
+            f = "unknown ({})".format(v)
+            if f == 1:
+                f = "blue"
+            elif f == 2:
+                f = "red"
+            elif f == 3:
+                f = "civilian"
             if f not in factions:
                 factions[f] = 0
-            print("kill at {}".format(e.simtime))
+            print("{} killed at {} ({})".format(f, e.simtime, e.datetime))
             factions[f] += 1
     delimit()
     print("kills:\n")
     for f in sorted(factions.keys()):
         v = factions[f]
-        name = "unknown ({})".format(f)
-        if f == 1:
-            name = "blue"
-        elif f == 2:
-            name = "red"
-        elif f == 3:
-            name = "civilians"
-        print("{}: {}".format(name, v))
+        print("{}: {}".format(f, v))
     delimit()
 
 
