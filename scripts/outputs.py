@@ -68,7 +68,8 @@ def check_tag(obj, tag):
     if fields:
         raw = get_raw(fields, _TAG)
         if raw:
-            return fields
+            if tag == raw:
+                return fields
     warn("missing tag: {}", obj)
     return None
 
