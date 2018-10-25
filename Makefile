@@ -2,7 +2,7 @@ BIN     := bin/
 CMD     := src/
 SRC     := $(shell find $(CMD) -type f -name "*.go")
 VERSION ?= $(shell git describe --long | sed "s/\([^-]*-g\)/r\1/;s/-/./g")
-FLAGS   := -ldflags '-s -w -X main.vers=$(VERSION)' -buildmode=pie
+FLAGS   := -ldflags 'i-linkmode external -extldflags '$(LDFLAGS)' -s -w -X main.vers=$(VERSION)'  -gcflags=all=-trimpath=$(GOPATH) -asmflags=all=-trimpath=$(GOPATH) -buildmode=pie
 GO      := go build $(FLAGS) -o $(BIN)armq-
 APPS    := receiver api tests
 GEN     := $(shell find . -type f -name "generated.go" | grep -v "vendor/")
