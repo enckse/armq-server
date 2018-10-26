@@ -85,12 +85,24 @@ def parse_data(d, tag):
             yield Event(f, has_key(o, "dt"))
 
 
+def format_unit_type(obj):
+    val = "unknown"
+    u = has_key(obj, "unit")
+    t = has_key(obj, "type")
+    if u:
+        val = u
+    if t:
+        val = "{} ({})".format(val, t)
+    return val
+
+
 def get_faction(e):
-    k = has_key(e.data, "victim")
-    if k:
-        k = has_key(k, "faction")
+    v = has_key(e.data, "victim")
+    a = has_key(e.data, "attacker")
+    if v and a:
+        k = has_key(v, "faction")
         if k is not None:
-            return k
+            return (k, format_unit_type(v), format_unit_type(a))
     warn("missing victim: ", e.data)
 
 
@@ -99,19 +111,25 @@ def killed(events):
     for e in events:
         if e.type == "unit_killed":
             v = get_faction(e)
-            f = "unknown ({})".format(v)
-            if f == 1:
-                f = "blue"
+            victim = v[1]
+            attacker = v[2]
+            f = v[0]
+            if f == 0:
+                f = "east"
+            elif f == 1:
+                f = "west"
             elif f == 2:
-                f = "red"
+                f = "independent"
             elif f == 3:
                 f = "civilian"
+            else:
+                f = "unknown ({})".format(v[0])
             if f not in factions:
                 factions[f] = 0
-            print("{} killed at {} ({})".format(f, e.simtime, e.datetime))
+            print("{} ({}): {} killed {}".format(e.simtime, e.datetime, attacker, victim))
             factions[f] += 1
     delimit()
-    print("kills:\n")
+    print("killed:\n")
     for f in sorted(factions.keys()):
         v = factions[f]
         print("{}: {}".format(f, v))
