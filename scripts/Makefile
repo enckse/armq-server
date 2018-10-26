@@ -5,7 +5,7 @@ TARGET  := http://$(SERVER):$(PORT)/
 CURL    := curl -s $(TARGET)
 TAGGED  := $(CURL)tags
 API     := $(CURL)api
-DATA    := $(CURL)?filter=fields.tag.raw:eq:$(TAG)
+DATA    := $(CURL)?filter=fields.tag.raw:eq:$(TAG)\&limit=100000000
 BIN     := bin/
 JSON    := $(BIN)data.json
 
