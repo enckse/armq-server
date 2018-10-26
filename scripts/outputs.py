@@ -108,11 +108,17 @@ def get_faction(e):
 
 def killed(events):
     factions = {}
+    first = True
     for e in events:
+        if first:
+            print("starting at {} ({})".format(e.datetime, e.simtime))
+        first = False
         if e.type == "unit_killed":
             v = get_faction(e)
             victim = v[1]
             attacker = v[2]
+            if victim == attacker:
+                continue
             f = v[0]
             if f == 0:
                 f = "east"
