@@ -24,6 +24,9 @@ tags: _check
 	$(TAGGED) | python -c $(PPRINT) > $(TAGJ)
 	touch $(BIN)$(shell cat $(TAGJ) | python -c "import sys,json; print('{' + ','.join([' '.join(list(x.keys())) for x in json.loads(sys.stdin.read())['data']]) + '}')")$(TAGFILE)
 
+list:
+	cat $(TAGJ) | grep -E '          (\"[a-z]|    \"20)' | sed "s/ //g;s/:\[//g;s/\"//g" | tr '\n' ' ' | sed 's/ 2/_2/g' | tr ' ' '\n' | sed "s/[_]/ /g" | sort -k 2
+
 $(TAGS): _check
 	test -s $@.json || $(DATA)$(shell basename -s $(TAGFILE) $@) | python -c $(PPRINT) > $@.json
 	cat $@.json | python outputs.py $(shell basename -s $(TAGFILE) $@)
