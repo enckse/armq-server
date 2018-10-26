@@ -225,6 +225,7 @@ type dataWriter struct {
 	header  bool
 	objects objectAdder
 	object  bool
+	limit   bool
 }
 
 func newDataWriter(w io.Writer, h onHeaders) *dataWriter {
@@ -233,6 +234,7 @@ func newDataWriter(w io.Writer, h onHeaders) *dataWriter {
 	o.writer = w
 	o.header = h != nil
 	o.headers = h
+	o.limit = true
 	return o
 }
 
@@ -254,7 +256,10 @@ func (d *dataWriter) addString(s string) {
 
 func handle(ctx *context, req map[string][]string, h *handlerSettings, writer *dataWriter) bool {
 	dataFilters := []*dataFilter{}
-	limited := ctx.limit
+	limited := 0
+	if writer.limit {
+		limited = ctx.limit
+	}
 	skip := 0
 	startDate := ""
 	endDate := ""
@@ -346,7 +351,7 @@ func handle(ctx *context, req map[string][]string, h *handlerSettings, writer *d
 	writer.addString(ctx.metaHeader)
 	hasMore := false
 	for _, p := range files {
-		if count > limited {
+		if limited > 0 && count > limited {
 			if has {
 				hasMore = true
 			}
@@ -510,6 +515,7 @@ func runApp() {
 	})
 	http.HandleFunc("/tags", func(w http.ResponseWriter, r *http.Request) {
 		obj := newWebDataWriter(w)
+		obj.limit = false
 		obj.objectWriter(&tagAdder{})
 		webRequest(ctx, h, w, r, obj)
 	})
