@@ -3,7 +3,7 @@ PORT    := 8080
 TARGET  := http://$(SERVER):$(PORT)/
 CURL    := curl -s $(TARGET)
 TAGGED  := $(CURL)tags
-DATA    := $(CURL)?limit=100000000\&filter=fields.tag.raw:eq:
+DATA    := $(CURL)?limit=0\&filter=fields.tag.raw:eq:
 BIN     := bin/
 TAGFILE := ".tag"
 TAGS    := $(shell find . -name "*$(TAGFILE)")
@@ -18,7 +18,7 @@ _check:
 ifeq ($(SERVER),)
 	$(error "make SERVER=server.domain required")
 endif
-	@echo
+	@echo $(SERVER) selected...
 
 _tags:
 	$(TAGGED) | python -c $(PPRINT) > $(TAGJ)

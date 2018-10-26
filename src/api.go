@@ -304,7 +304,7 @@ func handle(ctx *context, req map[string][]string, h *handlerSettings, writer *d
 			}
 		case "limit":
 			i, err := strconv.Atoi(p[0])
-			if err == nil && i > 0 {
+			if err == nil {
 				limited = i
 			}
 		case "skip":
