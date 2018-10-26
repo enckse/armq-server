@@ -20,9 +20,11 @@ ifeq ($(SERVER),)
 endif
 	@echo
 
-tags: _check
+_tags:
 	$(TAGGED) | python -c $(PPRINT) > $(TAGJ)
 	touch $(BIN)$(shell cat $(TAGJ) | python -c "import sys,json; print('{' + ','.join([' '.join(list(x.keys())) for x in json.loads(sys.stdin.read())['data']]) + '}')")$(TAGFILE)
+
+tags: _check _tags list
 
 list:
 	cat $(TAGJ) | grep -E '          (\"[a-z]|    \"20)' | sed "s/ //g;s/:\[//g;s/\"//g" | tr '\n' ' ' | sed 's/ 2/_2/g' | tr ' ' '\n' | sed "s/[_]/ /g" | sort -k 2
