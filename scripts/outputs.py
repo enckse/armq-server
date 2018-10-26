@@ -137,8 +137,9 @@ def killed(events):
                 f = "unknown ({})".format(v[0])
             if f not in factions:
                 factions[f] = 0
-            print("{}{} ({})".format(_OFFSET, e.simtime, e.datetime))
+            print("{}{} (simulation time: {})".format(_OFFSET, e.datetime, e.simtime))
             print("{}-> {} killed {}".format(_OFFSET * 4, attacker, victim))
+            print("")
             factions[f] += 1
     delimit("killed")
     keys = ["side", "---"] + sorted(factions.keys())
