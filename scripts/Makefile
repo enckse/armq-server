@@ -1,4 +1,4 @@
-SERVER  := localhost
+SERVER  := 
 PORT    := 8080
 TARGET  := http://$(SERVER):$(PORT)/
 CURL    := curl -s $(TARGET)
@@ -12,10 +12,16 @@ TAGS    := $(shell find . -name "*$(TAGFILE)")
 
 all: clean data outputs
 
-tags:
+_check:
+ifeq ($(SERVER),)
+	$(error "make SERVER=server.domain required")
+endif
+	@echo
+
+tags: _check
 	touch $(BIN)$(shell $(TAGGED) | python -c "import sys,json; print('{' + ','.join([' '.join(list(x.keys())) for x in json.loads(sys.stdin.read())['data']]) + '}')")$(TAGFILE)
 
-$(TAGS):
+$(TAGS): _check
 	test -s $@.json || $(DATA)$(shell basename -s $(TAGFILE) $@) | python -c "import sys,json; print(json.dumps(json.loads(sys.stdin.read()), indent=4))" > $@.json
 	cat $@.json | python outputs.py $(shell basename -s $(TAGFILE) $@)
 
