@@ -163,14 +163,19 @@ type objectAdder interface {
 	done(*context, io.Writer, bool)
 }
 
+type tagMeta struct {
+	ts int64
+	dt string
+}
+
 type tagAdder struct {
 	objectAdder
-	tracked map[string]int64
+	tracked map[string]*tagMeta
 }
 
 func (t *tagAdder) add(first bool, j map[string]json.RawMessage) {
 	if first {
-		t.tracked = make(map[string]int64)
+		t.tracked = make(map[string]*tagMeta)
 	}
 	o, ok := getSubField(fieldKey, j)
 	if !ok {
@@ -188,6 +193,14 @@ func (t *tagAdder) add(first bool, j map[string]json.RawMessage) {
 	if !ok {
 		return
 	}
+	dtRaw, ok := j[dtKey]
+	if !ok {
+		return
+	}
+	d, ok := stringFromJSON(dtRaw)
+	if !ok {
+		return
+	}
 	i, ok := int64FromJSON(tsRaw)
 	if !ok {
 		return
@@ -195,11 +208,11 @@ func (t *tagAdder) add(first bool, j map[string]json.RawMessage) {
 	s := string(v)
 	cur, ok := t.tracked[s]
 	if ok {
-		if i <= cur {
+		if i <= cur.ts {
 			return
 		}
 	}
-	t.tracked[s] = i
+	t.tracked[s] = &tagMeta{ts: i, dt: d}
 }
 
 func (t *tagAdder) done(ctx *context, w io.Writer, limit bool) {
@@ -209,7 +222,7 @@ func (t *tagAdder) done(ctx *context, w io.Writer, limit bool) {
 		if !first {
 			w.Write([]byte(","))
 		}
-		w.Write([]byte(fmt.Sprintf("{%s: %d}", k, v)))
+		w.Write([]byte(fmt.Sprintf("{%s: [%d, \"%s\"]}", k, v.ts, v.dt)))
 		first = false
 	}
 	if limit {
