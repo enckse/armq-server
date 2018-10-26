@@ -23,7 +23,7 @@ data:
 ifndef TAG
 	$(error no TAG given)
 endif
-	$(DATA) > $(JSON)
+	$(DATA) | python -c "import sys,json; print(json.dumps(json.loads(sys.stdin.read()), indent=4))" > $(JSON)
 
 outputs:
 	cat $(JSON) | python outputs.py $(TAG)
