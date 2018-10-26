@@ -320,6 +320,7 @@ func handle(ctx *context, req map[string][]string, h *handlerSettings, writer *d
 			if mtime.Before(stime) || mtime.After(etime) {
 				continue
 			}
+			goutils.WriteDebug("matched")
 			p := filepath.Join(ctx.directory, dname)
 			f, e := ioutil.ReadDir(p)
 			if e != nil {
