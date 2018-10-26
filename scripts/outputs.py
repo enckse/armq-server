@@ -9,6 +9,7 @@ _RAW = "raw"
 _DATA = "data"
 _ARRAY = "array"
 _OBJECT = "object"
+_OFFSET = "  "
 
 
 class Event():
@@ -32,17 +33,21 @@ def get_data(obj):
     return None
 
 
-def delimit():
-    print("==========")
+def delimit(title):
+    print("")
+    print(title)
+    print("===")
 
 
 def header(meta, tag):
-    delimit()
-    print("specification: {}".format(meta["spec"]))
-    print("api: {}".format(meta["api"]))
-    print("server: {}".format(meta["server"]))
-    print("tag: {}".format(tag))
-    delimit()
+    delimit("server information")
+    headers = ["spec", "api", "server"]
+    vals = {}
+    for h in headers:
+        vals[h] = meta[h]
+    vals["tag"] = tag
+    for v in vals.keys():
+        print("{}{:10s} {}".format(_OFFSET, v, vals[v]))
 
 
 def has_key(obj, key):
@@ -111,7 +116,7 @@ def killed(events):
     first = True
     for e in events:
         if first:
-            print("starting at {} ({})".format(e.datetime, e.simtime))
+            delimit("starting at {}".format(e.datetime))
         first = False
         if e.type == "unit_killed":
             v = get_faction(e)
@@ -132,14 +137,16 @@ def killed(events):
                 f = "unknown ({})".format(v[0])
             if f not in factions:
                 factions[f] = 0
-            print("{} ({}): {} killed {}".format(e.simtime, e.datetime, attacker, victim))
+            print("{}{} ({})".format(_OFFSET, e.simtime, e.datetime))
+            print("{}-> {} killed {}".format(_OFFSET * 4, attacker, victim))
             factions[f] += 1
-    delimit()
-    print("killed:\n")
-    for f in sorted(factions.keys()):
+    delimit("killed")
+    keys = ["side", "---"] + sorted(factions.keys())
+    factions["side"] = "killed"
+    factions["---"] = "---"
+    for f in keys:
         v = factions[f]
-        print("{}: {}".format(f, v))
-    delimit()
+        print("{}{:15s} {}".format(_OFFSET, f, v))
 
 
 def main():
@@ -157,8 +164,7 @@ def main():
         die("invalid data")
     e = list(parse_data(d, tag))
     killed(e)
-    with open("bin/pretty.json", 'w') as f:
-        f.write(json.dumps(j, indent=4, sort_keys=True))
+    print("")
 
 
 if __name__ == "__main__":
