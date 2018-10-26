@@ -1,32 +1,23 @@
-TAG     :=
 SERVER  := localhost
 PORT    := 8080
 TARGET  := http://$(SERVER):$(PORT)/
 CURL    := curl -s $(TARGET)
 TAGGED  := $(CURL)tags
-API     := $(CURL)api
-DATA    := $(CURL)?filter=fields.tag.raw:eq:$(TAG)\&limit=100000000
+DATA    := $(CURL)?limit=100000000\&filter=fields.tag.raw:eq:
 BIN     := bin/
-JSON    := $(BIN)data.json
+TAGFILE := ".tag"
+TAGS    := $(shell find . -name "*$(TAGFILE)") 
+
+.PHONY: $(TAGS)
 
 all: clean data outputs
 
 tags:
-	$(TAGGED)
-	@echo
+	touch $(BIN)$(shell $(TAGGED) | python -c "import sys,json; print('{' + ','.join([' '.join(list(x.keys())) for x in json.loads(sys.stdin.read())['data']]) + '}')")$(TAGFILE)
 
-api:
-	$(API)
-	@echo
-
-data:
-ifndef TAG
-	$(error no TAG given)
-endif
-	$(DATA) | python -c "import sys,json; print(json.dumps(json.loads(sys.stdin.read()), indent=4))" > $(JSON)
-
-outputs:
-	cat $(JSON) | python outputs.py $(TAG)
+$(TAGS):
+	test -s $@.json || $(DATA)$(shell basename -s $(TAGFILE) $@) | python -c "import sys,json; print(json.dumps(json.loads(sys.stdin.read()), indent=4))" > $@.json
+	cat $@.json | python outputs.py $(shell basename -s $(TAGFILE) $@)
 
 clean:
 	rm -rf $(BIN)
