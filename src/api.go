@@ -297,7 +297,6 @@ func handle(ctx *context, req map[string][]string, h *handlerSettings, writer *d
 		case "files":
 			fileRead = strings.TrimSpace(p[0])
 		case "startdate":
-
 			startDate = strings.TrimSpace(p[0])
 		case "enddate":
 			endDate = strings.TrimSpace(p[0])
@@ -314,12 +313,13 @@ func handle(ctx *context, req map[string][]string, h *handlerSettings, writer *d
 	goutils.WriteDebug("file filter", fileRead)
 	files := []string{}
 	for _, d := range dirs {
+		dname := d.Name()
+		goutils.WriteDebug("directory", dname)
 		if d.IsDir() {
 			mtime := d.ModTime()
 			if mtime.Before(stime) || mtime.After(etime) {
 				continue
 			}
-			dname := d.Name()
 			p := filepath.Join(ctx.directory, dname)
 			f, e := ioutil.ReadDir(p)
 			if e != nil {
