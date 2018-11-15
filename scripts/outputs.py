@@ -8,6 +8,7 @@ _TAG = "tag"
 _RAW = "raw"
 _DATA = "data"
 _ARRAY = "array"
+_LIMIT = "limited"
 _OBJECT = "object"
 _OFFSET = "  "
 
@@ -79,6 +80,9 @@ def check_tag(obj, tag):
         if raw:
             if tag == raw:
                 return fields
+    if _LIMIT in obj:
+        if obj[_LIMIT] == "true":
+            return None
     warn("missing tag: ", obj)
     return None
 
