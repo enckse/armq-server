@@ -12,7 +12,7 @@ PPRINT  := "import sys,json; print(json.dumps(json.loads(sys.stdin.read()), inde
 
 .PHONY: $(TAGS)
 
-all: clean data outputs
+all: clean tags
 
 _check:
 ifeq ($(SERVER),)
