@@ -9,6 +9,7 @@ TAGFILE := ".tag"
 TAGS    := $(shell find . -name "*$(TAGFILE)")
 TAGJ    := $(BIN)t.raw
 PPRINT  := "import sys,json; print(json.dumps(json.loads(sys.stdin.read()), indent=4))"
+POLL    := 0
 
 .PHONY: $(TAGS)
 
@@ -35,6 +36,9 @@ list:
 	@echo
 
 $(TAGS): _check
+ifeq ($(POLL),1)
+	rm -f $@.json
+endif
 	test -s $@.json || $(DATA)$(shell basename -s $(TAGFILE) $@) | python -c $(PPRINT) > $@.json
 	cat $@.json | python outputs.py $(shell basename -s $(TAGFILE) $@)
 
