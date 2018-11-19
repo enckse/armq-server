@@ -36,7 +36,7 @@ test: tests
 
 format:
 	@echo $(SRC)
-	exit $(shell goimports -l $(SRC) | wc -l)
+	exit $(shell gofmt -l $(SRC) | wc -l)
 
 clean:
 	rm -rf $(BIN)

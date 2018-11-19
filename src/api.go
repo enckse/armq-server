@@ -24,6 +24,7 @@ const (
 	startStringOp            = "ge"
 	endStringOp              = "le"
 	limitIndicator           = ", {\"limited\": \"true\"}"
+	spec                     = "0.1"
 )
 
 type dataFilter struct {
@@ -480,7 +481,7 @@ func apiMeta(ctx *context, started string) []byte {
 }
 
 func (ctx *context) setMeta(version, host string) {
-	ctx.metaHeader = "{\"meta\": {\"spec\": \"0.1\", \"api\": \"" + version + "\", \"server\": \"" + host + "\"}, \"data\": ["
+	ctx.metaHeader = "{\"meta\": {\"spec\": \"" + spec + "\", \"api\": \"" + version + "\", \"server\": \"" + host + "\"}, \"data\": ["
 	ctx.metaFooter = "]}"
 	ctx.byteHeader = []byte(ctx.metaHeader)
 	ctx.byteFooter = []byte(ctx.metaFooter)
