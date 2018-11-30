@@ -1,6 +1,6 @@
 [[constraint]]
   name = "github.com/epiphyte/goutils"
-  version = "v1.2.7"
+  version = "v2.0.0"
 
 [prune]
   go-tests = true

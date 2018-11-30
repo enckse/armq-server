@@ -1,23 +1,24 @@
 package main
 
 import (
-	"github.com/epiphyte/goutils"
+	"github.com/epiphyte/goutils/logger"
+	"github.com/epiphyte/goutils/sockets"
 )
 
 type receiver struct {
-	goutils.SocketReceive
+	sockets.SocketReceive
 }
 
 func (r *receiver) Consume(d []byte) {
-	goutils.WriteInfo(string(d))
+	logger.WriteInfo(string(d))
 	queue("", d, false)
 }
 
 func socketReceiver(ctx *context) {
-	goutils.WriteInfo("socket mode enabled")
-	socket := goutils.SocketSettings()
+	logger.WriteInfo("socket mode enabled")
+	socket := sockets.SocketSettings()
 	socket.Bind = ctx.binding
 	onReceive := &receiver{}
-	goutils.WriteInfo("ready to receive socket information")
-	goutils.SocketReceiveOnly(socket, onReceive)
+	logger.WriteInfo("ready to receive socket information")
+	sockets.SocketReceiveOnly(socket, onReceive)
 }

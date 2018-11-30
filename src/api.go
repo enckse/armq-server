@@ -12,7 +12,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/epiphyte/goutils"
+	"github.com/epiphyte/goutils/config"
+	"github.com/epiphyte/goutils/logger"
 )
 
 const (
@@ -91,7 +92,7 @@ func stringToOp(op string) opType {
 func parseFilter(filter string, mapping map[string]typeConv) *dataFilter {
 	parts := strings.Split(filter, filterDelimiter)
 	if len(parts) < 3 {
-		goutils.WriteWarn("filter missing components")
+		logger.WriteWarn("filter missing components")
 		return nil
 	}
 	val := strings.Join(parts[2:], filterDelimiter)
@@ -99,12 +100,12 @@ func parseFilter(filter string, mapping map[string]typeConv) *dataFilter {
 	f.field = parts[0]
 	t, ok := mapping[f.field]
 	if !ok {
-		goutils.WriteWarn("filter field unknown", f.field)
+		logger.WriteWarn("filter field unknown", f.field)
 		return nil
 	}
 	f.op = stringToOp(parts[1])
 	if f.op == invalidOp {
-		goutils.WriteWarn("filter op invalid")
+		logger.WriteWarn("filter op invalid")
 		return nil
 	}
 	f.fxn = t
@@ -112,32 +113,32 @@ func parseFilter(filter string, mapping map[string]typeConv) *dataFilter {
 	case intConv:
 		i, e := strconv.Atoi(val)
 		if e != nil {
-			goutils.WriteWarn("filter is not an int")
+			logger.WriteWarn("filter is not an int")
 			return nil
 		}
 		f.intVal = i
 	case int64Conv:
 		i, e := strconv.ParseInt(val, 10, 64)
 		if e != nil {
-			goutils.WriteWarn("filter is not an int64")
+			logger.WriteWarn("filter is not an int64")
 			return nil
 		}
 		f.int64Val = i
 	case float64Conv:
 		i, e := strconv.ParseFloat(val, 64)
 		if e != nil {
-			goutils.WriteWarn("filter is not a float64")
+			logger.WriteWarn("filter is not a float64")
 		}
 		f.float64Val = i
 	case strConv:
 		if f.op == equals || f.op == nEquals {
 			f.strVal = val
 		} else {
-			goutils.WriteWarn("filter string op is invalid")
+			logger.WriteWarn("filter string op is invalid")
 			return nil
 		}
 	default:
-		goutils.WriteWarn("unknown filter type")
+		logger.WriteWarn("unknown filter type")
 		return nil
 	}
 	return f
@@ -279,7 +280,7 @@ func handle(ctx *context, req map[string][]string, h *handlerSettings, writer *d
 	endDate := ""
 	fileRead := ""
 	for k, p := range req {
-		goutils.WriteDebug(k, p...)
+		logger.WriteDebug(k, p...)
 		if len(p) == 0 {
 			continue
 		}
@@ -325,26 +326,26 @@ func handle(ctx *context, req map[string][]string, h *handlerSettings, writer *d
 	etime := getDate(endDate, 24*time.Hour)
 	dirs, e := ioutil.ReadDir(ctx.directory)
 	if e != nil {
-		goutils.WriteError("unable to read dir", e)
+		logger.WriteError("unable to read dir", e)
 		return false
 	}
 	filterFiles := len(fileRead) > 0
-	goutils.WriteDebug("file filter", fileRead)
+	logger.WriteDebug("file filter", fileRead)
 	files := []string{}
 	for _, d := range dirs {
 		dname := d.Name()
-		goutils.WriteDebug("directory", dname)
+		logger.WriteDebug("directory", dname)
 		if d.IsDir() {
 			mtime := d.ModTime()
 			if mtime.Before(stime) || mtime.After(etime) {
 				continue
 			}
-			goutils.WriteDebug("matched")
+			logger.WriteDebug("matched")
 			p := filepath.Join(ctx.directory, dname)
 			f, e := ioutil.ReadDir(p)
 			if e != nil {
-				goutils.WriteWarn("unable to read subdir", dname)
-				goutils.WriteError("reading subdir failed", e)
+				logger.WriteWarn("unable to read subdir", dname)
+				logger.WriteError("reading subdir failed", e)
 				continue
 			}
 			for _, file := range f {
@@ -391,8 +392,8 @@ func handle(ctx *context, req map[string][]string, h *handlerSettings, writer *d
 						var sub map[string]json.RawMessage
 						err := json.Unmarshal(v, &sub)
 						if err != nil {
-							goutils.WriteWarn("unable to unmarshal obj", p, d.field)
-							goutils.WriteError("unmarshal error", err)
+							logger.WriteWarn("unable to unmarshal obj", p, d.field)
+							logger.WriteError("unmarshal error", err)
 							break
 						}
 						filterObj = sub
@@ -410,7 +411,7 @@ func handle(ctx *context, req map[string][]string, h *handlerSettings, writer *d
 			skip += -1
 			continue
 		}
-		goutils.WriteDebug("passed", p)
+		logger.WriteDebug("passed", p)
 		if has {
 			writer.addString(",")
 		}
@@ -487,7 +488,7 @@ func (ctx *context) setMeta(version, host string) {
 	ctx.byteFooter = []byte(ctx.metaFooter)
 }
 
-func getConfigFalse(c *goutils.Config, key string) bool {
+func getConfigFalse(c *config.Config, key string) bool {
 	if c.GetFalse(key) {
 		return false
 	}
@@ -500,7 +501,7 @@ func runApp() {
 	c := conf.GetSection("[api]")
 	bind := c.GetStringOrDefault("bind", ":8080")
 	limit := c.GetIntOrDefaultOnly("limit", 1000)
-	goutils.WriteDebug("api ready")
+	logger.WriteDebug("api ready")
 	ctx := &context{}
 	ctx.limit = limit
 	ctx.directory = dir
@@ -535,6 +536,6 @@ func runApp() {
 	})
 	err = http.ListenAndServe(bind, nil)
 	if err != nil {
-		goutils.Fatal("unable to do http serve", err)
+		logger.Fatal("unable to do http serve", err)
 	}
 }

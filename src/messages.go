@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"github.com/epiphyte/goutils"
+	"github.com/epiphyte/goutils/logger"
 )
 
 const (
@@ -50,18 +50,18 @@ func isTag(e *Entry) bool {
 }
 
 func loadFile(path string, h *handlerSettings) (map[string]json.RawMessage, []byte) {
-	goutils.WriteDebug("reading", path)
+	logger.WriteDebug("reading", path)
 	b, err := ioutil.ReadFile(path)
 	if err != nil {
-		goutils.WriteWarn("error reading file", path)
-		goutils.WriteError("unable to read file", err)
+		logger.WriteWarn("error reading file", path)
+		logger.WriteError("unable to read file", err)
 		return nil, nil
 	}
 	var obj map[string]json.RawMessage
 	err = json.Unmarshal(b, &obj)
 	if err != nil {
-		goutils.WriteWarn("unable to marshal object", path)
-		goutils.WriteError("unable to parse json", err)
+		logger.WriteWarn("unable to marshal object", path)
+		logger.WriteError("unable to parse json", err)
 		return nil, nil
 	}
 	if h.enabled {

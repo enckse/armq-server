@@ -11,7 +11,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/epiphyte/goutils"
+	"github.com/epiphyte/goutils/logger"
+	"github.com/epiphyte/goutils/opsys"
+	"github.com/epiphyte/goutils/sockets"
 )
 
 var (
@@ -103,8 +105,8 @@ func writerWorker(id, count int, outdir string, obj *object, ctx *context) bool 
 	ts := parts[0]
 	i, e := strconv.ParseInt(ts, 10, 64)
 	if e != nil {
-		goutils.WriteWarn("unable to parse timestamp (not critical)", obj.id)
-		goutils.WriteError("parse error was", e)
+		logger.WriteWarn("unable to parse timestamp (not critical)", obj.id)
+		logger.WriteError("parse error was", e)
 		i = -1
 	}
 	datum.Timestamp = i
@@ -120,27 +122,27 @@ func writerWorker(id, count int, outdir string, obj *object, ctx *context) bool 
 	if ctx.dump {
 		j, e = json.Marshal(dump)
 		if e != nil {
-			goutils.WriteWarn("unable to handle file", obj.id)
-			goutils.WriteError("unable to read object to json", e)
+			logger.WriteWarn("unable to handle file", obj.id)
+			logger.WriteError("unable to read object to json", e)
 			return false
 		}
 	}
 	j = []byte(fmt.Sprintf("{%s, \"%s\": %s, \"%s\": %s}", datum.toJSON(), dumpKey, j, fieldKey, fields))
-	goutils.WriteDebug(string(j))
+	logger.WriteDebug(string(j))
 	p := filepath.Join(outdir, datum.Id)
 	err := ioutil.WriteFile(p, j, 0644)
 	if err != nil {
-		goutils.WriteWarn("error saving results", p)
-		goutils.WriteError("unable to save file", err)
+		logger.WriteWarn("error saving results", p)
+		logger.WriteError("unable to save file", err)
 		return false
 	}
 	return true
 }
 
-func repeaterWorker(socket *goutils.SocketSetup, obj *object) bool {
-	err := goutils.SocketSendOnly(socket, obj.data)
+func repeaterWorker(socket *sockets.SocketSetup, obj *object) bool {
+	err := sockets.SocketSendOnly(socket, obj.data)
 	if err != nil {
-		goutils.WriteError("unable to send data over socket", err)
+		logger.WriteError("unable to send data over socket", err)
 		return false
 	}
 	return true
@@ -149,22 +151,22 @@ func repeaterWorker(socket *goutils.SocketSetup, obj *object) bool {
 func (c *context) resetWorker() (int, string) {
 	now := time.Now().Format("2006-01-02")
 	p := filepath.Join(c.output, now)
-	goutils.RunBashCommand(fmt.Sprintf("mkdir -p %s", p))
+	opsys.RunBashCommand(fmt.Sprintf("mkdir -p %s", p))
 	return 0, p
 }
 
 func createWorker(id int, ctx *context) {
 	count, outdir := ctx.resetWorker()
-	var socket *goutils.SocketSetup
+	var socket *sockets.SocketSetup
 	if ctx.repeater {
-		socket = goutils.SocketSettings()
+		socket = sockets.SocketSettings()
 		socket.Bind = ctx.binding
 	}
 	lastWorked := 0
 	for {
 		obj, ok := next()
 		if ok {
-			goutils.WriteDebug(fmt.Sprintf("%d -> %s", id, obj.id))
+			logger.WriteDebug(fmt.Sprintf("%d -> %s", id, obj.id))
 			if ctx.repeater {
 				ok = repeaterWorker(socket, obj)
 			} else {
@@ -243,7 +245,7 @@ func detectJSON(segment []string) string {
 		}
 		j, err := json.Marshal(entry)
 		if err != nil {
-			goutils.WriteError("unable to marshal raw object", err)
+			logger.WriteError("unable to marshal raw object", err)
 			j = emptyObject
 		}
 		buffer.WriteString(fmt.Sprintf("\"%s\": ", e.name))
@@ -270,12 +272,12 @@ func runApp() {
 	case fileMode, repeatMode:
 		go fileReceive(config.GetSection(section))
 	default:
-		goutils.Fatal("unknown mode", nil)
+		logger.Fatal("unknown mode", nil)
 	}
 	worker := config.GetIntOrDefaultOnly("workers", 4)
 	if ctx.repeater {
 		if worker != 1 {
-			goutils.WriteWarn("setting workers back to 1 for repeater")
+			logger.WriteWarn("setting workers back to 1 for repeater")
 			worker = 1
 		}
 	}

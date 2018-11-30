@@ -8,7 +8,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/epiphyte/goutils"
+	"github.com/epiphyte/goutils/config"
+	"github.com/epiphyte/goutils/logger"
+	"github.com/epiphyte/goutils/opsys"
 )
 
 var (
@@ -22,11 +24,11 @@ func runCollector(conf *fileConfig) {
 	defer lock.Unlock()
 	for _, f := range files {
 		p := filepath.Join(conf.directory, f)
-		goutils.WriteDebug("collecting", p)
-		_, e := goutils.RunBashCommand(fmt.Sprintf("rm -f %s", p))
+		logger.WriteDebug("collecting", p)
+		_, e := opsys.RunBashCommand(fmt.Sprintf("rm -f %s", p))
 		if e != nil {
-			goutils.WriteWarn("file error on gc", p)
-			goutils.WriteError("unable to remove garbage", e)
+			logger.WriteWarn("file error on gc", p)
+			logger.WriteError("unable to remove garbage", e)
 		}
 		// we are good to no longer know about this
 		if _, ok := cache[f]; ok {
@@ -45,7 +47,7 @@ type fileConfig struct {
 func scan(conf *fileConfig) {
 	files, e := ioutil.ReadDir(conf.directory)
 	if e != nil {
-		goutils.WriteError("unable to scan files", e)
+		logger.WriteError("unable to scan files", e)
 		return
 	}
 	lock.Lock()
@@ -60,34 +62,34 @@ func scan(conf *fileConfig) {
 		if f.ModTime().After(requiredTime) {
 			continue
 		}
-		goutils.WriteDebug("reading", n)
+		logger.WriteDebug("reading", n)
 		cache[n] = struct{}{}
 		p := filepath.Join(conf.directory, n)
 		d, e := ioutil.ReadFile(p)
 		if e != nil {
-			goutils.WriteWarn("file read error", p)
-			goutils.WriteError("unable to read file", e)
+			logger.WriteWarn("file read error", p)
+			logger.WriteError("unable to read file", e)
 			continue
 		}
 		queue(n, d, true)
 	}
 }
 
-func fileReceive(config *goutils.Config) {
+func fileReceive(config *config.Config) {
 	conf := &fileConfig{}
 	conf.directory = config.GetStringOrDefault("directory", "/opt/armq/")
 	conf.gc = config.GetIntOrDefaultOnly("gc", 50)
 	conf.sleep = time.Duration(config.GetIntOrDefaultOnly("sleep", 100))
 	conf.after = time.Duration(config.GetIntOrDefaultOnly("after", -10))
-	goutils.WriteInfo("file mode enabled")
+	logger.WriteInfo("file mode enabled")
 	err := os.Mkdir(conf.directory, 0777)
 	if err != nil {
-		goutils.WriteError("unable to create directory (not aborting)", err)
+		logger.WriteError("unable to create directory (not aborting)", err)
 	}
 	lastCollected := 0
 	for {
 		if lastCollected > conf.gc {
-			goutils.WriteDebug("collecting garbage")
+			logger.WriteDebug("collecting garbage")
 			runCollector(conf)
 			lastCollected = 0
 		}

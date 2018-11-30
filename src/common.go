@@ -4,7 +4,8 @@ import (
 	"encoding/json"
 	"flag"
 
-	"github.com/epiphyte/goutils"
+	"github.com/epiphyte/goutils/config"
+	"github.com/epiphyte/goutils/logger"
 )
 
 var (
@@ -14,17 +15,17 @@ var (
 	emptyObject = []byte("{}")
 )
 
-func startup() *goutils.Config {
+func startup() *config.Config {
 	conf := flag.String("config", "/etc/armq.conf", "config file")
 	flag.Parse()
-	c, e := goutils.LoadConfigDefaults(*conf)
+	c, e := config.LoadConfigDefaults(*conf)
 	if e != nil {
-		goutils.Fatal("failed to start", e)
+		logger.Fatal("failed to start", e)
 	}
-	goutils.WriteInfo("starting", vers)
-	opts := goutils.NewLogOptions()
+	logger.WriteInfo("starting", vers)
+	opts := logger.NewLogOptions()
 	opts.Debug = c.GetTrue("debug")
-	goutils.ConfigureLogging(opts)
+	logger.ConfigureLogging(opts)
 	return c
 }
 
