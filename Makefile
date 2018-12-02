@@ -5,7 +5,7 @@ VERSION ?= $(shell git describe --long | sed "s/\([^-]*-g\)/r\1/;s/-/./g")
 FLAGS   := -ldflags 'i-linkmode external -extldflags '$(LDFLAGS)' -s -w -X main.vers=$(VERSION)'  -gcflags=all=-trimpath=$(GOPATH) -asmflags=all=-trimpath=$(GOPATH) -buildmode=pie
 GO      := go build $(FLAGS) -o $(BIN)armq-
 APPS    := receiver api tests
-GEN     := $(shell find . -type f -name "generated.go" | grep -v "vendor/")
+GEN     := $(shell find . -type f -name "generated.go")
 API_GO  := $(CMD)api.go $(CMD)messages.go
 COMMON  := $(CMD)generated.go $(CMD)common.go
 TST_SRC := $(CMD)tests.go $(COMMON) $(API_GO)
@@ -36,7 +36,7 @@ test: tests
 
 format:
 	@echo $(SRC)
-	exit $(shell gofmt -l $(SRC) | wc -l)
+	exit $(shell goimports -l $(SRC) | wc -l)
 
 clean:
 	rm -rf $(BIN)
