@@ -1,9 +1,9 @@
 package main
 
 import (
-	"gitlab.com/enckse/armq-server/common"
+	"gitlab.com/enckse/armq-server/internal"
 )
 
 func main() {
-	common.RunApi()
+	internal.RunApi()
 }
