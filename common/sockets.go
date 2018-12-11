@@ -1,4 +1,4 @@
-package main
+package common
 
 import (
 	"github.com/epiphyte/goutils/logger"
@@ -14,7 +14,7 @@ func (r *receiver) Consume(d []byte) {
 	queue("", d, false)
 }
 
-func socketReceiver(ctx *context) {
+func socketReceiver(ctx *rcvContext) {
 	logger.WriteInfo("socket mode enabled")
 	socket := sockets.SocketSettings()
 	socket.Bind = ctx.binding

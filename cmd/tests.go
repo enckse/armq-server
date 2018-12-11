@@ -4,30 +4,32 @@ import (
 	"bytes"
 	"encoding/json"
 	"io/ioutil"
+
+	"gitlab.com/enckse/armq-server/common"
 )
 
-func testHandlers() *handlerSettings {
-	return &handlerSettings{allowEvent: true, allowDump: true, allowEmpty: true, enabled: true}
+func testHandlers() *common.HandlerSettings {
+	return &common.HandlerSettings{AllowEvent: true, AllowDump: true, AllowEmpty: true, Enabled: true}
 }
 
-type writerAdjust func(*dataWriter)
+type writerAdjust func(*common.DataWriter)
 
 type testHarness struct {
-	ctx *context
+	ctx *common.ApiContext
 	out string
 	req map[string][]string
-	hdl *handlerSettings
+	hdl *common.HandlerSettings
 	ok  bool
 	adj writerAdjust
 }
 
-func runTest(c *context, output string, r map[string][]string, h *handlerSettings, success bool) {
+func runTest(c *common.ApiContext, output string, r map[string][]string, h *common.HandlerSettings, success bool) {
 	test(&testHarness{ctx: c, out: output, req: r, hdl: h, ok: success})
 }
 
-func tagTest(c *context) {
+func tagTest(c *common.ApiContext) {
 	h := &testHarness{ctx: c, out: "tags", req: nil, hdl: nil, ok: true}
-	h.adj = func(d *dataWriter) {
+	h.adj = func(d *common.DataWriter) {
 		d.objectWriter(&tagAdder{})
 	}
 	test(h)
@@ -48,7 +50,7 @@ func test(h *testHarness) {
 	check := func() {
 		called = true
 	}
-	d := newDataWriter(b, check)
+	d := newcommon.DataWriter(b, check)
 	if h.adj != nil {
 		h.adj(d)
 	}
@@ -68,12 +70,12 @@ func test(h *testHarness) {
 }
 
 func main() {
-	c := &context{}
+	c := &common.ApiContext{}
 	c.directory = "bin/"
 	c.limit = 10
 	c.setMeta("master", "localhost")
 	runTest(c, "normal", nil, nil, true)
-	runTest(c, "nohandlers", nil, &handlerSettings{}, true)
+	runTest(c, "nohandlers", nil, &common.HandlerSettings{}, true)
 	// limit input
 	m := make(map[string][]string)
 	m["limit"] = []string{"1"}

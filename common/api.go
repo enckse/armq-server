@@ -1,4 +1,4 @@
-package main
+package common
 
 import (
 	"encoding/json"
@@ -52,7 +52,7 @@ func (f *dataFilter) check(d []byte) bool {
 	return false
 }
 
-type context struct {
+type apiContext struct {
 	limit     int
 	directory string
 	convert   map[string]typeConv
@@ -162,7 +162,7 @@ type onHeaders func()
 
 type objectAdder interface {
 	add(bool, map[string]json.RawMessage)
-	done(*context, io.Writer, bool)
+	done(*apiContext, io.Writer, bool)
 }
 
 type tagMeta struct {
@@ -217,7 +217,7 @@ func (t *tagAdder) add(first bool, j map[string]json.RawMessage) {
 	t.tracked[s] = &tagMeta{ts: i, dt: d}
 }
 
-func (t *tagAdder) done(ctx *context, w io.Writer, limit bool) {
+func (t *tagAdder) done(ctx *apiContext, w io.Writer, limit bool) {
 	w.Write(ctx.byteHeader)
 	first := true
 	for k, v := range t.tracked {
@@ -243,7 +243,7 @@ type dataWriter struct {
 	limit   bool
 }
 
-func newDataWriter(w io.Writer, h onHeaders) *dataWriter {
+func newdataWriter(w io.Writer, h onHeaders) *dataWriter {
 	o := &dataWriter{}
 	o.write = w != nil
 	o.writer = w
@@ -269,7 +269,7 @@ func (d *dataWriter) addString(s string) {
 	d.add([]byte(s))
 }
 
-func handle(ctx *context, req map[string][]string, h *handlerSettings, writer *dataWriter) bool {
+func handle(ctx *apiContext, req map[string][]string, h *handlerSettings, writer *dataWriter) bool {
 	dataFilters := []*dataFilter{}
 	limited := 0
 	if writer.limit {
@@ -433,8 +433,8 @@ func writeSuccess(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func newWebDataWriter(w http.ResponseWriter) *dataWriter {
-	return newDataWriter(w, func() {
+func newWebdataWriter(w http.ResponseWriter) *dataWriter {
+	return newdataWriter(w, func() {
 		writeSuccess(w)
 	})
 }
@@ -445,13 +445,13 @@ func (d *dataWriter) addObject(first bool, o map[string]json.RawMessage) {
 	}
 }
 
-func (d *dataWriter) closeObjects(ctx *context, limited bool) {
+func (d *dataWriter) closeObjects(ctx *apiContext, limited bool) {
 	if d.object {
 		d.objects.done(ctx, d.writer, limited)
 	}
 }
 
-func webRequest(ctx *context, h *handlerSettings, w http.ResponseWriter, r *http.Request, d *dataWriter) {
+func webRequest(ctx *apiContext, h *handlerSettings, w http.ResponseWriter, r *http.Request, d *dataWriter) {
 	success := handle(ctx, r.URL.Query(), h, d)
 	if !success {
 		w.WriteHeader(http.StatusBadRequest)
@@ -477,11 +477,11 @@ func getSubField(key string, j map[string]json.RawMessage) (map[string]json.RawM
 	return sub, true
 }
 
-func apiMeta(ctx *context, started string) []byte {
+func apiMeta(ctx *apiContext, started string) []byte {
 	return []byte(fmt.Sprintf("%s {\"started\": \"%s\"} %s", ctx.metaHeader, started, ctx.metaFooter))
 }
 
-func (ctx *context) setMeta(version, host string) {
+func (ctx *apiContext) setMeta(version, host string) {
 	ctx.metaHeader = "{\"meta\": {\"spec\": \"" + spec + "\", \"api\": \"" + version + "\", \"server\": \"" + host + "\"}, \"data\": ["
 	ctx.metaFooter = "]}"
 	ctx.byteHeader = []byte(ctx.metaHeader)
@@ -495,14 +495,14 @@ func getConfigFalse(c *config.Config, key string) bool {
 	return true
 }
 
-func runApp() {
+func RunApi() {
 	conf := startup()
 	dir := conf.GetStringOrDefault(outKey, dataDir)
 	c := conf.GetSection("[api]")
 	bind := c.GetStringOrDefault("bind", ":8080")
 	limit := c.GetIntOrDefaultOnly("limit", 1000)
 	logger.WriteDebug("api ready")
-	ctx := &context{}
+	ctx := &apiContext{}
 	ctx.limit = limit
 	ctx.directory = dir
 	ctx.convert = conversions()
@@ -520,7 +520,7 @@ func runApp() {
 	h.allowReplay = getConfigFalse(c, "replayHandler")
 	h.allowPlayer = getConfigFalse(c, "playerHandler")
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		d := newWebDataWriter(w)
+		d := newWebdataWriter(w)
 		webRequest(ctx, h, w, r, d)
 	})
 	apiBytes := apiMeta(ctx, time.Now().Format("2006-01-02T15:04:05"))
@@ -529,7 +529,7 @@ func runApp() {
 		w.Write(apiBytes)
 	})
 	http.HandleFunc("/tags", func(w http.ResponseWriter, r *http.Request) {
-		obj := newWebDataWriter(w)
+		obj := newWebdataWriter(w)
 		obj.limit = false
 		obj.objectWriter(&tagAdder{})
 		webRequest(ctx, h, w, r, obj)

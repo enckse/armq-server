@@ -1,4 +1,4 @@
-package main
+package common
 
 import (
 	"bytes"
@@ -31,7 +31,7 @@ const (
 	sleepCycleMax = 108
 )
 
-type context struct {
+type rcvContext struct {
 	binding    string
 	start      time.Time
 	timeFormat string
@@ -98,7 +98,7 @@ func (d *Datum) toJSON() string {
 	return fmt.Sprintf("\"%s\": \"%s\", \"%s\": %d, \"vers\": \"%s\", \"file\": \"%s\", \"%s\": \"%s\"", idKey, d.Id, tsKey, d.Timestamp, d.Version, d.File, dtKey, d.Date)
 }
 
-func writerWorker(id, count int, outdir string, obj *object, ctx *context) bool {
+func writerWorker(id, count int, outdir string, obj *object, ctx *rcvContext) bool {
 	dump := &Entry{Raw: string(obj.data), Type: notJSON}
 	datum := &Datum{}
 	parts := strings.Split(dump.Raw, delimiter)
@@ -148,14 +148,14 @@ func repeaterWorker(socket *sockets.SocketSetup, obj *object) bool {
 	return true
 }
 
-func (c *context) resetWorker() (int, string) {
+func (c *rcvContext) resetWorker() (int, string) {
 	now := time.Now().Format("2006-01-02")
 	p := filepath.Join(c.output, now)
 	opsys.RunBashCommand(fmt.Sprintf("mkdir -p %s", p))
 	return 0, p
 }
 
-func createWorker(id int, ctx *context) {
+func createWorker(id int, ctx *rcvContext) {
 	count, outdir := ctx.resetWorker()
 	var socket *sockets.SocketSetup
 	if ctx.repeater {
@@ -254,11 +254,11 @@ func detectJSON(segment []string) string {
 	return fmt.Sprintf("{%s}", buffer.String())
 }
 
-func runApp() {
+func RunReceiver() {
 	config := startup()
 	now := time.Now()
 	op := config.GetStringOrDefault("mode", fileMode)
-	ctx := &context{}
+	ctx := &rcvContext{}
 	ctx.binding = config.GetStringOrDefault("bind", "127.0.0.1:5000")
 	ctx.start = now
 	ctx.repeater = op == repeatMode
