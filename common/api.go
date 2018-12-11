@@ -243,7 +243,7 @@ type dataWriter struct {
 	limit   bool
 }
 
-func newdataWriter(w io.Writer, h onHeaders) *dataWriter {
+func newDataWriter(w io.Writer, h onHeaders) *dataWriter {
 	o := &dataWriter{}
 	o.write = w != nil
 	o.writer = w
@@ -434,7 +434,7 @@ func writeSuccess(w http.ResponseWriter) {
 }
 
 func newWebdataWriter(w http.ResponseWriter) *dataWriter {
-	return newdataWriter(w, func() {
+	return newDataWriter(w, func() {
 		writeSuccess(w)
 	})
 }
