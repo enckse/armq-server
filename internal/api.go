@@ -347,8 +347,10 @@ func handle(ctx *apiContext, req map[string][]string, h *handlerSettings, writer
 		logger.WriteDebug("directory", dname)
 		if d.IsDir() {
 			mtime := d.ModTime()
-			if mtime.Before(stime) || mtime.After(etime) {
-				continue
+			if !seek {
+				if mtime.Before(stime) || mtime.After(etime) {
+					continue
+				}
 			}
 			logger.WriteDebug("matched")
 			p := filepath.Join(ctx.directory, dname)
