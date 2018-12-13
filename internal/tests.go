@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io/ioutil"
+	"time"
 )
 
 func testHandlers() *handlerSettings {
@@ -71,6 +72,8 @@ func RunTests() {
 	c := &apiContext{}
 	c.directory = "bin/"
 	c.limit = 10
+	c.scanStart = -10 * 24 * time.Hour
+	c.scanEnd = 24 * time.Hour
 	c.setMeta("master", "localhost")
 	runTest(c, "normal", nil, nil, true)
 	runTest(c, "nohandlers", nil, &handlerSettings{}, true)

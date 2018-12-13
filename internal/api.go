@@ -61,6 +61,9 @@ type apiContext struct {
 	metaHeader string
 	byteHeader []byte
 	byteFooter []byte
+	// how we scan for data
+	scanStart time.Duration
+	scanEnd   time.Duration
 }
 
 func conversions() map[string]typeConv {
@@ -322,8 +325,8 @@ func handle(ctx *apiContext, req map[string][]string, h *handlerSettings, writer
 			endDate = strings.TrimSpace(p[0])
 		}
 	}
-	stime := getDate(startDate, -10*24*time.Hour)
-	etime := getDate(endDate, 24*time.Hour)
+	stime := getDate(startDate, ctx.scanStart)
+	etime := getDate(endDate, ctx.scanEnd)
 	dirs, e := ioutil.ReadDir(ctx.directory)
 	if e != nil {
 		logger.WriteError("unable to read dir", e)
@@ -506,6 +509,8 @@ func RunApi() {
 	ctx.limit = limit
 	ctx.directory = dir
 	ctx.convert = conversions()
+	ctx.scanStart = time.Duration(c.GetIntOrDefaultOnly("sscan", -1)) * 24 * time.Hour
+	ctx.scanEnd = time.Duration(c.GetIntOrDefaultOnly("escan", 1)) * 24 * time.Hour
 	host, err := os.Hostname()
 	if err != nil {
 		host = "localhost"
