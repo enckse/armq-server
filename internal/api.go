@@ -282,7 +282,7 @@ func handle(ctx *apiContext, req map[string][]string, h *handlerSettings, writer
 	startDate := ""
 	endDate := ""
 	fileRead := ""
-	today := false
+	seek := false
 	for k, p := range req {
 		logger.WriteDebug(k, p...)
 		if len(p) == 0 {
@@ -324,14 +324,14 @@ func handle(ctx *apiContext, req map[string][]string, h *handlerSettings, writer
 			startDate = strings.TrimSpace(p[0])
 		case "enddate":
 			endDate = strings.TrimSpace(p[0])
-		case "today":
-			today = true
+		case "seek":
+			seek = true
 		}
 	}
 	stime := getDate(startDate, ctx.scanStart)
 	etime := getDate(endDate, ctx.scanEnd)
 	dirs, e := ioutil.ReadDir(ctx.directory)
-	if today && len(dirs) > 0 {
+	if seek && len(dirs) > 0 {
 		last := dirs[len(dirs)-1]
 		dirs = []os.FileInfo{last}
 	}
