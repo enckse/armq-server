@@ -6,6 +6,7 @@ FLAGS   := -ldflags 'i-linkmode external -extldflags '$(LDFLAGS)' -s -w -X main.
 GO      := go build $(FLAGS) -o $(BIN)armq-
 APPS    := receiver api tests
 GEN     := $(shell find . -type f -name "generated.go")
+SYSD    := /lib/systemd/system/
 
 .PHONY: $(APPS)
 
@@ -30,3 +31,10 @@ clean:
 	rm -rf $(BIN)
 	mkdir -p $(BIN)
 	rm -f $(GEN)
+
+install:
+	install -Dm 755 $(BIN)armq-receiver $(DESTDIR)/usr/bin/armq-receiver
+	install -Dm 755 $(BIN)armq-api $(DESTDIR)/usr/bin/armq-api
+	install -Dm 755 -d $(DESTDIR)$(SYSD)
+	install -Dm 644 service/armqapi.service $(DESTDIR)$(SYSD)
+	install -Dm 644 service/armqserver.service $(DESTDIR)$(SYSD)
