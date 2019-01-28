@@ -1,9 +1,7 @@
 armq-server
 ===
 
-In conjunction with [armq](https://voidedtech.network/cgit/cgit.cgi/armq/about/) - provides a receiving endpoint to extension payloads
-
-![Build Status](https://git.epiphyte.network/cgit/armq-server.png)
+In conjunction with [armq](https://voidedtech.com/cgit/armq/about/) - provides a receiving endpoint to extension payloads
 
 # Description
 
@@ -13,9 +11,14 @@ armq-server works by using a reader over `/opt/armq/` or a socket receiver (for 
 
 first you need to have deploy arma, adc, and armq (not documented here)
 
-armq-server is available via the epiphyte [repository](https://mirror.epiphyte.network/repos/)
+build
 ```
-pacman -S armq-server
+make
+```
+
+then install
+```
+make install
 ```
 
 config file (default should work) is `/etc/armq.conf`, enable the following service to collect data
