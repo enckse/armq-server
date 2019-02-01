@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"flag"
 
-	"github.com/epiphyte/goutils/config"
-	"github.com/epiphyte/goutils/logger"
+	"voidedtech.com/goutils/config"
+	"voidedtech.com/goutils/logger"
 )
 
 var (

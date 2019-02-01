@@ -1,7 +1,7 @@
 package main
 
 import (
-	"gitlab.com/enckse/armq-server/internal"
+	"voidedtech.com/armq-server/internal"
 )
 
 func main() {

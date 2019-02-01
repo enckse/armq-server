@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"github.com/epiphyte/goutils/logger"
+	"voidedtech.com/goutils/logger"
 )
 
 const (

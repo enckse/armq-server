@@ -11,9 +11,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/epiphyte/goutils/logger"
-	"github.com/epiphyte/goutils/opsys"
-	"github.com/epiphyte/goutils/sockets"
+	"voidedtech.com/goutils/logger"
+	"voidedtech.com/goutils/opsys"
+	"voidedtech.com/goutils/sockets"
 )
 
 var (

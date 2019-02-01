@@ -1,8 +1,8 @@
 package internal
 
 import (
-	"github.com/epiphyte/goutils/logger"
-	"github.com/epiphyte/goutils/sockets"
+	"voidedtech.com/goutils/logger"
+	"voidedtech.com/goutils/sockets"
 )
 
 type receiver struct {

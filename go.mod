@@ -1,3 +1,3 @@
-module gitlab.com/enckse/armq-server
+module voidedtech.com/armq-server
 
-require github.com/epiphyte/goutils v2.0.0+incompatible
+require voidedtech.com/goutils v2.0.1+incompatible
