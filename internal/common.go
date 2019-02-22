@@ -86,17 +86,19 @@ type Configuration struct {
 		Sleep     int
 	}
 	Api struct {
-		DumpHandler   bool
-		Handlers      bool
-		Bind          string
-		Limit         int
-		Top           int
-		StartScan     int
-		EndScan       int
-		EventHandler  bool
-		EmptyHandler  bool
-		StartHandler  bool
-		ReplayHandler bool
-		PlayerHandler bool
+		Bind      string
+		Limit     int
+		Top       int
+		StartScan int
+		EndScan   int
+		Handlers  struct {
+			Enable bool
+			Dump   bool
+			Event  bool
+			Empty  bool
+			Start  bool
+			Replay bool
+			Player bool
+		}
 	}
 }

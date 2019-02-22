@@ -517,13 +517,13 @@ func RunApi() {
 	}
 	ctx.setMeta(vers, host)
 	h := &handlerSettings{}
-	h.enabled = conf.Api.Handlers
-	h.allowEvent = conf.Api.EventHandler
-	h.allowDump = conf.Api.DumpHandler
-	h.allowEmpty = conf.Api.EmptyHandler
-	h.allowStart = conf.Api.StartHandler
-	h.allowReplay = conf.Api.ReplayHandler
-	h.allowPlayer = conf.Api.PlayerHandler
+	h.enabled = conf.Api.Handlers.Enable
+	h.allowEvent = conf.Api.Handlers.Event
+	h.allowDump = conf.Api.Handlers.Dump
+	h.allowEmpty = conf.Api.Handlers.Empty
+	h.allowStart = conf.Api.Handlers.Start
+	h.allowReplay = conf.Api.Handlers.Replay
+	h.allowPlayer = conf.Api.Handlers.Player
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		d := newWebdataWriter(w)
 		webRequest(ctx, h, w, r, d)
