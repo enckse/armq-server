@@ -13,7 +13,6 @@ import (
 
 	"voidedtech.com/goutils/logger"
 	"voidedtech.com/goutils/opsys"
-	"voidedtech.com/goutils/sockets"
 )
 
 var (
@@ -25,17 +24,12 @@ var (
 
 const (
 	fileMode      = "file"
-	sockMode      = "socket"
-	repeatMode    = "repeat"
 	sleepCycleMin = 90
 	sleepCycleMax = 108
 )
 
 type rcvContext struct {
-	binding    string
-	start      time.Time
 	timeFormat string
-	repeater   bool
 	output     string
 	dump       bool
 }
@@ -139,15 +133,6 @@ func writerWorker(id, count int, outdir string, obj *object, ctx *rcvContext) bo
 	return true
 }
 
-func repeaterWorker(socket *sockets.SocketSetup, obj *object) bool {
-	err := sockets.SocketSendOnly(socket, obj.data)
-	if err != nil {
-		logger.WriteError("unable to send data over socket", err)
-		return false
-	}
-	return true
-}
-
 func (c *rcvContext) resetWorker() (int, string) {
 	now := time.Now().Format("2006-01-02")
 	p := filepath.Join(c.output, now)
@@ -157,24 +142,15 @@ func (c *rcvContext) resetWorker() (int, string) {
 
 func createWorker(id int, ctx *rcvContext) {
 	count, outdir := ctx.resetWorker()
-	var socket *sockets.SocketSetup
-	if ctx.repeater {
-		socket = sockets.SocketSettings()
-		socket.Bind = ctx.binding
-	}
 	lastWorked := 0
 	for {
 		obj, ok := next()
 		if ok {
 			logger.WriteDebug(fmt.Sprintf("%d -> %s", id, obj.id))
-			if ctx.repeater {
-				ok = repeaterWorker(socket, obj)
+			if writerWorker(id, count, outdir, obj, ctx) {
+				count += 1
 			} else {
-				if writerWorker(id, count, outdir, obj, ctx) {
-					count += 1
-				} else {
-					ok = false
-				}
+				ok = false
 			}
 			if ok {
 				garbage(obj)
@@ -257,30 +233,12 @@ func detectJSON(segment []string) string {
 func RunReceiver() {
 	config := startup()
 	now := time.Now()
-	op := config.GetStringOrDefault("mode", fileMode)
 	ctx := &rcvContext{}
-	ctx.binding = config.GetStringOrDefault("bind", "127.0.0.1:5000")
-	ctx.start = now
-	ctx.repeater = op == repeatMode
 	ctx.timeFormat = now.Format("2006-01-02T15-04-05")
-	ctx.output = config.GetStringOrDefault("output", dataDir)
-	ctx.dump = config.GetTrue("dump")
-	section := fmt.Sprintf("[%s]", op)
-	switch op {
-	case sockMode:
-		go socketReceiver(ctx)
-	case fileMode, repeatMode:
-		go fileReceive(config.GetSection(section))
-	default:
-		logger.Fatal("unknown mode", nil)
-	}
-	worker := config.GetIntOrDefaultOnly("workers", 4)
-	if ctx.repeater {
-		if worker != 1 {
-			logger.WriteWarn("setting workers back to 1 for repeater")
-			worker = 1
-		}
-	}
+	ctx.output = config.Global.Output
+	ctx.dump = config.Global.Dump
+	go fileReceive(config)
+	worker := config.Global.Workers
 	i := 0
 	for i < worker {
 		go createWorker(i, ctx)

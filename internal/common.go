@@ -4,27 +4,27 @@ import (
 	"encoding/json"
 	"flag"
 
-	"voidedtech.com/goutils/config"
 	"voidedtech.com/goutils/logger"
+	"voidedtech.com/goutils/preyaml"
 )
 
 var (
 	vers        = "master"
-	dataDir     = "/var/lib/armq/"
-	outKey      = "output"
 	emptyObject = []byte("{}")
 )
 
-func startup() *config.Config {
-	conf := flag.String("config", "/etc/armq.conf", "config file")
+func startup() *Configuration {
+	conf := flag.String("config", "/etc/armq.yaml", "config file")
 	flag.Parse()
-	c, e := config.LoadConfigDefaults(*conf)
-	if e != nil {
-		logger.Fatal("failed to start", e)
+	d := &preyaml.Directives{}
+	c := &Configuration{}
+	err := preyaml.UnmarshalFile(*conf, d, c)
+	if err != nil {
+		logger.Fatal("unable to parse config", err)
 	}
 	logger.WriteInfo("starting", vers)
 	opts := logger.NewLogOptions()
-	opts.Debug = c.GetTrue("debug")
+	opts.Debug = c.Global.Debug
 	logger.ConfigureLogging(opts)
 	return c
 }
@@ -69,4 +69,34 @@ type Entry struct {
 	Array  []json.RawMessage          `json:"array,omitempty"`
 	Object map[string]json.RawMessage `json:"object,omitempty"`
 	name   string
+}
+
+type Configuration struct {
+	Global struct {
+		Bind    string
+		Debug   bool
+		Workers int
+		Output  string
+		Dump    bool
+	}
+	Files struct {
+		Directory string
+		Gc        int
+		After     int
+		Sleep     int
+	}
+	Api struct {
+		DumpHandler   bool
+		Handlers      bool
+		Bind          string
+		Limit         int
+		Top           int
+		StartScan     int
+		EndScan       int
+		EventHandler  bool
+		EmptyHandler  bool
+		StartHandler  bool
+		ReplayHandler bool
+		PlayerHandler bool
+	}
 }

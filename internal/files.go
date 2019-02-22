@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"voidedtech.com/goutils/config"
 	"voidedtech.com/goutils/logger"
 	"voidedtech.com/goutils/opsys"
 )
@@ -75,12 +74,12 @@ func scan(conf *fileConfig) {
 	}
 }
 
-func fileReceive(config *config.Config) {
+func fileReceive(config *Configuration) {
 	conf := &fileConfig{}
-	conf.directory = config.GetStringOrDefault("directory", "/opt/armq/")
-	conf.gc = config.GetIntOrDefaultOnly("gc", 50)
-	conf.sleep = time.Duration(config.GetIntOrDefaultOnly("sleep", 100))
-	conf.after = time.Duration(config.GetIntOrDefaultOnly("after", -10))
+	conf.directory = config.Files.Directory
+	conf.gc = config.Files.Gc
+	conf.sleep = time.Duration(config.Files.Sleep)
+	conf.after = time.Duration(config.Files.After)
 	logger.WriteInfo("file mode enabled")
 	err := os.Mkdir(conf.directory, 0777)
 	if err != nil {

@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"voidedtech.com/goutils/config"
 	"voidedtech.com/goutils/logger"
 )
 
@@ -500,39 +499,31 @@ func (ctx *apiContext) setMeta(version, host string) {
 	ctx.byteFooter = []byte(ctx.metaFooter)
 }
 
-func getConfigFalse(c *config.Config, key string) bool {
-	if c.GetFalse(key) {
-		return false
-	}
-	return true
-}
-
 func RunApi() {
 	conf := startup()
-	dir := conf.GetStringOrDefault(outKey, dataDir)
-	c := conf.GetSection("[api]")
-	bind := c.GetStringOrDefault("bind", ":8080")
-	limit := c.GetIntOrDefaultOnly("limit", 1000)
+	dir := conf.Global.Output
+	bind := conf.Api.Bind
+	limit := conf.Api.Limit
 	logger.WriteDebug("api ready")
 	ctx := &apiContext{}
 	ctx.limit = limit
 	ctx.directory = dir
 	ctx.convert = conversions()
-	ctx.scanStart = time.Duration(c.GetIntOrDefaultOnly("sscan", -1)) * 24 * time.Hour
-	ctx.scanEnd = time.Duration(c.GetIntOrDefaultOnly("escan", 1)) * 24 * time.Hour
+	ctx.scanStart = time.Duration(conf.Api.StartScan) * 24 * time.Hour
+	ctx.scanEnd = time.Duration(conf.Api.EndScan) * 24 * time.Hour
 	host, err := os.Hostname()
 	if err != nil {
 		host = "localhost"
 	}
 	ctx.setMeta(vers, host)
 	h := &handlerSettings{}
-	h.enabled = c.GetTrue("handlers")
-	h.allowEvent = getConfigFalse(c, "eventHandler")
-	h.allowDump = getConfigFalse(c, "dumpHandler")
-	h.allowEmpty = getConfigFalse(c, "emptyHandler")
-	h.allowStart = getConfigFalse(c, "startHandler")
-	h.allowReplay = getConfigFalse(c, "replayHandler")
-	h.allowPlayer = getConfigFalse(c, "playerHandler")
+	h.enabled = conf.Api.Handlers
+	h.allowEvent = conf.Api.EventHandler
+	h.allowDump = conf.Api.DumpHandler
+	h.allowEmpty = conf.Api.EmptyHandler
+	h.allowStart = conf.Api.StartHandler
+	h.allowReplay = conf.Api.ReplayHandler
+	h.allowPlayer = conf.Api.PlayerHandler
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		d := newWebdataWriter(w)
 		webRequest(ctx, h, w, r, d)
