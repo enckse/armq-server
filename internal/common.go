@@ -14,7 +14,7 @@ var (
 )
 
 func startup() *Configuration {
-	conf := flag.String("config", "/etc/armq.yaml", "config file")
+	conf := flag.String("config", "/etc/armq.conf", "config file")
 	flag.Parse()
 	d := &preyaml.Directives{}
 	c := &Configuration{}
