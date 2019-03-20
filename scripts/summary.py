@@ -1,7 +1,7 @@
-#!/usr/bin/python
-import sys
+#!/usr/bin/python3
 import json
 import os
+import argparse
 
 _FIELDS = "fields"
 _TAG = "tag"
@@ -156,10 +156,14 @@ def killed(events):
 
 def main():
     """main entry."""
-    if len(sys.argv) < 2:
-        die("invalid inputs, no tag?")
-    tag = sys.argv[1]
-    j = json.loads(sys.stdin.read())
+    parser = argparse.ArgumentParser()
+    parser.add_argument("file")
+    args = parser.parse_args()
+    bname = os.path.basename(args.file)
+    tag = bname.replace(".json", "")
+    j = None
+    with open(args.file) as f:
+        j = json.loads(f.read())
     m = has_key(j, "meta")
     if not m:
         die("invalid metadata")
