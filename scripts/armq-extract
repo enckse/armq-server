@@ -4,6 +4,7 @@ import urllib.request
 import argparse
 import json
 import os
+import datetime
 
 _DATA = "data"
 
@@ -48,18 +49,25 @@ def main():
     print("downloading tags...")
     print("this may take a moment...")
     downloads = {}
-    for t in _get_tags(args.server, query):
-        print(t)
-        for k in t.keys():
-            print("found tag: {}".format(k))
-            tag_file = os.path.join(args.cache) + "{}.json".format(k)
-            if os.path.exists(tag_file):
-                print(" -> already downloaded ({})".format(tag_file))
-                continue
-            downloads[k] = tag_file
-    for d in downloads:
-        print("downloading data: {}".format(d))
-        _download(args.server, downloads[d], d)
+    dt = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+    tag_data = os.path.join(args.cache, "tags.{}.log".format(dt))
+    with open(tag_data, 'w') as tag_sum:
+        print("tags", file=tag_sum)
+        for t in _get_tags(args.server, query):
+            print(t)
+            print(t, file=tag_sum)
+            for k in t.keys():
+                print("found tag: {}".format(k))
+                tag_file = os.path.join(args.cache + "{}.json".format(k))
+                if os.path.exists(tag_file):
+                    print(" -> already downloaded ({})".format(tag_file))
+                    continue
+                downloads[k] = tag_file
+        print("downloads", file=tag_sum)
+        for d in downloads:
+            print("downloading data: {}".format(d))
+            print(d, file=tag_sum)
+            _download(args.server, downloads[d], d)
 
 
 if __name__ == "__main__":
