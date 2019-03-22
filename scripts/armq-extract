@@ -63,6 +63,7 @@ def main():
                     print(" -> already downloaded ({})".format(tag_file))
                     continue
                 downloads[k] = tag_file
+        tag_sum.flush()
         print("downloads", file=tag_sum)
         for d in downloads:
             print("downloading data: {}".format(d))
