@@ -21,12 +21,31 @@ then install
 make install
 ```
 
+### armqserver
+
 config file (default should work) is `/etc/armq.conf`, enable the following service to collect data
 ```
 systemctl enable --now armqserver.service
 ```
+**NOTE: armqserver MUST run with access to the directory armq writes to (e.g. `/opt/armq`)**
 
-and to enable the API
+### armqapi
+
 ```
 systemctl enable --now armqapi.service
+```
+**NOTE: armqapi MUST have access to the directory structure that armqserver uses as it's backend (this is NOT `/opt/armq` and is defined in the configuration file)**
+
+to extract data via the api:
+```
+armq-extract
+```
+
+The ^ above ^ command will iterate through all tags (using the scanning rules in the configuration file)
+* will find and output all tags and last time the tag was tracked
+* download each tag data set
+
+you can then run the following to briefly view a summary of the data
+```
+armq-summary <tag>.json
 ```
