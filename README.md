@@ -42,6 +42,7 @@ armq-extract
 ```
 
 The ^ above ^ command will iterate through all tags (using the scanning rules in the configuration file)
+
 * will find and output all tags and last time the tag was tracked
 * download each tag data set
 
