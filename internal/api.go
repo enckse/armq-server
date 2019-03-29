@@ -168,8 +168,10 @@ type objectAdder interface {
 }
 
 type tagMeta struct {
-	ts int64
-	dt string
+	endTime      int64
+	endTimeStr   string
+	startTime    int64
+	startTimeStr string
 }
 
 type tagAdder struct {
@@ -212,11 +214,21 @@ func (t *tagAdder) add(first bool, j map[string]json.RawMessage) {
 	s := string(v)
 	cur, ok := t.tracked[s]
 	if ok {
-		if i <= cur.ts {
-			return
+		if i >= cur.endTime {
+			cur.endTime = i
+			cur.endTimeStr = d
+		} else {
+			if i <= cur.startTime {
+				cur.startTime = i
+				cur.startTimeStr = d
+			} else {
+				return
+			}
 		}
+		t.tracked[s] = cur
+	} else {
+		t.tracked[s] = &tagMeta{endTime: i, endTimeStr: d, startTime: i, startTimeStr: d}
 	}
-	t.tracked[s] = &tagMeta{ts: i, dt: d}
 }
 
 func (t *tagAdder) done(ctx *apiContext, w io.Writer, limit bool) {
@@ -226,7 +238,7 @@ func (t *tagAdder) done(ctx *apiContext, w io.Writer, limit bool) {
 		if !first {
 			w.Write([]byte(","))
 		}
-		w.Write([]byte(fmt.Sprintf("{%s: [%d, \"%s\"]}", k, v.ts, v.dt)))
+		w.Write([]byte(fmt.Sprintf("{%s: [%d, \"%s\", %d, \"%s\"]}", k, v.startTime, v.startTimeStr, v.endTime, v.endTimeStr)))
 		first = false
 	}
 	if limit {
