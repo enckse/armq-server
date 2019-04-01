@@ -139,7 +139,11 @@ func writerWorker(id, count int, outdir string, obj *object, ctx *rcvContext) bo
 func (c *rcvContext) resetWorker() (int, string) {
 	now := time.Now().Format("2006-01-02")
 	p := filepath.Join(c.output, now)
-	opsys.RunBashCommand(fmt.Sprintf("mkdir -p %s", p))
+	err := opsys.PathExistsOrCreate(p, 0755)
+	if err != nil {
+		logger.WriteWarn("error reseting path", p)
+		logger.WriteError("error for path reset", err)
+	}
 	return 0, p
 }
 
@@ -259,7 +263,7 @@ func runCollector(conf *fileConfig) {
 	for _, f := range files {
 		p := filepath.Join(conf.directory, f)
 		logger.WriteDebug("collecting", p)
-		_, e := opsys.RunBashCommand(fmt.Sprintf("rm -f %s", p))
+		_, e := opsys.RunCommand("rm", "-f", p)
 		if e != nil {
 			logger.WriteWarn("file error on gc", p)
 			logger.WriteError("unable to remove garbage", e)

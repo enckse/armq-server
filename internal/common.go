@@ -5,7 +5,7 @@ import (
 	"flag"
 
 	"voidedtech.com/goutils/logger"
-	"voidedtech.com/goutils/preyaml"
+	"voidedtech.com/goutils/yaml"
 )
 
 var (
@@ -16,9 +16,8 @@ var (
 func startup() *Configuration {
 	conf := flag.String("config", "/etc/armq.conf", "config file")
 	flag.Parse()
-	d := &preyaml.Directives{}
 	c := &Configuration{}
-	err := preyaml.UnmarshalFile(*conf, d, c)
+	err := yaml.UnmarshalFile(*conf, c)
 	if err != nil {
 		logger.Fatal("unable to parse config", err)
 	}
