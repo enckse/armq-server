@@ -11,8 +11,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"voidedtech.com/goutils/logger"
 )
 
 const (
@@ -94,7 +92,7 @@ func stringToOp(op string) opType {
 func parseFilter(filter string, mapping map[string]typeConv) *dataFilter {
 	parts := strings.Split(filter, filterDelimiter)
 	if len(parts) < 3 {
-		logger.WriteWarn("filter missing components")
+		info("filter missing components")
 		return nil
 	}
 	val := strings.Join(parts[2:], filterDelimiter)
@@ -102,12 +100,12 @@ func parseFilter(filter string, mapping map[string]typeConv) *dataFilter {
 	f.field = parts[0]
 	t, ok := mapping[f.field]
 	if !ok {
-		logger.WriteWarn("filter field unknown", f.field)
+		info(fmt.Sprintf("filter field unknown: %s", f.field))
 		return nil
 	}
 	f.op = stringToOp(parts[1])
 	if f.op == invalidOp {
-		logger.WriteWarn("filter op invalid")
+		info("filter op invalid")
 		return nil
 	}
 	f.fxn = t
@@ -115,32 +113,32 @@ func parseFilter(filter string, mapping map[string]typeConv) *dataFilter {
 	case intConv:
 		i, e := strconv.Atoi(val)
 		if e != nil {
-			logger.WriteWarn("filter is not an int")
+			info("filter is not an int")
 			return nil
 		}
 		f.intVal = i
 	case int64Conv:
 		i, e := strconv.ParseInt(val, 10, 64)
 		if e != nil {
-			logger.WriteWarn("filter is not an int64")
+			info("filter is not an int64")
 			return nil
 		}
 		f.int64Val = i
 	case float64Conv:
 		i, e := strconv.ParseFloat(val, 64)
 		if e != nil {
-			logger.WriteWarn("filter is not a float64")
+			info("filter is not a float64")
 		}
 		f.float64Val = i
 	case strConv:
 		if f.op == equals || f.op == nEquals {
 			f.strVal = val
 		} else {
-			logger.WriteWarn("filter string op is invalid")
+			info("filter string op is invalid")
 			return nil
 		}
 	default:
-		logger.WriteWarn("unknown filter type")
+		info("unknown filter type")
 		return nil
 	}
 	return f
@@ -295,7 +293,6 @@ func handle(ctx *apiContext, req map[string][]string, h *handlerSettings, writer
 	fileRead := ""
 	seek := false
 	for k, p := range req {
-		logger.WriteDebug(k, p...)
 		if len(p) == 0 {
 			continue
 		}
@@ -347,15 +344,13 @@ func handle(ctx *apiContext, req map[string][]string, h *handlerSettings, writer
 		dirs = []os.FileInfo{last}
 	}
 	if e != nil {
-		logger.WriteError("unable to read dir", e)
+		errored("unable to read dir", e)
 		return false
 	}
 	filterFiles := len(fileRead) > 0
-	logger.WriteDebug("file filter", fileRead)
 	files := []string{}
 	for _, d := range dirs {
 		dname := d.Name()
-		logger.WriteDebug("directory", dname)
 		if d.IsDir() {
 			mtime := d.ModTime()
 			if !seek {
@@ -363,12 +358,11 @@ func handle(ctx *apiContext, req map[string][]string, h *handlerSettings, writer
 					continue
 				}
 			}
-			logger.WriteDebug("matched")
 			p := filepath.Join(ctx.directory, dname)
 			f, e := ioutil.ReadDir(p)
 			if e != nil {
-				logger.WriteWarn("unable to read subdir", dname)
-				logger.WriteError("reading subdir failed", e)
+				info(fmt.Sprintf("unable to read subdir: %s", dname))
+				errored("reading subdir failed", e)
 				continue
 			}
 			for _, file := range f {
@@ -415,8 +409,8 @@ func handle(ctx *apiContext, req map[string][]string, h *handlerSettings, writer
 						var sub map[string]json.RawMessage
 						err := json.Unmarshal(v, &sub)
 						if err != nil {
-							logger.WriteWarn("unable to unmarshal obj", p, d.field)
-							logger.WriteError("unmarshal error", err)
+							info(fmt.Sprintf("unable to unmarshal obj: %s (%s)", p, d.field))
+							errored("unmarshal error", err)
 							break
 						}
 						filterObj = sub
@@ -434,7 +428,6 @@ func handle(ctx *apiContext, req map[string][]string, h *handlerSettings, writer
 			skip += -1
 			continue
 		}
-		logger.WriteDebug("passed", p)
 		if has {
 			writer.addString(",")
 		}
@@ -516,7 +509,6 @@ func RunApi() {
 	dir := conf.Global.Output
 	bind := conf.Api.Bind
 	limit := conf.Api.Limit
-	logger.WriteDebug("api ready")
 	ctx := &apiContext{}
 	ctx.limit = limit
 	ctx.directory = dir
@@ -553,6 +545,7 @@ func RunApi() {
 	})
 	err = http.ListenAndServe(bind, nil)
 	if err != nil {
-		logger.Fatal("unable to do http serve", err)
+		errored("unable to do http serve", err)
+		panic("unable to host")
 	}
 }

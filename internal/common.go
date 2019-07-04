@@ -3,9 +3,10 @@ package internal
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
+	"io/ioutil"
 
-	"voidedtech.com/goutils/logger"
-	"voidedtech.com/goutils/yaml"
+	yaml "gopkg.in/yaml.v2"
 )
 
 var (
@@ -17,14 +18,15 @@ func startup() *Configuration {
 	conf := flag.String("config", "/etc/armq.conf", "config file")
 	flag.Parse()
 	c := &Configuration{}
-	err := yaml.UnmarshalFile(*conf, c)
+	b, err := ioutil.ReadFile(*conf)
 	if err != nil {
-		logger.Fatal("unable to parse config", err)
+		panic(fmt.Sprintf("unable to read config %v", err))
 	}
-	logger.WriteInfo("starting", vers)
-	opts := logger.NewLogOptions()
-	opts.Debug = c.Global.Debug
-	logger.ConfigureLogging(opts)
+	err = yaml.Unmarshal(b, c)
+	if err != nil {
+		panic(fmt.Sprintf("unable to parse config %v", err))
+	}
+	info(vers)
 	return c
 }
 
@@ -73,7 +75,6 @@ type Entry struct {
 type Configuration struct {
 	Global struct {
 		Bind    string
-		Debug   bool
 		Workers int
 		Output  string
 		Dump    bool
@@ -100,4 +101,12 @@ type Configuration struct {
 			Player bool
 		}
 	}
+}
+
+func info(message string) {
+	fmt.Println(message)
+}
+
+func errored(message string, err error) {
+	info(fmt.Sprintf("ERROR -> %s (%v)", message, err))
 }

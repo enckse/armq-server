@@ -11,9 +11,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"voidedtech.com/goutils/logger"
-	"voidedtech.com/goutils/opsys"
 )
 
 var (
@@ -102,8 +99,8 @@ func writerWorker(id, count int, outdir string, obj *object, ctx *rcvContext) bo
 	ts := parts[0]
 	i, e := strconv.ParseInt(ts, 10, 64)
 	if e != nil {
-		logger.WriteWarn("unable to parse timestamp (not critical)", obj.id)
-		logger.WriteError("parse error was", e)
+		info(fmt.Sprintf("unable to parse timestamp (not critical): %s", obj.id))
+		errored("parse error was", e)
 		i = -1
 	}
 	datum.Timestamp = i
@@ -119,18 +116,17 @@ func writerWorker(id, count int, outdir string, obj *object, ctx *rcvContext) bo
 	if ctx.dump {
 		j, e = json.Marshal(dump)
 		if e != nil {
-			logger.WriteWarn("unable to handle file", obj.id)
-			logger.WriteError("unable to read object to json", e)
+			info(fmt.Sprintf("unable to handle file %s", obj.id))
+			errored("unable to read object to json", e)
 			return false
 		}
 	}
 	j = []byte(fmt.Sprintf("{%s, \"%s\": %s, \"%s\": %s}", datum.toJSON(), dumpKey, j, fieldKey, fields))
-	logger.WriteDebug(string(j))
 	p := filepath.Join(outdir, datum.Id)
 	err := ioutil.WriteFile(p, j, 0644)
 	if err != nil {
-		logger.WriteWarn("error saving results", p)
-		logger.WriteError("unable to save file", err)
+		info(fmt.Sprintf("error saving results: %s", p))
+		errored("unable to save file", err)
 		return false
 	}
 	return true
@@ -139,10 +135,12 @@ func writerWorker(id, count int, outdir string, obj *object, ctx *rcvContext) bo
 func (c *rcvContext) resetWorker() (int, string) {
 	now := time.Now().Format("2006-01-02")
 	p := filepath.Join(c.output, now)
-	err := opsys.PathExistsOrCreate(p, 0755)
-	if err != nil {
-		logger.WriteWarn("error reseting path", p)
-		logger.WriteError("error for path reset", err)
+	if !pathExists(p) {
+		err := os.MkdirAll(p, 0755)
+		if err != nil {
+			info(fmt.Sprintf("error reseting path: %s", p))
+			errored("error for path reset", err)
+		}
 	}
 	return 0, p
 }
@@ -153,7 +151,6 @@ func createWorker(id int, ctx *rcvContext) {
 	for {
 		obj, ok := next()
 		if ok {
-			logger.WriteDebug(fmt.Sprintf("%d -> %s", id, obj.id))
 			if writerWorker(id, count, outdir, obj, ctx) {
 				count += 1
 			} else {
@@ -228,7 +225,7 @@ func detectJSON(segment []string) string {
 		}
 		j, err := json.Marshal(entry)
 		if err != nil {
-			logger.WriteError("unable to marshal raw object", err)
+			errored("unable to marshal raw object", err)
 			j = emptyObject
 		}
 		buffer.WriteString(fmt.Sprintf("\"%s\": ", e.name))
@@ -256,17 +253,26 @@ func RunReceiver() {
 	}
 }
 
+func pathExists(file string) bool {
+	if _, err := os.Stat(file); os.IsNotExist(err) {
+		return false
+	} else {
+		return true
+	}
+}
+
 func runCollector(conf *fileConfig) {
 	files := collect()
 	lock.Lock()
 	defer lock.Unlock()
 	for _, f := range files {
 		p := filepath.Join(conf.directory, f)
-		logger.WriteDebug("collecting", p)
-		_, e := opsys.RunCommand("rm", "-f", p)
-		if e != nil {
-			logger.WriteWarn("file error on gc", p)
-			logger.WriteError("unable to remove garbage", e)
+		if pathExists(p) {
+			e := os.Remove(p)
+			if e != nil {
+				info(fmt.Sprintf("file error on gc: %s", p))
+				errored("unable to remove garbage", e)
+			}
 		}
 		// we are good to no longer know about this
 		if _, ok := cache[f]; ok {
@@ -285,7 +291,7 @@ type fileConfig struct {
 func scan(conf *fileConfig) {
 	files, e := ioutil.ReadDir(conf.directory)
 	if e != nil {
-		logger.WriteError("unable to scan files", e)
+		errored("unable to scan files", e)
 		return
 	}
 	lock.Lock()
@@ -300,13 +306,12 @@ func scan(conf *fileConfig) {
 		if f.ModTime().After(requiredTime) {
 			continue
 		}
-		logger.WriteDebug("reading", n)
 		cache[n] = struct{}{}
 		p := filepath.Join(conf.directory, n)
 		d, e := ioutil.ReadFile(p)
 		if e != nil {
-			logger.WriteWarn("file read error", p)
-			logger.WriteError("unable to read file", e)
+			info(fmt.Sprintf("file read error: %s", p))
+			errored("unable to read file", e)
 			continue
 		}
 		queue(n, d, true)
@@ -319,15 +324,14 @@ func fileReceive(config *Configuration) {
 	conf.gc = config.Files.Gc
 	conf.sleep = time.Duration(config.Files.Sleep)
 	conf.after = time.Duration(config.Files.After)
-	logger.WriteInfo("file mode enabled")
+	info("file mode enabled")
 	err := os.Mkdir(conf.directory, 0777)
 	if err != nil {
-		logger.WriteError("unable to create directory (not aborting)", err)
+		errored("unable to create directory (not aborting)", err)
 	}
 	lastCollected := 0
 	for {
 		if lastCollected > conf.gc {
-			logger.WriteDebug("collecting garbage")
 			runCollector(conf)
 			lastCollected = 0
 		}

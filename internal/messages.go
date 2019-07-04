@@ -2,10 +2,9 @@ package internal
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"strings"
-
-	"voidedtech.com/goutils/logger"
 )
 
 const (
@@ -50,18 +49,17 @@ func isTag(e *Entry) bool {
 }
 
 func loadFile(path string, h *handlerSettings) (map[string]json.RawMessage, []byte) {
-	logger.WriteDebug("reading", path)
 	b, err := ioutil.ReadFile(path)
 	if err != nil {
-		logger.WriteWarn("error reading file", path)
-		logger.WriteError("unable to read file", err)
+		info(fmt.Sprintf("error reading file: %s", path))
+		errored("unable to read file", err)
 		return nil, nil
 	}
 	var obj map[string]json.RawMessage
 	err = json.Unmarshal(b, &obj)
 	if err != nil {
-		logger.WriteWarn("unable to marshal object", path)
-		logger.WriteError("unable to parse json", err)
+		info(fmt.Sprintf("unable to marshal object: %s", path))
+		errored("unable to parse json", err)
 		return nil, nil
 	}
 	if h.enabled {
