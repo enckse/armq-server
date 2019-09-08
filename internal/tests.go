@@ -68,6 +68,7 @@ func test(h *testHarness) {
 	}
 }
 
+// RunTests performs test execution
 func RunTests() {
 	c := &apiContext{}
 	c.directory = "bin/"

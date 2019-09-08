@@ -12,7 +12,7 @@ const (
 	startType    = "start"
 	replayType   = "replay"
 	playerType   = "player"
-	playerIdType = "playerid"
+	playerIDType = "playerid"
 )
 
 func isEmpty(e *Entry) bool {
@@ -186,7 +186,7 @@ func set(e *Entry) bool {
 func (h *eventHandler) handle(count int, entries map[string]*Entry) map[string]*Entry {
 	rewriteName(eventType, field0Key, set, entries)
 	if rewriteName(tagKey, field1Key, isTag, entries) {
-		if rewriteName(playerIdType, field2Key, isRaw, entries) {
+		if rewriteName(playerIDType, field2Key, isRaw, entries) {
 			if rewriteName("type", field3Key, isRaw, entries) {
 				if rewriteName("data", field4Key, isNotRaw, entries) {
 					rewriteName("simtime", field5Key, isRaw, entries)
@@ -214,7 +214,7 @@ type playerHandler struct {
 
 func (h *playerHandler) handle(count int, entries map[string]*Entry) map[string]*Entry {
 	rewriteName(playerType, field0Key, set, entries)
-	if rewriteName(playerIdType, field1Key, isRaw, entries) {
+	if rewriteName(playerIDType, field1Key, isRaw, entries) {
 		rewriteName("name", field2Key, isRaw, entries)
 	}
 	return entries

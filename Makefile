@@ -1,6 +1,5 @@
 BIN     := bin/
 CMD     := cmd/
-SRC     := $(shell find $(CMD) -type f) $(shell find internal/ -type f)
 VERSION ?= $(shell git describe --long | sed "s/\([^-]*-g\)/r\1/;s/-/./g")
 FLAGS   := -ldflags 'i-linkmode external -extldflags '$(LDFLAGS)' -s -w -X main.vers=$(VERSION)'  -gcflags=all=-trimpath=$(GOPATH) -asmflags=all=-trimpath=$(GOPATH) -buildmode=pie
 GO      := go build $(FLAGS) -o $(BIN)armq-
@@ -24,8 +23,7 @@ test: tests
 	make -C tests VERSION=$(VERSION)
 
 format:
-	@echo $(SRC)
-	exit $(shell goimports -l $(SRC) | wc -l)
+	goformatter
 
 clean:
 	rm -rf $(BIN)

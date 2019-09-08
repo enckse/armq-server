@@ -80,8 +80,9 @@ func next() (*object, bool) {
 	return obj, true
 }
 
+// Datum is representative output from armq
 type Datum struct {
-	Id        string
+	ID        string
 	Timestamp int64
 	Version   string
 	File      string
@@ -89,7 +90,7 @@ type Datum struct {
 }
 
 func (d *Datum) toJSON() string {
-	return fmt.Sprintf("\"%s\": \"%s\", \"%s\": %d, \"vers\": \"%s\", \"file\": \"%s\", \"%s\": \"%s\"", idKey, d.Id, tsKey, d.Timestamp, d.Version, d.File, dtKey, d.Date)
+	return fmt.Sprintf("\"%s\": \"%s\", \"%s\": %d, \"vers\": \"%s\", \"file\": \"%s\", \"%s\": \"%s\"", idKey, d.ID, tsKey, d.Timestamp, d.Version, d.File, dtKey, d.Date)
 }
 
 func writerWorker(id, count int, outdir string, obj *object, ctx *rcvContext) bool {
@@ -107,7 +108,7 @@ func writerWorker(id, count int, outdir string, obj *object, ctx *rcvContext) bo
 	datum.Date = time.Unix(i/1000, 0).Format("2006-01-02T15:04:05")
 	datum.Version = parts[1]
 	datum.File = obj.id
-	datum.Id = fmt.Sprintf("%s.%d.%d.%d", ctx.timeFormat, datum.Timestamp, id, count)
+	datum.ID = fmt.Sprintf("%s.%d.%d.%d", ctx.timeFormat, datum.Timestamp, id, count)
 	fields := detectJSON(parts[2:])
 	if fields == "" {
 		fields = "{}"
@@ -122,7 +123,7 @@ func writerWorker(id, count int, outdir string, obj *object, ctx *rcvContext) bo
 		}
 	}
 	j = []byte(fmt.Sprintf("{%s, \"%s\": %s, \"%s\": %s}", datum.toJSON(), dumpKey, j, fieldKey, fields))
-	p := filepath.Join(outdir, datum.Id)
+	p := filepath.Join(outdir, datum.ID)
 	err := ioutil.WriteFile(p, j, 0644)
 	if err != nil {
 		info(fmt.Sprintf("error saving results: %s", p))
@@ -152,7 +153,7 @@ func createWorker(id int, ctx *rcvContext) {
 		obj, ok := next()
 		if ok {
 			if writerWorker(id, count, outdir, obj, ctx) {
-				count += 1
+				count++
 			} else {
 				ok = false
 			}
@@ -177,7 +178,7 @@ func createWorker(id int, ctx *rcvContext) {
 				cooldown = 30
 			}
 			if lastWorked < sleepCycleMax {
-				lastWorked += 1
+				lastWorked++
 			}
 			sleepFor := time.Duration(cooldown) * time.Second
 			time.Sleep(sleepFor)
@@ -234,6 +235,7 @@ func detectJSON(segment []string) string {
 	return fmt.Sprintf("{%s}", buffer.String())
 }
 
+// RunReceiver runs the receiving component to parse armq outputs
 func RunReceiver() {
 	config := startup()
 	now := time.Now()
@@ -246,7 +248,7 @@ func RunReceiver() {
 	i := 0
 	for i < worker {
 		go createWorker(i, ctx)
-		i += 1
+		i++
 	}
 	for {
 		time.Sleep(1)
@@ -256,9 +258,8 @@ func RunReceiver() {
 func pathExists(file string) bool {
 	if _, err := os.Stat(file); os.IsNotExist(err) {
 		return false
-	} else {
-		return true
 	}
+	return true
 }
 
 func runCollector(conf *fileConfig) {
@@ -337,6 +338,6 @@ func fileReceive(config *Configuration) {
 		}
 		scan(conf)
 		time.Sleep(conf.sleep * time.Millisecond)
-		lastCollected += 1
+		lastCollected++
 	}
 }

@@ -434,7 +434,7 @@ func handle(ctx *apiContext, req map[string][]string, h *handlerSettings, writer
 		writer.add(b)
 		writer.addObject(!has, obj)
 		has = true
-		count += 1
+		count++
 	}
 	if hasMore {
 		writer.addString(limitIndicator)
@@ -474,10 +474,10 @@ func webRequest(ctx *apiContext, h *handlerSettings, w http.ResponseWriter, r *h
 	}
 }
 
-func (o *dataWriter) objectWriter(adder objectAdder) {
-	o.object = true
-	o.write = false
-	o.objects = adder
+func (d *dataWriter) objectWriter(adder objectAdder) {
+	d.object = true
+	d.write = false
+	d.objects = adder
 }
 
 func getSubField(key string, j map[string]json.RawMessage) (map[string]json.RawMessage, bool) {
@@ -504,30 +504,31 @@ func (ctx *apiContext) setMeta(version, host string) {
 	ctx.byteFooter = []byte(ctx.metaFooter)
 }
 
-func RunApi() {
+// RunAPI runs the API listener
+func RunAPI() {
 	conf := startup()
 	dir := conf.Global.Output
-	bind := conf.Api.Bind
-	limit := conf.Api.Limit
+	bind := conf.API.Bind
+	limit := conf.API.Limit
 	ctx := &apiContext{}
 	ctx.limit = limit
 	ctx.directory = dir
 	ctx.convert = conversions()
-	ctx.scanStart = time.Duration(conf.Api.StartScan) * 24 * time.Hour
-	ctx.scanEnd = time.Duration(conf.Api.EndScan) * 24 * time.Hour
+	ctx.scanStart = time.Duration(conf.API.StartScan) * 24 * time.Hour
+	ctx.scanEnd = time.Duration(conf.API.EndScan) * 24 * time.Hour
 	host, err := os.Hostname()
 	if err != nil {
 		host = "localhost"
 	}
 	ctx.setMeta(vers, host)
 	h := &handlerSettings{}
-	h.enabled = conf.Api.Handlers.Enable
-	h.allowEvent = conf.Api.Handlers.Event
-	h.allowDump = conf.Api.Handlers.Dump
-	h.allowEmpty = conf.Api.Handlers.Empty
-	h.allowStart = conf.Api.Handlers.Start
-	h.allowReplay = conf.Api.Handlers.Replay
-	h.allowPlayer = conf.Api.Handlers.Player
+	h.enabled = conf.API.Handlers.Enable
+	h.allowEvent = conf.API.Handlers.Event
+	h.allowDump = conf.API.Handlers.Dump
+	h.allowEmpty = conf.API.Handlers.Empty
+	h.allowStart = conf.API.Handlers.Start
+	h.allowReplay = conf.API.Handlers.Replay
+	h.allowPlayer = conf.API.Handlers.Player
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		d := newWebdataWriter(w)
 		webRequest(ctx, h, w, r, d)

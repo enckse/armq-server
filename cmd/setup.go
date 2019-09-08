@@ -56,9 +56,13 @@ func {{.Name}}FromJSON(d []byte) ({{.Name}}, bool) {
 `
 )
 
+// Object to generate a converter
 type Object struct {
-	Name  string
+	// Type name
+	Name string
+	// Use type value
 	Value string
+	// Is a number
 	IsNum bool
 }
 

@@ -64,14 +64,20 @@ const (
 	invalidOp opType = minOp
 )
 
+// Entry represents a data entry
 type Entry struct {
-	Type   string                     `json:"jsontype"`
-	Raw    string                     `json:"raw,omitempty"`
-	Array  []json.RawMessage          `json:"array,omitempty"`
+	// Corresponding type (of data to query from other fields)
+	Type string `json:"jsontype"`
+	// Represents a raw field of data
+	Raw string `json:"raw,omitempty"`
+	// Represents an array object
+	Array []json.RawMessage `json:"array,omitempty"`
+	// Represents a map (object)
 	Object map[string]json.RawMessage `json:"object,omitempty"`
 	name   string
 }
 
+// Configuration for the server
 type Configuration struct {
 	Global struct {
 		Bind    string
@@ -85,7 +91,7 @@ type Configuration struct {
 		After     int
 		Sleep     int
 	}
-	Api struct {
+	API struct {
 		Bind      string
 		Limit     int
 		Top       int
