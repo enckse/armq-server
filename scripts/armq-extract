@@ -37,7 +37,7 @@ def _download(server, tag_storage, tagged):
 def main():
     """Program entry."""
     parser = argparse.ArgumentParser()
-    parser.add_argument("--server", default="http://localhost:8080")
+    parser.add_argument("--server", default="http://localhost:9090")
     parser.add_argument("--cache", default="bin/")
     parser.add_argument("--query", default="")
     args = parser.parse_args()
