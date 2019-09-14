@@ -141,7 +141,9 @@ def killed(events):
                 f = "unknown ({})".format(v[0])
             if f not in factions:
                 factions[f] = 0
-            print("{}{} (simulation time: {})".format(_OFFSET, e.datetime, e.simtime))
+            print("{}{} (simulation time: {})".format(_OFFSET,
+                                                      e.datetime,
+                                                      e.simtime))
             print("{}-> {} killed {}".format(_OFFSET * 4, attacker, victim))
             print("")
             factions[f] += 1
