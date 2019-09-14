@@ -5,7 +5,7 @@ In conjunction with [armq](https://voidedtech.com/cgit/armq/about/) - provides a
 
 # Description
 
-armq-server works by using a reader over `/opt/armq/` or a socket receiver (for general TCP traffic from armq)
+armq-server works by using a reader over `/opt/armq/`
 
 ## Running
 
