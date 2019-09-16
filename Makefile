@@ -1,34 +1,50 @@
 BIN     := bin/
+VERSION := $(BUILD_VERSION)
+ifeq ($(VERSION),)
+       VERSION := DEVELOP
+endif
 CMD     := cmd/
-VERSION ?= $(shell git describe --long | sed "s/\([^-]*-g\)/r\1/;s/-/./g")
 FLAGS   := -ldflags 'i-linkmode external -extldflags '$(LDFLAGS)' -s -w -X main.vers=$(VERSION)'  -gcflags=all=-trimpath=$(GOPATH) -asmflags=all=-trimpath=$(GOPATH) -buildmode=pie
-GO      := go build $(FLAGS) -o $(BIN)armq-
-APPS    := receiver api tests
-GEN     := $(shell find . -type f -name "generated.go")
+GOBUILD := go build $(FLAGS)
 SYSD    := /lib/systemd/system/
+ITL     := internal/
+ARMQ    := $(BIN)armq-
+ARMQRCV := $(ARMQ)receiver
+ARMQAPI := $(ARMQ)api
+ARMQTST := $(ARMQ)tests
+RCV_SRC := $(CMD)receiver.go
+ITERNL  := $(shell find $(ITL) -type f -name "*.go")
+API_SRC := $(CMD)api.go
+TST_SRC := $(CMD)tests.go
+GEN_SRC := $(ITL)generated.go
+STP_SRC := $(CMD)setup.go
+FORMAT  := $(BIN)format
 
-.PHONY: $(APPS)
+build: $(ARMQRCV) $(ARMQAPI) $(ARMQTST) test $(FORMAT)
 
-all: clean gen apps test format
+$(GEN_SRC): $(STP_SRC)
+	go generate $(STP_SRC)
 
-apps: $(APPS)
+$(ARMQRCV): $(GEN_SRC) $(RCV_SRC) $(ITERNL)
+	$(GOBUILD) -o $(ARMQRCV) $(RCV_SRC)
 
-$(APPS):
-	$(GO)$@ $(CMD)$@.go
+$(ARMQAPI): $(GEN_SRC) $(API_SRC) $(ITERNL)
+	$(GOBUILD) -o $(ARMQAPI) $(API_SRC)
 
-gen:
-	go generate $(CMD)setup.go
+$(ARMQTST): $(GEN_SRC) $(TST_SRC) $(ITERNL)
+	$(GOBUILD) -o $(ARMQTST) $(TST_SRC)
 
 test: tests
 	make -C tests VERSION=$(VERSION)
 
-format:
+$(FORMAT):
 	goformatter
+	@touch $(FORMAT)
 
 clean:
 	rm -rf $(BIN)
 	mkdir -p $(BIN)
-	rm -f $(GEN)
+	rm -f $(GEN_SRC)
 
 install:
 	install -Dm 755 $(BIN)armq-receiver $(DESTDIR)/usr/bin/armq-receiver
