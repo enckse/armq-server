@@ -1,13 +1,12 @@
-BIN           := bin/
-BUILD_VERSION ?= master
-VERSION       := $(BUILD_VERSION)
-CMD           := cmd/
-FLAGS         := -ldflags 'i-linkmode external -extldflags '$(LDFLAGS)' -s -w -X main.vers=$(VERSION)'  -gcflags=all=-trimpath=$(GOPATH) -asmflags=all=-trimpath=$(GOPATH) -buildmode=pie
-ARMQ          := $(BIN)armq-
-GEN_SRC       := internal/generated.go
-STP_SRC       := $(CMD)setup.go
-FORMAT        := $(BIN)format
-OBJECTS       := $(ARMQ)api $(ARMQ)receiver $(ARMQ)tests
+BIN     := bin/
+VERSION ?= master
+CMD     := cmd/
+FLAGS   := -ldflags 'i-linkmode external -extldflags '$(LDFLAGS)' -s -w -X main.vers=$(VERSION)'  -gcflags=all=-trimpath=$(GOPATH) -asmflags=all=-trimpath=$(GOPATH) -buildmode=pie
+ARMQ    := $(BIN)armq-
+GEN_SRC := internal/generated.go
+STP_SRC := $(CMD)setup.go
+FORMAT  := $(BIN)format
+OBJECTS := $(ARMQ)api $(ARMQ)receiver $(ARMQ)tests
 
 build: $(OBJECTS) test $(FORMAT)
 
