@@ -20,7 +20,7 @@ test: tests
 	make -C tests VERSION=$(VERSION)
 
 $(FORMAT):
-	goformatter
+	@golinter
 	@touch $(FORMAT)
 
 clean:
