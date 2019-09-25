@@ -1,3 +1,4 @@
-bin/
+armq-*
 internal/generated.go
 tests/armq-tests
+tests/bin
