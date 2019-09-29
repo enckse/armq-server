@@ -16,8 +16,6 @@ import (
 )
 
 const (
-	maxOp                           = 5
-	minOp                           = -1
 	int64Conv       common.TypeConv = 1
 	strConv         common.TypeConv = 2
 	intConv         common.TypeConv = 3
@@ -27,48 +25,6 @@ const (
 	endStringOp                     = "le"
 	limitIndicator                  = ", {\"limited\": \"true\"}"
 	spec                            = "0.1"
-	notJSON                         = "raw"
-	objJSON                         = "object"
-	arrayJSON                       = "array"
-	emptyJSON                       = "empty"
-	fieldKey                        = "fields"
-	dumpKey                         = "dump"
-	fKey                            = "field"
-	tsKey                           = "ts"
-	idKey                           = "id"
-	tagKey                          = "tag"
-	dtKey                           = "dt"
-	field0Key                       = fKey + "0"
-	field1Key                       = fKey + "1"
-	field2Key                       = fKey + "2"
-	field3Key                       = fKey + "3"
-	field4Key                       = fKey + "4"
-	field5Key                       = fKey + "5"
-	lessThan        common.OpType   = 0
-	equals          common.OpType   = 1
-	lessTE          common.OpType   = 2
-	greatThan       common.OpType   = 3
-	greatTE         common.OpType   = 4
-	nEquals         common.OpType   = maxOp
-	invalidOp       common.OpType   = minOp
-	// TSKey is the timestamp key
-	TSKey = tsKey
-	// IDKey is the identifier key
-	IDKey = idKey
-	// DumpKey is the raw dump
-	DumpKey = dumpKey
-	// DTKey is the datetime key
-	DTKey = dtKey
-	// NotJSON indicates raw json-ish object
-	NotJSON = notJSON
-	// FieldKey is for the fields in the data
-	FieldKey = fieldKey
-	// ArrayJSON indicates it is an array of things
-	ArrayJSON = arrayJSON
-	// ObjJSON indicates it is a json-ic ojbect
-	ObjJSON = objJSON
-	// FKey is a field indicator
-	FKey = fKey
 )
 
 type (
@@ -142,28 +98,28 @@ func (f *dataFilter) check(d []byte) bool {
 
 func conversions() map[string]common.TypeConv {
 	m := make(map[string]common.TypeConv)
-	m[tsKey] = int64Conv
-	m[idKey] = strConv
-	m[fmt.Sprintf("%s.%s.%s", fieldKey, tagKey, notJSON)] = strConv
+	m[common.TSKey] = int64Conv
+	m[common.IDKey] = strConv
+	m[fmt.Sprintf("%s.%s.%s", common.FieldKey, common.TagKey, common.NotJSON)] = strConv
 	return m
 }
 
 func stringToOp(op string) common.OpType {
 	switch op {
 	case "eq":
-		return equals
+		return common.Equals
 	case "neq":
-		return nEquals
+		return common.NEquals
 	case "gt":
-		return greatThan
+		return common.GreatThan
 	case "lt":
-		return lessThan
+		return common.LessThan
 	case endStringOp:
-		return lessTE
+		return common.LessTE
 	case startStringOp:
-		return greatTE
+		return common.GreatTE
 	}
-	return invalidOp
+	return common.InvalidOp
 }
 
 func parseFilter(filter string, mapping map[string]common.TypeConv) *dataFilter {
@@ -181,7 +137,7 @@ func parseFilter(filter string, mapping map[string]common.TypeConv) *dataFilter 
 		return nil
 	}
 	f.op = stringToOp(parts[1])
-	if f.op == invalidOp {
+	if f.op == common.InvalidOp {
 		common.Info("filter op invalid")
 		return nil
 	}
@@ -208,7 +164,7 @@ func parseFilter(filter string, mapping map[string]common.TypeConv) *dataFilter 
 		}
 		f.float64Val = i
 	case strConv:
-		if f.op == equals || f.op == nEquals {
+		if f.op == common.Equals || f.op == common.NEquals {
 			f.strVal = val
 		} else {
 			common.Info("filter string op is invalid")
@@ -222,7 +178,7 @@ func parseFilter(filter string, mapping map[string]common.TypeConv) *dataFilter 
 }
 
 func timeFilter(op, value string, mapping map[string]common.TypeConv) *dataFilter {
-	return parseFilter(fmt.Sprintf("%s%s%s%s%s", tsKey, filterDelimiter, op, filterDelimiter, value), mapping)
+	return parseFilter(fmt.Sprintf("%s%s%s%s%s", common.TSKey, filterDelimiter, op, filterDelimiter, value), mapping)
 }
 
 func getDate(in string, adding time.Duration) time.Time {
@@ -239,23 +195,23 @@ func (t *tagAdder) add(first bool, j map[string]json.RawMessage) {
 	if first {
 		t.tracked = make(map[string]*tagMeta)
 	}
-	o, ok := getSubField(fieldKey, j)
+	o, ok := getSubField(common.FieldKey, j)
 	if !ok {
 		return
 	}
-	o, ok = getSubField(tagKey, o)
+	o, ok = getSubField(common.TagKey, o)
 	if !ok {
 		return
 	}
-	v, ok := o[notJSON]
+	v, ok := o[common.NotJSON]
 	if !ok {
 		return
 	}
-	tsRaw, ok := j[tsKey]
+	tsRaw, ok := j[common.TSKey]
 	if !ok {
 		return
 	}
-	dtRaw, ok := j[dtKey]
+	dtRaw, ok := j[common.DTKey]
 	if !ok {
 		return
 	}

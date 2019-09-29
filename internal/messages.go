@@ -15,6 +15,13 @@ const (
 	replayType   = "replay"
 	playerType   = "player"
 	playerIDType = "playerid"
+	emptyJSON    = "empty"
+	field0Key    = common.FKey + "0"
+	field1Key    = common.FKey + "1"
+	field2Key    = common.FKey + "2"
+	field3Key    = common.FKey + "3"
+	field4Key    = common.FKey + "4"
+	field5Key    = common.FKey + "5"
 )
 
 func isEmpty(e *common.Entry) bool {
@@ -22,15 +29,15 @@ func isEmpty(e *common.Entry) bool {
 }
 
 func isRaw(e *common.Entry) bool {
-	return e.Type == notJSON
+	return e.Type == common.NotJSON
 }
 
 func isArray(e *common.Entry) bool {
-	return e.Type == arrayJSON
+	return e.Type == common.ArrayJSON
 }
 
 func isObject(e *common.Entry) bool {
-	return e.Type == objJSON
+	return e.Type == common.ObjJSON
 }
 
 func isNotRaw(e *common.Entry) bool {
@@ -66,12 +73,12 @@ func loadFile(path string, h *common.Configuration) (map[string]json.RawMessage,
 	}
 	if h.API.Handlers.Enable {
 		if !h.API.Handlers.Dump {
-			_, ok := obj[dumpKey]
+			_, ok := obj[common.DumpKey]
 			if ok {
-				delete(obj, dumpKey)
+				delete(obj, common.DumpKey)
 			}
 		}
-		v, ok := obj[fieldKey]
+		v, ok := obj[common.FieldKey]
 		if ok {
 			var fields map[string]*common.Entry
 			err = json.Unmarshal(v, &fields)
@@ -79,7 +86,7 @@ func loadFile(path string, h *common.Configuration) (map[string]json.RawMessage,
 				rewrite := handleEntries(fields, h)
 				r, err := json.Marshal(rewrite)
 				if err == nil {
-					obj[fieldKey] = r
+					obj[common.FieldKey] = r
 					b, _ = json.Marshal(obj)
 				}
 			}
@@ -173,7 +180,7 @@ func set(e *common.Entry) bool {
 
 func (h *eventHandler) handle(count int, entries map[string]*common.Entry) map[string]*common.Entry {
 	rewriteName(eventType, field0Key, set, entries)
-	if rewriteName(tagKey, field1Key, isTag, entries) {
+	if rewriteName(common.TagKey, field1Key, isTag, entries) {
 		if rewriteName(playerIDType, field2Key, isRaw, entries) {
 			if rewriteName("type", field3Key, isRaw, entries) {
 				if rewriteName("data", field4Key, isNotRaw, entries) {

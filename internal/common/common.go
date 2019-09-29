@@ -9,6 +9,45 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
+const (
+	// TSKey is the timestamp key
+	TSKey = "ts"
+	// IDKey is the identifier key
+	IDKey = "id"
+	// DumpKey is the raw dump
+	DumpKey = "dump"
+	// DTKey is the datetime key
+	DTKey = "dt"
+	// NotJSON indicates raw json-ish object
+	NotJSON = "raw"
+	// FieldKey is for the fields in the data
+	FieldKey = "fields"
+	// ArrayJSON indicates it is an array of things
+	ArrayJSON = "array"
+	// ObjJSON indicates it is a json-ic ojbect
+	ObjJSON = "object"
+	// FKey is a field indicator
+	FKey  = "field"
+	maxOp = 5
+	minOp = -1
+	// TagKey represents a unique run tag
+	TagKey = "tag"
+	// LessThan is the < operator
+	LessThan OpType = 0
+	// Equals is the = operator
+	Equals OpType = 1
+	// LessTE is the <= operator
+	LessTE OpType = 2
+	// GreatThan is the > operator
+	GreatThan OpType = 3
+	// GreatTE is the >= operator
+	GreatTE OpType = 4
+	// NEquals is the != or <> operator
+	NEquals OpType = maxOp
+	// InvalidOp indicates the operator is invalid
+	InvalidOp OpType = minOp
+)
+
 // Startup is a common way to setup command-line application in the armq-* portfolio
 func Startup(vers string) *Configuration {
 	conf := flag.String("config", "/etc/armq.conf", "config file")

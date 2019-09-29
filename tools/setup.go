@@ -27,18 +27,18 @@ func {{.Name}}Converter(expect {{.Name}}, d []byte, op common.OpType) bool {
 	if ok {
 		switch op {
 {{if .IsNum}}
-		case lessThan:
+		case common.LessThan:
 			return i < expect
-		case lessTE:
+		case common.LessTE:
 			return i <= expect
-		case greatThan:
+		case common.GreatThan:
 			return i > expect
-		case greatTE:
+		case common.GreatTE:
 			return i >= expect
 {{end}}
-		case nEquals:
+		case common.NEquals:
 			return i != expect
-		case equals:
+		case common.Equals:
 			return i == expect
 		}
 	}

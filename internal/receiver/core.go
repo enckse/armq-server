@@ -12,7 +12,6 @@ import (
 	"sync"
 	"time"
 
-	"voidedtech.com/armq-server/internal"
 	"voidedtech.com/armq-server/internal/common"
 )
 
@@ -95,11 +94,11 @@ type Datum struct {
 }
 
 func (d *Datum) toJSON() string {
-	return fmt.Sprintf("\"%s\": \"%s\", \"%s\": %d, \"vers\": \"%s\", \"file\": \"%s\", \"%s\": \"%s\"", internal.IDKey, d.ID, internal.TSKey, d.Timestamp, d.Version, d.File, internal.DTKey, d.Date)
+	return fmt.Sprintf("\"%s\": \"%s\", \"%s\": %d, \"vers\": \"%s\", \"file\": \"%s\", \"%s\": \"%s\"", common.IDKey, d.ID, common.TSKey, d.Timestamp, d.Version, d.File, common.DTKey, d.Date)
 }
 
 func writerWorker(id, count int, outdir string, obj *object, ctx *rcvContext) bool {
-	dump := &common.Entry{Raw: string(obj.data), Type: internal.NotJSON}
+	dump := &common.Entry{Raw: string(obj.data), Type: common.NotJSON}
 	datum := &Datum{}
 	parts := strings.Split(dump.Raw, delimiter)
 	ts := parts[0]
@@ -127,7 +126,7 @@ func writerWorker(id, count int, outdir string, obj *object, ctx *rcvContext) bo
 			return false
 		}
 	}
-	j = []byte(fmt.Sprintf("{%s, \"%s\": %s, \"%s\": %s}", datum.toJSON(), internal.DumpKey, j, internal.FieldKey, fields))
+	j = []byte(fmt.Sprintf("{%s, \"%s\": %s, \"%s\": %s}", datum.toJSON(), common.DumpKey, j, common.FieldKey, fields))
 	p := filepath.Join(outdir, datum.ID)
 	err := ioutil.WriteFile(p, j, 0644)
 	if err != nil {
@@ -198,21 +197,21 @@ func detectJSON(segment []string) string {
 	entries := []*common.Entry{}
 	for idx, section := range segment {
 		p := &common.Entry{}
-		p.Type = internal.NotJSON
+		p.Type = common.NotJSON
 		p.Raw = section
 		var arr []json.RawMessage
 		bytes := []byte(section)
 		if json.Unmarshal(bytes, &arr) == nil {
 			p.Array = arr
-			p.Type = internal.ArrayJSON
+			p.Type = common.ArrayJSON
 		} else {
 			var obj map[string]json.RawMessage
 			if json.Unmarshal(bytes, &obj) == nil {
-				p.Type = internal.ObjJSON
+				p.Type = common.ObjJSON
 				p.Object = obj
 			}
 		}
-		p.Name = fmt.Sprintf("%s%d", internal.FKey, idx)
+		p.Name = fmt.Sprintf("%s%d", common.FKey, idx)
 		entries = append(entries, p)
 	}
 	var buffer bytes.Buffer
@@ -222,11 +221,11 @@ func detectJSON(segment []string) string {
 		}
 		entry := &common.Entry{Type: e.Type}
 		switch e.Type {
-		case internal.NotJSON:
+		case common.NotJSON:
 			entry.Raw = e.Raw
-		case internal.ArrayJSON:
+		case common.ArrayJSON:
 			entry.Array = e.Array
-		case internal.ObjJSON:
+		case common.ObjJSON:
 			entry.Object = e.Object
 		}
 		j, err := json.Marshal(entry)
