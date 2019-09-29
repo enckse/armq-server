@@ -22,7 +22,7 @@ type (
 	writerAdjust func(*dataWriter)
 
 	testHarness struct {
-		ctx *apiContext
+		ctx *Context
 		out string
 		req map[string][]string
 		hdl *common.Configuration
@@ -31,14 +31,14 @@ type (
 	}
 )
 
-func runTest(c *apiContext, output string, r map[string][]string, h *common.Configuration, success bool) {
+func runTest(c *Context, output string, r map[string][]string, h *common.Configuration, success bool) {
 	test(&testHarness{ctx: c, out: output, req: r, hdl: h, ok: success})
 }
 
-func tagTest(c *apiContext) {
+func tagTest(c *Context) {
 	h := &testHarness{ctx: c, out: "tags", req: nil, hdl: nil, ok: true}
 	h.adj = func(d *dataWriter) {
-		d.objectWriter(&tagAdder{})
+		d.objectWriter(&TagAdder{})
 	}
 	test(h)
 }
@@ -71,7 +71,7 @@ func test(h *testHarness) {
 	if err != nil {
 		panic("unable to adjust output")
 	}
-	err = ioutil.WriteFile(h.ctx.directory+h.out, indent.Bytes(), 0644)
+	err = ioutil.WriteFile(h.ctx.Directory+h.out, indent.Bytes(), 0644)
 	if err != nil {
 		panic("unable to complete test")
 	}
@@ -79,12 +79,12 @@ func test(h *testHarness) {
 
 // RunTests performs test execution
 func RunTests() {
-	c := &apiContext{}
-	c.directory = "bin/"
-	c.limit = 10
-	c.scanStart = -10 * 24 * time.Hour
-	c.scanEnd = 24 * time.Hour
-	c.setMeta("master", "localhost")
+	c := &Context{}
+	c.Directory = "bin/"
+	c.Limit = 10
+	c.ScanStart = -10 * 24 * time.Hour
+	c.ScanEnd = 24 * time.Hour
+	c.SetMeta("master", "localhost")
 	runTest(c, "normal", nil, nil, true)
 	runTest(c, "nohandlers", nil, &common.Configuration{}, true)
 	// limit input
@@ -93,21 +93,21 @@ func RunTests() {
 	runTest(c, "limit", m, nil, true)
 	// skip input
 	delete(m, "limit")
-	c.limit = 1
+	c.Limit = 1
 	m["skip"] = []string{"1"}
 	runTest(c, "skip", m, nil, true)
 	// start & end
-	c.limit = 10
-	c.convert = conversions()
+	c.Limit = 10
+	c.Convert = conversions()
 	delete(m, "skip")
 	m["start"] = []string{"1538671495199"}
 	m["end"] = []string{"1538671495201"}
 	runTest(c, "startend", m, nil, true)
 	// filters
-	c.convert = conversions()
+	c.Convert = conversions()
 	delete(m, "start")
 	delete(m, "end")
-	c.convert["fields.simtime.raw"] = float64Conv
+	c.Convert["fields.simtime.raw"] = float64Conv
 	filter := []string{"fields.simtime.raw:gt:100"}
 	m["filter"] = filter
 	runTest(c, "filters", m, nil, true)
@@ -115,6 +115,6 @@ func RunTests() {
 	filter = append(filter, "fields.tag.raw:eq:jzml")
 	m["filter"] = filter
 	runTest(c, "filtersand", m, nil, true)
-	c.convert = conversions()
+	c.Convert = conversions()
 	tagTest(c)
 }

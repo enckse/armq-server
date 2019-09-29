@@ -39,25 +39,26 @@ type (
 		fxn        common.TypeConv
 	}
 
-	apiContext struct {
-		limit     int
-		directory string
-		convert   map[string]common.TypeConv
+	// Context represents operating context
+	Context struct {
+		Limit     int
+		Directory string
+		Convert   map[string]common.TypeConv
 		// api output data
 		metaFooter string
 		metaHeader string
 		byteHeader []byte
 		byteFooter []byte
 		// how we scan for data
-		scanStart time.Duration
-		scanEnd   time.Duration
+		ScanStart time.Duration
+		ScanEnd   time.Duration
 	}
 
 	onHeaders func()
 
 	objectAdder interface {
 		add(bool, map[string]json.RawMessage)
-		done(*apiContext, io.Writer, bool)
+		done(*Context, io.Writer, bool)
 	}
 
 	tagMeta struct {
@@ -67,7 +68,8 @@ type (
 		startTimeStr string
 	}
 
-	tagAdder struct {
+	// TagAdder handles tagged results
+	TagAdder struct {
 		objectAdder
 		tracked map[string]*tagMeta
 	}
@@ -192,7 +194,7 @@ func getDate(in string, adding time.Duration) time.Time {
 	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.Local)
 }
 
-func (t *tagAdder) add(first bool, j map[string]json.RawMessage) {
+func (t *TagAdder) add(first bool, j map[string]json.RawMessage) {
 	if first {
 		t.tracked = make(map[string]*tagMeta)
 	}
@@ -244,7 +246,7 @@ func (t *tagAdder) add(first bool, j map[string]json.RawMessage) {
 	}
 }
 
-func (t *tagAdder) done(ctx *apiContext, w io.Writer, limit bool) {
+func (t *TagAdder) done(ctx *Context, w io.Writer, limit bool) {
 	w.Write(ctx.byteHeader)
 	first := true
 	for k, v := range t.tracked {
@@ -286,11 +288,11 @@ func (d *dataWriter) addString(s string) {
 	d.add([]byte(s))
 }
 
-func handle(ctx *apiContext, req map[string][]string, h *common.Configuration, writer *dataWriter) bool {
+func handle(ctx *Context, req map[string][]string, h *common.Configuration, writer *dataWriter) bool {
 	dataFilters := []*dataFilter{}
 	limited := 0
 	if writer.limit {
-		limited = ctx.limit
+		limited = ctx.Limit
 	}
 	skip := 0
 	startDate := ""
@@ -304,7 +306,7 @@ func handle(ctx *apiContext, req map[string][]string, h *common.Configuration, w
 		switch k {
 		case "filter":
 			for _, val := range p {
-				f := parseFilter(val, ctx.convert)
+				f := parseFilter(val, ctx.Convert)
 				if f != nil {
 					dataFilters = append(dataFilters, f)
 				}
@@ -317,7 +319,7 @@ func handle(ctx *apiContext, req map[string][]string, h *common.Configuration, w
 			if k == "start" {
 				mode = startStringOp
 			}
-			f := timeFilter(mode, p[0], ctx.convert)
+			f := timeFilter(mode, p[0], ctx.Convert)
 			if f != nil {
 				dataFilters = append(dataFilters, f)
 			}
@@ -341,9 +343,9 @@ func handle(ctx *apiContext, req map[string][]string, h *common.Configuration, w
 			seek = true
 		}
 	}
-	stime := getDate(startDate, ctx.scanStart)
-	etime := getDate(endDate, ctx.scanEnd)
-	dirs, e := ioutil.ReadDir(ctx.directory)
+	stime := getDate(startDate, ctx.ScanStart)
+	etime := getDate(endDate, ctx.ScanEnd)
+	dirs, e := ioutil.ReadDir(ctx.Directory)
 	if seek && len(dirs) > 0 {
 		last := dirs[len(dirs)-1]
 		dirs = []os.FileInfo{last}
@@ -363,7 +365,7 @@ func handle(ctx *apiContext, req map[string][]string, h *common.Configuration, w
 					continue
 				}
 			}
-			p := filepath.Join(ctx.directory, dname)
+			p := filepath.Join(ctx.Directory, dname)
 			f, e := ioutil.ReadDir(p)
 			if e != nil {
 				common.Info(fmt.Sprintf("unable to read subdir: %s", dname))
@@ -466,13 +468,13 @@ func (d *dataWriter) addObject(first bool, o map[string]json.RawMessage) {
 	}
 }
 
-func (d *dataWriter) closeObjects(ctx *apiContext, limited bool) {
+func (d *dataWriter) closeObjects(ctx *Context, limited bool) {
 	if d.object {
 		d.objects.done(ctx, d.writer, limited)
 	}
 }
 
-func webRequest(ctx *apiContext, h *common.Configuration, w http.ResponseWriter, r *http.Request, d *dataWriter) {
+func webRequest(ctx *Context, h *common.Configuration, w http.ResponseWriter, r *http.Request, d *dataWriter) {
 	success := handle(ctx, r.URL.Query(), h, d)
 	if !success {
 		w.WriteHeader(http.StatusBadRequest)
@@ -498,11 +500,12 @@ func getSubField(key string, j map[string]json.RawMessage) (map[string]json.RawM
 	return sub, true
 }
 
-func apiMeta(ctx *apiContext, started string) []byte {
+func apiMeta(ctx *Context, started string) []byte {
 	return []byte(fmt.Sprintf("%s {\"started\": \"%s\"} %s", ctx.metaHeader, started, ctx.metaFooter))
 }
 
-func (ctx *apiContext) setMeta(version, host string) {
+// SetMeta indicates metadata for the context run
+func (ctx *Context) SetMeta(version, host string) {
 	ctx.metaHeader = "{\"meta\": {\"spec\": \"" + spec + "\", \"api\": \"" + version + "\", \"server\": \"" + host + "\"}, \"data\": ["
 	ctx.metaFooter = "]}"
 	ctx.byteHeader = []byte(ctx.metaHeader)
@@ -515,17 +518,17 @@ func Run(vers string) {
 	dir := conf.Global.Output
 	bind := conf.API.Bind
 	limit := conf.API.Limit
-	ctx := &apiContext{}
-	ctx.limit = limit
-	ctx.directory = dir
-	ctx.convert = conversions()
-	ctx.scanStart = time.Duration(conf.API.StartScan) * 24 * time.Hour
-	ctx.scanEnd = time.Duration(conf.API.EndScan) * 24 * time.Hour
+	ctx := &Context{}
+	ctx.Limit = limit
+	ctx.Directory = dir
+	ctx.Convert = conversions()
+	ctx.ScanStart = time.Duration(conf.API.StartScan) * 24 * time.Hour
+	ctx.ScanEnd = time.Duration(conf.API.EndScan) * 24 * time.Hour
 	host, err := os.Hostname()
 	if err != nil {
 		host = "localhost"
 	}
-	ctx.setMeta(vers, host)
+	ctx.SetMeta(vers, host)
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		d := newWebdataWriter(w)
 		webRequest(ctx, conf, w, r, d)
@@ -538,7 +541,7 @@ func Run(vers string) {
 	http.HandleFunc("/tags", func(w http.ResponseWriter, r *http.Request) {
 		obj := newWebdataWriter(w)
 		obj.limit = false
-		obj.objectWriter(&tagAdder{})
+		obj.objectWriter(&TagAdder{})
 		webRequest(ctx, conf, w, r, obj)
 	})
 	err = http.ListenAndServe(bind, nil)

@@ -27,7 +27,6 @@ var (
 
 const (
 	delimiter     = "`"
-	fileMode      = "file"
 	sleepCycleMin = 90
 	sleepCycleMax = 108
 )
