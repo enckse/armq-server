@@ -5,10 +5,17 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"time"
+
+	"voidedtech.com/armq-server/internal/common"
 )
 
-func testHandlers() *handlerSettings {
-	return &handlerSettings{allowEvent: true, allowDump: true, allowEmpty: true, enabled: true}
+func testHandlers() *common.Configuration {
+	cfg := &common.Configuration{}
+	cfg.API.Handlers.Enable = true
+	cfg.API.Handlers.Dump = true
+	cfg.API.Handlers.Empty = true
+	cfg.API.Handlers.Event = true
+	return cfg
 }
 
 type writerAdjust func(*dataWriter)
@@ -17,12 +24,12 @@ type testHarness struct {
 	ctx *apiContext
 	out string
 	req map[string][]string
-	hdl *handlerSettings
+	hdl *common.Configuration
 	ok  bool
 	adj writerAdjust
 }
 
-func runTest(c *apiContext, output string, r map[string][]string, h *handlerSettings, success bool) {
+func runTest(c *apiContext, output string, r map[string][]string, h *common.Configuration, success bool) {
 	test(&testHarness{ctx: c, out: output, req: r, hdl: h, ok: success})
 }
 
@@ -77,7 +84,7 @@ func RunTests() {
 	c.scanEnd = 24 * time.Hour
 	c.setMeta("master", "localhost")
 	runTest(c, "normal", nil, nil, true)
-	runTest(c, "nohandlers", nil, &handlerSettings{}, true)
+	runTest(c, "nohandlers", nil, &common.Configuration{}, true)
 	// limit input
 	m := make(map[string][]string)
 	m["limit"] = []string{"1"}

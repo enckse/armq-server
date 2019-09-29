@@ -50,7 +50,7 @@ func isTag(e *common.Entry) bool {
 	return false
 }
 
-func loadFile(path string, h *handlerSettings) (map[string]json.RawMessage, []byte) {
+func loadFile(path string, h *common.Configuration) (map[string]json.RawMessage, []byte) {
 	b, err := ioutil.ReadFile(path)
 	if err != nil {
 		common.Info(fmt.Sprintf("error reading file: %s", path))
@@ -64,8 +64,8 @@ func loadFile(path string, h *handlerSettings) (map[string]json.RawMessage, []by
 		common.Errored("unable to parse json", err)
 		return nil, nil
 	}
-	if h.enabled {
-		if !h.allowDump {
+	if h.API.Handlers.Enable {
+		if !h.API.Handlers.Dump {
 			_, ok := obj[dumpKey]
 			if ok {
 				delete(obj, dumpKey)
@@ -92,21 +92,7 @@ func handleAll(entries map[string]*common.Entry, h entityHandler) map[string]*co
 	return h.handle(len(entries), entries)
 }
 
-type handlerSettings struct {
-	allowEvent  bool
-	allowDump   bool
-	allowEmpty  bool
-	allowStart  bool
-	allowPlayer bool
-	allowReplay bool
-	enabled     bool
-}
-
-func (h *handlerSettings) allowFields() bool {
-	return h.allowEvent || h.allowStart || h.allowPlayer || h.allowReplay
-}
-
-func handleEntries(entries map[string]*common.Entry, settings *handlerSettings) map[string]*common.Entry {
+func handleEntries(entries map[string]*common.Entry, settings *common.Configuration) map[string]*common.Entry {
 	if len(entries) == 0 {
 		return entries
 	}
@@ -115,21 +101,21 @@ func handleEntries(entries map[string]*common.Entry, settings *handlerSettings) 
 	first, ok := entries[field0Key]
 	if ok {
 		firstField := ""
-		if settings.allowFields() {
+		if settings.HandleFields() {
 			if isRaw(first) {
 				firstField = first.Raw
 			}
 		}
-		if settings.allowEvent && firstField == eventType {
+		if settings.API.Handlers.Event && firstField == eventType {
 			handler = &eventHandler{}
 		}
-		if settings.allowStart && firstField == startType {
+		if settings.API.Handlers.Start && firstField == startType {
 			handler = &startHandler{}
 		}
-		if settings.allowReplay && firstField == replayType {
+		if settings.API.Handlers.Replay && firstField == replayType {
 			handler = &replayHandler{}
 		}
-		if settings.allowPlayer && firstField == playerType {
+		if settings.API.Handlers.Player && firstField == playerType {
 			handler = &playerHandler{}
 		}
 	}
@@ -139,7 +125,7 @@ func handleEntries(entries map[string]*common.Entry, settings *handlerSettings) 
 		if len(n) == 0 {
 			n = k
 		}
-		if settings.allowEmpty {
+		if settings.API.Handlers.Empty {
 			if isEmpty(v) {
 				v.Type = emptyJSON
 			}

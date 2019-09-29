@@ -329,7 +329,7 @@ func (d *dataWriter) addString(s string) {
 	d.add([]byte(s))
 }
 
-func handle(ctx *apiContext, req map[string][]string, h *handlerSettings, writer *dataWriter) bool {
+func handle(ctx *apiContext, req map[string][]string, h *common.Configuration, writer *dataWriter) bool {
 	dataFilters := []*dataFilter{}
 	limited := 0
 	if writer.limit {
@@ -515,7 +515,7 @@ func (d *dataWriter) closeObjects(ctx *apiContext, limited bool) {
 	}
 }
 
-func webRequest(ctx *apiContext, h *handlerSettings, w http.ResponseWriter, r *http.Request, d *dataWriter) {
+func webRequest(ctx *apiContext, h *common.Configuration, w http.ResponseWriter, r *http.Request, d *dataWriter) {
 	success := handle(ctx, r.URL.Query(), h, d)
 	if !success {
 		w.WriteHeader(http.StatusBadRequest)
@@ -569,17 +569,9 @@ func Run(vers string) {
 		host = "localhost"
 	}
 	ctx.setMeta(vers, host)
-	h := &handlerSettings{}
-	h.enabled = conf.API.Handlers.Enable
-	h.allowEvent = conf.API.Handlers.Event
-	h.allowDump = conf.API.Handlers.Dump
-	h.allowEmpty = conf.API.Handlers.Empty
-	h.allowStart = conf.API.Handlers.Start
-	h.allowReplay = conf.API.Handlers.Replay
-	h.allowPlayer = conf.API.Handlers.Player
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		d := newWebdataWriter(w)
-		webRequest(ctx, h, w, r, d)
+		webRequest(ctx, conf, w, r, d)
 	})
 	apiBytes := apiMeta(ctx, time.Now().Format("2006-01-02T15:04:05"))
 	http.HandleFunc("/api", func(w http.ResponseWriter, r *http.Request) {
@@ -590,7 +582,7 @@ func Run(vers string) {
 		obj := newWebdataWriter(w)
 		obj.limit = false
 		obj.objectWriter(&tagAdder{})
-		webRequest(ctx, h, w, r, obj)
+		webRequest(ctx, conf, w, r, obj)
 	})
 	err = http.ListenAndServe(bind, nil)
 	if err != nil {

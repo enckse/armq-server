@@ -31,51 +31,56 @@ type (
 	TypeConv int
 	// OpType is an operator type
 	OpType int
-)
 
-// Entry represents a data entry
-type Entry struct {
-	// Corresponding type (of data to query from other fields)
-	Type string `json:"jsontype"`
-	// Represents a raw field of data
-	Raw string `json:"raw,omitempty"`
-	// Represents an array object
-	Array []json.RawMessage `json:"array,omitempty"`
-	// Represents a map (object)
-	Object map[string]json.RawMessage `json:"object,omitempty"`
-	Name   string                     `json:"-"`
-}
+	// Entry represents a data entry
+	Entry struct {
+		// Corresponding type (of data to query from other fields)
+		Type string `json:"jsontype"`
+		// Represents a raw field of data
+		Raw string `json:"raw,omitempty"`
+		// Represents an array object
+		Array []json.RawMessage `json:"array,omitempty"`
+		// Represents a map (object)
+		Object map[string]json.RawMessage `json:"object,omitempty"`
+		Name   string                     `json:"-"`
+	}
 
-// Configuration for the server
-type Configuration struct {
-	Global struct {
-		Bind    string
-		Workers int
-		Output  string
-		Dump    bool
-	}
-	Files struct {
-		Directory string
-		Gc        int
-		After     int
-		Sleep     int
-	}
-	API struct {
-		Bind      string
-		Limit     int
-		Top       int
-		StartScan int
-		EndScan   int
-		Handlers  struct {
-			Enable bool
-			Dump   bool
-			Event  bool
-			Empty  bool
-			Start  bool
-			Replay bool
-			Player bool
+	// Configuration for the server
+	Configuration struct {
+		Global struct {
+			Bind    string
+			Workers int
+			Output  string
+			Dump    bool
+		}
+		Files struct {
+			Directory string
+			Gc        int
+			After     int
+			Sleep     int
+		}
+		API struct {
+			Bind      string
+			Limit     int
+			Top       int
+			StartScan int
+			EndScan   int
+			Handlers  struct {
+				Enable bool
+				Dump   bool
+				Event  bool
+				Empty  bool
+				Start  bool
+				Replay bool
+				Player bool
+			}
 		}
 	}
+)
+
+// HandleFields indicates if the handlers support field handling
+func (c *Configuration) HandleFields() bool {
+	return c.API.Handlers.Event || c.API.Handlers.Start || c.API.Handlers.Player || c.API.Handlers.Replay
 }
 
 // Info is for informational messages
