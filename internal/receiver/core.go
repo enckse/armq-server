@@ -32,17 +32,35 @@ const (
 	sleepCycleMax = 108
 )
 
-type rcvContext struct {
-	timeFormat string
-	output     string
-	dump       bool
-}
+type (
+	fileConfig struct {
+		directory string
+		after     time.Duration
+		gc        int
+		sleep     time.Duration
+	}
 
-type object struct {
-	id   string
-	data []byte
-	gc   bool
-}
+	// Datum is representative output from armq
+	Datum struct {
+		ID        string
+		Timestamp int64
+		Version   string
+		File      string
+		Date      string
+	}
+
+	rcvContext struct {
+		timeFormat string
+		output     string
+		dump       bool
+	}
+
+	object struct {
+		id   string
+		data []byte
+		gc   bool
+	}
+)
 
 func collect() []string {
 	gcLock.Lock()
@@ -82,15 +100,6 @@ func next() (*object, bool) {
 	obj := objcache[0]
 	objcache = objcache[1:]
 	return obj, true
-}
-
-// Datum is representative output from armq
-type Datum struct {
-	ID        string
-	Timestamp int64
-	Version   string
-	File      string
-	Date      string
 }
 
 func (d *Datum) toJSON() string {
@@ -284,13 +293,6 @@ func runCollector(conf *fileConfig) {
 			delete(cache, f)
 		}
 	}
-}
-
-type fileConfig struct {
-	directory string
-	after     time.Duration
-	gc        int
-	sleep     time.Duration
 }
 
 func scan(conf *fileConfig) {

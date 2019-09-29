@@ -54,7 +54,6 @@ func isTag(e *common.Entry) bool {
 	return false
 }
 
-
 func handleAll(entries map[string]*common.Entry, h entityHandler) map[string]*common.Entry {
 	return h.handle(len(entries), entries)
 }
@@ -103,25 +102,42 @@ func HandleEntries(entries map[string]*common.Entry, settings *common.Configurat
 	return r
 }
 
-type entityHandler interface {
-	handle(int, map[string]*common.Entry) map[string]*common.Entry
-}
+type (
+	// indicates a 'start'
+	startHandler struct {
+		entityHandler
+	}
 
-type defaultHandler struct {
-	entityHandler
-}
+	// indicates a 'player'
+	playerHandler struct {
+		entityHandler
+	}
+
+	// indicates a 'replay'
+	replayHandler struct {
+		entityHandler
+	}
+
+	entityHandler interface {
+		handle(int, map[string]*common.Entry) map[string]*common.Entry
+	}
+
+	defaultHandler struct {
+		entityHandler
+	}
+
+	// handles anything marked as an event
+	eventHandler struct {
+		entityHandler
+	}
+
+	entityCheck func(e *common.Entry) bool
+)
 
 // default handler is a noop, we don't know what to do with this entity
 func (h *defaultHandler) handle(count int, entries map[string]*common.Entry) map[string]*common.Entry {
 	return entries
 }
-
-// handles anything marked as an event
-type eventHandler struct {
-	entityHandler
-}
-
-type entityCheck func(e *common.Entry) bool
 
 func rewriteName(name, field string, check entityCheck, entries map[string]*common.Entry) bool {
 	v, ok := entries[field]
@@ -153,19 +169,9 @@ func (h *eventHandler) handle(count int, entries map[string]*common.Entry) map[s
 	return entries
 }
 
-// indicates a 'start'
-type startHandler struct {
-	entityHandler
-}
-
 func (h *startHandler) handle(count int, entries map[string]*common.Entry) map[string]*common.Entry {
 	rewriteName(startType, field0Key, set, entries)
 	return entries
-}
-
-// indicates a 'player'
-type playerHandler struct {
-	entityHandler
 }
 
 func (h *playerHandler) handle(count int, entries map[string]*common.Entry) map[string]*common.Entry {
@@ -174,11 +180,6 @@ func (h *playerHandler) handle(count int, entries map[string]*common.Entry) map[
 		rewriteName("name", field2Key, isRaw, entries)
 	}
 	return entries
-}
-
-// indicates a 'replay'
-type replayHandler struct {
-	entityHandler
 }
 
 func (h *replayHandler) handle(count int, entries map[string]*common.Entry) map[string]*common.Entry {
