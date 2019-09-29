@@ -25,15 +25,60 @@ const (
 	spec                     = "0.1"
 )
 
-type dataFilter struct {
-	field      string
-	op         opType
-	int64Val   int64
-	strVal     string
-	intVal     int
-	float64Val float64
-	fxn        typeConv
-}
+type (
+	dataFilter struct {
+		field      string
+		op         opType
+		int64Val   int64
+		strVal     string
+		intVal     int
+		float64Val float64
+		fxn        typeConv
+	}
+
+	apiContext struct {
+		limit     int
+		directory string
+		convert   map[string]typeConv
+		// api output data
+		metaFooter string
+		metaHeader string
+		byteHeader []byte
+		byteFooter []byte
+		// how we scan for data
+		scanStart time.Duration
+		scanEnd   time.Duration
+	}
+
+	onHeaders func()
+
+	objectAdder interface {
+		add(bool, map[string]json.RawMessage)
+		done(*apiContext, io.Writer, bool)
+	}
+
+	tagMeta struct {
+		endTime      int64
+		endTimeStr   string
+		startTime    int64
+		startTimeStr string
+	}
+
+	tagAdder struct {
+		objectAdder
+		tracked map[string]*tagMeta
+	}
+
+	dataWriter struct {
+		writer  io.Writer
+		write   bool
+		headers onHeaders
+		header  bool
+		objects objectAdder
+		object  bool
+		limit   bool
+	}
+)
 
 func (f *dataFilter) check(d []byte) bool {
 	switch f.fxn {
@@ -47,20 +92,6 @@ func (f *dataFilter) check(d []byte) bool {
 		return float64Converter(f.float64Val, d, f.op)
 	}
 	return false
-}
-
-type apiContext struct {
-	limit     int
-	directory string
-	convert   map[string]typeConv
-	// api output data
-	metaFooter string
-	metaHeader string
-	byteHeader []byte
-	byteFooter []byte
-	// how we scan for data
-	scanStart time.Duration
-	scanEnd   time.Duration
 }
 
 func conversions() map[string]typeConv {
@@ -158,25 +189,6 @@ func getDate(in string, adding time.Duration) time.Time {
 	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.Local)
 }
 
-type onHeaders func()
-
-type objectAdder interface {
-	add(bool, map[string]json.RawMessage)
-	done(*apiContext, io.Writer, bool)
-}
-
-type tagMeta struct {
-	endTime      int64
-	endTimeStr   string
-	startTime    int64
-	startTimeStr string
-}
-
-type tagAdder struct {
-	objectAdder
-	tracked map[string]*tagMeta
-}
-
 func (t *tagAdder) add(first bool, j map[string]json.RawMessage) {
 	if first {
 		t.tracked = make(map[string]*tagMeta)
@@ -243,16 +255,6 @@ func (t *tagAdder) done(ctx *apiContext, w io.Writer, limit bool) {
 		w.Write([]byte(limitIndicator))
 	}
 	w.Write(ctx.byteFooter)
-}
-
-type dataWriter struct {
-	writer  io.Writer
-	write   bool
-	headers onHeaders
-	header  bool
-	objects objectAdder
-	object  bool
-	limit   bool
 }
 
 func newDataWriter(w io.Writer, h onHeaders) *dataWriter {
