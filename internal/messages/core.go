@@ -1,9 +1,6 @@
-package internal
+package messages
 
 import (
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
 	"strings"
 
 	"voidedtech.com/armq-server/internal/common"
@@ -57,49 +54,13 @@ func isTag(e *common.Entry) bool {
 	return false
 }
 
-func loadFile(path string, h *common.Configuration) (map[string]json.RawMessage, []byte) {
-	b, err := ioutil.ReadFile(path)
-	if err != nil {
-		common.Info(fmt.Sprintf("error reading file: %s", path))
-		common.Errored("unable to read file", err)
-		return nil, nil
-	}
-	var obj map[string]json.RawMessage
-	err = json.Unmarshal(b, &obj)
-	if err != nil {
-		common.Info(fmt.Sprintf("unable to marshal object: %s", path))
-		common.Errored("unable to parse json", err)
-		return nil, nil
-	}
-	if h.API.Handlers.Enable {
-		if !h.API.Handlers.Dump {
-			_, ok := obj[common.DumpKey]
-			if ok {
-				delete(obj, common.DumpKey)
-			}
-		}
-		v, ok := obj[common.FieldKey]
-		if ok {
-			var fields map[string]*common.Entry
-			err = json.Unmarshal(v, &fields)
-			if err == nil {
-				rewrite := handleEntries(fields, h)
-				r, err := json.Marshal(rewrite)
-				if err == nil {
-					obj[common.FieldKey] = r
-					b, _ = json.Marshal(obj)
-				}
-			}
-		}
-	}
-	return obj, b
-}
 
 func handleAll(entries map[string]*common.Entry, h entityHandler) map[string]*common.Entry {
 	return h.handle(len(entries), entries)
 }
 
-func handleEntries(entries map[string]*common.Entry, settings *common.Configuration) map[string]*common.Entry {
+// HandleEntries is responsible for taking a set of input entries and massaging them into useful data
+func HandleEntries(entries map[string]*common.Entry, settings *common.Configuration) map[string]*common.Entry {
 	if len(entries) == 0 {
 		return entries
 	}

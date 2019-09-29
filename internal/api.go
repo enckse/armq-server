@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"voidedtech.com/armq-server/internal/common"
+	"voidedtech.com/armq-server/internal/messages"
 )
 
 const (
@@ -545,4 +546,42 @@ func Run(vers string) {
 		common.Errored("unable to do http serve", err)
 		panic("unable to host")
 	}
+}
+
+func loadFile(path string, h *common.Configuration) (map[string]json.RawMessage, []byte) {
+	b, err := ioutil.ReadFile(path)
+	if err != nil {
+		common.Info(fmt.Sprintf("error reading file: %s", path))
+		common.Errored("unable to read file", err)
+		return nil, nil
+	}
+	var obj map[string]json.RawMessage
+	err = json.Unmarshal(b, &obj)
+	if err != nil {
+		common.Info(fmt.Sprintf("unable to marshal object: %s", path))
+		common.Errored("unable to parse json", err)
+		return nil, nil
+	}
+	if h.API.Handlers.Enable {
+		if !h.API.Handlers.Dump {
+			_, ok := obj[common.DumpKey]
+			if ok {
+				delete(obj, common.DumpKey)
+			}
+		}
+		v, ok := obj[common.FieldKey]
+		if ok {
+			var fields map[string]*common.Entry
+			err = json.Unmarshal(v, &fields)
+			if err == nil {
+				rewrite := messages.HandleEntries(fields, h)
+				r, err := json.Marshal(rewrite)
+				if err == nil {
+					obj[common.FieldKey] = r
+					b, _ = json.Marshal(obj)
+				}
+			}
+		}
+	}
+	return obj, b
 }
