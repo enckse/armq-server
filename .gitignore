@@ -1,4 +1,3 @@
 armq-*
-internal/generated.go
-tests/armq-tests
+generated.go
 tests/bin
