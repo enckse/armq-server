@@ -7,11 +7,11 @@ OBJECTS := armq-api armq-receiver armq-tests
 
 build: $(OBJECTS) test lint
 
-$(GEN_SRC): cmd/setup.go
-	go generate cmd/setup.go
+$(GEN_SRC): tools/setup.go
+	go generate tools/setup.go
 
 $(OBJECTS): $(GEN_SRC) $(shell find . -type f -name "*.go")
-	go build $(FLAGS) -o $@ cmd/$@.go
+	go build $(FLAGS) -o $@ cmd/$@/main.go
 
 test: tests
 	make -C tests VERSION=$(VERSION)
