@@ -12,13 +12,17 @@ const (
 package internal
 `
 	convHeader = `
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"voidedtech.com/armq-server/internal/common"
+)
 
 const quoteByte = byte('"')
 `
 	strType  = "string"
 	convBody = `
-func {{.Name}}Converter(expect {{.Name}}, d []byte, op opType) bool {
+func {{.Name}}Converter(expect {{.Name}}, d []byte, op common.OpType) bool {
 	i, ok := {{.Name}}FromJSON(d)
 	if ok {
 		switch op {

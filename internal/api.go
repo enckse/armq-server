@@ -11,35 +11,64 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"voidedtech.com/armq-server/internal/common"
 )
 
 const (
-	int64Conv       typeConv = 1
-	strConv         typeConv = 2
-	intConv         typeConv = 3
-	float64Conv     typeConv = 4
-	filterDelimiter          = ":"
-	startStringOp            = "ge"
-	endStringOp              = "le"
-	limitIndicator           = ", {\"limited\": \"true\"}"
-	spec                     = "0.1"
+	maxOp                           = 5
+	minOp                           = -1
+	int64Conv       common.TypeConv = 1
+	strConv         common.TypeConv = 2
+	intConv         common.TypeConv = 3
+	float64Conv     common.TypeConv = 4
+	filterDelimiter                 = ":"
+	startStringOp                   = "ge"
+	endStringOp                     = "le"
+	limitIndicator                  = ", {\"limited\": \"true\"}"
+	spec                            = "0.1"
+	notJSON                         = "raw"
+	objJSON                         = "object"
+	arrayJSON                       = "array"
+	emptyJSON                       = "empty"
+	delimiter                       = "`"
+	fieldKey                        = "fields"
+	dumpKey                         = "dump"
+	fKey                            = "field"
+	tsKey                           = "ts"
+	idKey                           = "id"
+	tagKey                          = "tag"
+	dtKey                           = "dt"
+	field0Key                       = fKey + "0"
+	field1Key                       = fKey + "1"
+	field2Key                       = fKey + "2"
+	field3Key                       = fKey + "3"
+	field4Key                       = fKey + "4"
+	field5Key                       = fKey + "5"
+	lessThan        common.OpType   = 0
+	equals          common.OpType   = 1
+	lessTE          common.OpType   = 2
+	greatThan       common.OpType   = 3
+	greatTE         common.OpType   = 4
+	nEquals         common.OpType   = maxOp
+	invalidOp       common.OpType   = minOp
 )
 
 type (
 	dataFilter struct {
 		field      string
-		op         opType
+		op         common.OpType
 		int64Val   int64
 		strVal     string
 		intVal     int
 		float64Val float64
-		fxn        typeConv
+		fxn        common.TypeConv
 	}
 
 	apiContext struct {
 		limit     int
 		directory string
-		convert   map[string]typeConv
+		convert   map[string]common.TypeConv
 		// api output data
 		metaFooter string
 		metaHeader string
@@ -94,15 +123,15 @@ func (f *dataFilter) check(d []byte) bool {
 	return false
 }
 
-func conversions() map[string]typeConv {
-	m := make(map[string]typeConv)
+func conversions() map[string]common.TypeConv {
+	m := make(map[string]common.TypeConv)
 	m[tsKey] = int64Conv
 	m[idKey] = strConv
 	m[fmt.Sprintf("%s.%s.%s", fieldKey, tagKey, notJSON)] = strConv
 	return m
 }
 
-func stringToOp(op string) opType {
+func stringToOp(op string) common.OpType {
 	switch op {
 	case "eq":
 		return equals
@@ -120,10 +149,10 @@ func stringToOp(op string) opType {
 	return invalidOp
 }
 
-func parseFilter(filter string, mapping map[string]typeConv) *dataFilter {
+func parseFilter(filter string, mapping map[string]common.TypeConv) *dataFilter {
 	parts := strings.Split(filter, filterDelimiter)
 	if len(parts) < 3 {
-		info("filter missing components")
+		common.Info("filter missing components")
 		return nil
 	}
 	val := strings.Join(parts[2:], filterDelimiter)
@@ -131,12 +160,12 @@ func parseFilter(filter string, mapping map[string]typeConv) *dataFilter {
 	f.field = parts[0]
 	t, ok := mapping[f.field]
 	if !ok {
-		info(fmt.Sprintf("filter field unknown: %s", f.field))
+		common.Info(fmt.Sprintf("filter field unknown: %s", f.field))
 		return nil
 	}
 	f.op = stringToOp(parts[1])
 	if f.op == invalidOp {
-		info("filter op invalid")
+		common.Info("filter op invalid")
 		return nil
 	}
 	f.fxn = t
@@ -144,38 +173,38 @@ func parseFilter(filter string, mapping map[string]typeConv) *dataFilter {
 	case intConv:
 		i, e := strconv.Atoi(val)
 		if e != nil {
-			info("filter is not an int")
+			common.Info("filter is not an int")
 			return nil
 		}
 		f.intVal = i
 	case int64Conv:
 		i, e := strconv.ParseInt(val, 10, 64)
 		if e != nil {
-			info("filter is not an int64")
+			common.Info("filter is not an int64")
 			return nil
 		}
 		f.int64Val = i
 	case float64Conv:
 		i, e := strconv.ParseFloat(val, 64)
 		if e != nil {
-			info("filter is not a float64")
+			common.Info("filter is not a float64")
 		}
 		f.float64Val = i
 	case strConv:
 		if f.op == equals || f.op == nEquals {
 			f.strVal = val
 		} else {
-			info("filter string op is invalid")
+			common.Info("filter string op is invalid")
 			return nil
 		}
 	default:
-		info("unknown filter type")
+		common.Info("unknown filter type")
 		return nil
 	}
 	return f
 }
 
-func timeFilter(op, value string, mapping map[string]typeConv) *dataFilter {
+func timeFilter(op, value string, mapping map[string]common.TypeConv) *dataFilter {
 	return parseFilter(fmt.Sprintf("%s%s%s%s%s", tsKey, filterDelimiter, op, filterDelimiter, value), mapping)
 }
 
@@ -346,7 +375,7 @@ func handle(ctx *apiContext, req map[string][]string, h *handlerSettings, writer
 		dirs = []os.FileInfo{last}
 	}
 	if e != nil {
-		errored("unable to read dir", e)
+		common.Errored("unable to read dir", e)
 		return false
 	}
 	filterFiles := len(fileRead) > 0
@@ -363,8 +392,8 @@ func handle(ctx *apiContext, req map[string][]string, h *handlerSettings, writer
 			p := filepath.Join(ctx.directory, dname)
 			f, e := ioutil.ReadDir(p)
 			if e != nil {
-				info(fmt.Sprintf("unable to read subdir: %s", dname))
-				errored("reading subdir failed", e)
+				common.Info(fmt.Sprintf("unable to read subdir: %s", dname))
+				common.Errored("reading subdir failed", e)
 				continue
 			}
 			for _, file := range f {
@@ -411,8 +440,8 @@ func handle(ctx *apiContext, req map[string][]string, h *handlerSettings, writer
 						var sub map[string]json.RawMessage
 						err := json.Unmarshal(v, &sub)
 						if err != nil {
-							info(fmt.Sprintf("unable to unmarshal obj: %s (%s)", p, d.field))
-							errored("unmarshal error", err)
+							common.Info(fmt.Sprintf("unable to unmarshal obj: %s (%s)", p, d.field))
+							common.Errored("unmarshal error", err)
 							break
 						}
 						filterObj = sub
@@ -506,9 +535,9 @@ func (ctx *apiContext) setMeta(version, host string) {
 	ctx.byteFooter = []byte(ctx.metaFooter)
 }
 
-// RunAPI runs the API listener
-func RunAPI() {
-	conf := startup()
+// Run runs the API listener
+func Run(vers string) {
+	conf := common.Startup(vers)
 	dir := conf.Global.Output
 	bind := conf.API.Bind
 	limit := conf.API.Limit
@@ -548,7 +577,7 @@ func RunAPI() {
 	})
 	err = http.ListenAndServe(bind, nil)
 	if err != nil {
-		errored("unable to do http serve", err)
+		common.Errored("unable to do http serve", err)
 		panic("unable to host")
 	}
 }

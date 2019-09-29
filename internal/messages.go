@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"strings"
+
+	"voidedtech.com/armq-server/internal/common"
 )
 
 const (
@@ -15,27 +17,27 @@ const (
 	playerIDType = "playerid"
 )
 
-func isEmpty(e *Entry) bool {
+func isEmpty(e *common.Entry) bool {
 	return len(e.Raw) == 0 && len(e.Array) == 0 && len(e.Object) == 0
 }
 
-func isRaw(e *Entry) bool {
+func isRaw(e *common.Entry) bool {
 	return e.Type == notJSON
 }
 
-func isArray(e *Entry) bool {
+func isArray(e *common.Entry) bool {
 	return e.Type == arrayJSON
 }
 
-func isObject(e *Entry) bool {
+func isObject(e *common.Entry) bool {
 	return e.Type == objJSON
 }
 
-func isNotRaw(e *Entry) bool {
+func isNotRaw(e *common.Entry) bool {
 	return isObject(e) || isArray(e)
 }
 
-func isTag(e *Entry) bool {
+func isTag(e *common.Entry) bool {
 	if isRaw(e) && len(e.Raw) == 4 {
 		for _, r := range e.Raw {
 			if r >= 'a' && r <= 'z' {
@@ -51,15 +53,15 @@ func isTag(e *Entry) bool {
 func loadFile(path string, h *handlerSettings) (map[string]json.RawMessage, []byte) {
 	b, err := ioutil.ReadFile(path)
 	if err != nil {
-		info(fmt.Sprintf("error reading file: %s", path))
-		errored("unable to read file", err)
+		common.Info(fmt.Sprintf("error reading file: %s", path))
+		common.Errored("unable to read file", err)
 		return nil, nil
 	}
 	var obj map[string]json.RawMessage
 	err = json.Unmarshal(b, &obj)
 	if err != nil {
-		info(fmt.Sprintf("unable to marshal object: %s", path))
-		errored("unable to parse json", err)
+		common.Info(fmt.Sprintf("unable to marshal object: %s", path))
+		common.Errored("unable to parse json", err)
 		return nil, nil
 	}
 	if h.enabled {
@@ -71,7 +73,7 @@ func loadFile(path string, h *handlerSettings) (map[string]json.RawMessage, []by
 		}
 		v, ok := obj[fieldKey]
 		if ok {
-			var fields map[string]*Entry
+			var fields map[string]*common.Entry
 			err = json.Unmarshal(v, &fields)
 			if err == nil {
 				rewrite := handleEntries(fields, h)
@@ -86,7 +88,7 @@ func loadFile(path string, h *handlerSettings) (map[string]json.RawMessage, []by
 	return obj, b
 }
 
-func handleAll(entries map[string]*Entry, h entityHandler) map[string]*Entry {
+func handleAll(entries map[string]*common.Entry, h entityHandler) map[string]*common.Entry {
 	return h.handle(len(entries), entries)
 }
 
@@ -104,7 +106,7 @@ func (h *handlerSettings) allowFields() bool {
 	return h.allowEvent || h.allowStart || h.allowPlayer || h.allowReplay
 }
 
-func handleEntries(entries map[string]*Entry, settings *handlerSettings) map[string]*Entry {
+func handleEntries(entries map[string]*common.Entry, settings *handlerSettings) map[string]*common.Entry {
 	if len(entries) == 0 {
 		return entries
 	}
@@ -131,9 +133,9 @@ func handleEntries(entries map[string]*Entry, settings *handlerSettings) map[str
 			handler = &playerHandler{}
 		}
 	}
-	r := make(map[string]*Entry)
+	r := make(map[string]*common.Entry)
 	for k, v := range handleAll(entries, handler) {
-		n := strings.TrimSpace(v.name)
+		n := strings.TrimSpace(v.Name)
 		if len(n) == 0 {
 			n = k
 		}
@@ -148,7 +150,7 @@ func handleEntries(entries map[string]*Entry, settings *handlerSettings) map[str
 }
 
 type entityHandler interface {
-	handle(int, map[string]*Entry) map[string]*Entry
+	handle(int, map[string]*common.Entry) map[string]*common.Entry
 }
 
 type defaultHandler struct {
@@ -156,7 +158,7 @@ type defaultHandler struct {
 }
 
 // default handler is a noop, we don't know what to do with this entity
-func (h *defaultHandler) handle(count int, entries map[string]*Entry) map[string]*Entry {
+func (h *defaultHandler) handle(count int, entries map[string]*common.Entry) map[string]*common.Entry {
 	return entries
 }
 
@@ -165,25 +167,25 @@ type eventHandler struct {
 	entityHandler
 }
 
-type entityCheck func(e *Entry) bool
+type entityCheck func(e *common.Entry) bool
 
-func rewriteName(name, field string, check entityCheck, entries map[string]*Entry) bool {
+func rewriteName(name, field string, check entityCheck, entries map[string]*common.Entry) bool {
 	v, ok := entries[field]
 	if !ok {
 		return false
 	}
 	ok = check(v)
 	if ok {
-		v.name = name
+		v.Name = name
 	}
 	return ok
 }
 
-func set(e *Entry) bool {
+func set(e *common.Entry) bool {
 	return true
 }
 
-func (h *eventHandler) handle(count int, entries map[string]*Entry) map[string]*Entry {
+func (h *eventHandler) handle(count int, entries map[string]*common.Entry) map[string]*common.Entry {
 	rewriteName(eventType, field0Key, set, entries)
 	if rewriteName(tagKey, field1Key, isTag, entries) {
 		if rewriteName(playerIDType, field2Key, isRaw, entries) {
@@ -202,7 +204,7 @@ type startHandler struct {
 	entityHandler
 }
 
-func (h *startHandler) handle(count int, entries map[string]*Entry) map[string]*Entry {
+func (h *startHandler) handle(count int, entries map[string]*common.Entry) map[string]*common.Entry {
 	rewriteName(startType, field0Key, set, entries)
 	return entries
 }
@@ -212,7 +214,7 @@ type playerHandler struct {
 	entityHandler
 }
 
-func (h *playerHandler) handle(count int, entries map[string]*Entry) map[string]*Entry {
+func (h *playerHandler) handle(count int, entries map[string]*common.Entry) map[string]*common.Entry {
 	rewriteName(playerType, field0Key, set, entries)
 	if rewriteName(playerIDType, field1Key, isRaw, entries) {
 		rewriteName("name", field2Key, isRaw, entries)
@@ -225,7 +227,7 @@ type replayHandler struct {
 	entityHandler
 }
 
-func (h *replayHandler) handle(count int, entries map[string]*Entry) map[string]*Entry {
+func (h *replayHandler) handle(count int, entries map[string]*common.Entry) map[string]*common.Entry {
 	rewriteName(replayType, field0Key, set, entries)
 	if rewriteName("mission", field1Key, isTag, entries) {
 		if rewriteName("world", field2Key, isRaw, entries) {

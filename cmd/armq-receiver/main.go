@@ -4,6 +4,8 @@ import (
 	"voidedtech.com/armq-server/internal"
 )
 
+var vers = "master"
+
 func main() {
-	internal.RunReceiver()
+	internal.RunReceiver(vers)
 }

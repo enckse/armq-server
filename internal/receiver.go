@@ -11,6 +11,12 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"voidedtech.com/armq-server/internal/common"
+)
+
+var (
+	emptyObject = []byte("{}")
 )
 
 var (
@@ -94,14 +100,14 @@ func (d *Datum) toJSON() string {
 }
 
 func writerWorker(id, count int, outdir string, obj *object, ctx *rcvContext) bool {
-	dump := &Entry{Raw: string(obj.data), Type: notJSON}
+	dump := &common.Entry{Raw: string(obj.data), Type: notJSON}
 	datum := &Datum{}
 	parts := strings.Split(dump.Raw, delimiter)
 	ts := parts[0]
 	i, e := strconv.ParseInt(ts, 10, 64)
 	if e != nil {
-		info(fmt.Sprintf("unable to parse timestamp (not critical): %s", obj.id))
-		errored("parse error was", e)
+		common.Info(fmt.Sprintf("unable to parse timestamp (not critical): %s", obj.id))
+		common.Errored("parse error was", e)
 		i = -1
 	}
 	datum.Timestamp = i
@@ -117,8 +123,8 @@ func writerWorker(id, count int, outdir string, obj *object, ctx *rcvContext) bo
 	if ctx.dump {
 		j, e = json.Marshal(dump)
 		if e != nil {
-			info(fmt.Sprintf("unable to handle file %s", obj.id))
-			errored("unable to read object to json", e)
+			common.Info(fmt.Sprintf("unable to handle file %s", obj.id))
+			common.Errored("unable to read object to json", e)
 			return false
 		}
 	}
@@ -126,8 +132,8 @@ func writerWorker(id, count int, outdir string, obj *object, ctx *rcvContext) bo
 	p := filepath.Join(outdir, datum.ID)
 	err := ioutil.WriteFile(p, j, 0644)
 	if err != nil {
-		info(fmt.Sprintf("error saving results: %s", p))
-		errored("unable to save file", err)
+		common.Info(fmt.Sprintf("error saving results: %s", p))
+		common.Errored("unable to save file", err)
 		return false
 	}
 	return true
@@ -139,8 +145,8 @@ func (c *rcvContext) resetWorker() (int, string) {
 	if !pathExists(p) {
 		err := os.MkdirAll(p, 0755)
 		if err != nil {
-			info(fmt.Sprintf("error reseting path: %s", p))
-			errored("error for path reset", err)
+			common.Info(fmt.Sprintf("error reseting path: %s", p))
+			common.Errored("error for path reset", err)
 		}
 	}
 	return 0, p
@@ -190,9 +196,9 @@ func detectJSON(segment []string) string {
 	if len(segment) == 0 {
 		return ""
 	}
-	entries := []*Entry{}
+	entries := []*common.Entry{}
 	for idx, section := range segment {
-		p := &Entry{}
+		p := &common.Entry{}
 		p.Type = notJSON
 		p.Raw = section
 		var arr []json.RawMessage
@@ -207,7 +213,7 @@ func detectJSON(segment []string) string {
 				p.Object = obj
 			}
 		}
-		p.name = fmt.Sprintf("%s%d", fKey, idx)
+		p.Name = fmt.Sprintf("%s%d", fKey, idx)
 		entries = append(entries, p)
 	}
 	var buffer bytes.Buffer
@@ -215,7 +221,7 @@ func detectJSON(segment []string) string {
 		if idx > 0 {
 			buffer.WriteString(",")
 		}
-		entry := &Entry{Type: e.Type}
+		entry := &common.Entry{Type: e.Type}
 		switch e.Type {
 		case notJSON:
 			entry.Raw = e.Raw
@@ -226,18 +232,18 @@ func detectJSON(segment []string) string {
 		}
 		j, err := json.Marshal(entry)
 		if err != nil {
-			errored("unable to marshal raw object", err)
+			common.Errored("unable to marshal raw object", err)
 			j = emptyObject
 		}
-		buffer.WriteString(fmt.Sprintf("\"%s\": ", e.name))
+		buffer.WriteString(fmt.Sprintf("\"%s\": ", e.Name))
 		buffer.Write(j)
 	}
 	return fmt.Sprintf("{%s}", buffer.String())
 }
 
 // RunReceiver runs the receiving component to parse armq outputs
-func RunReceiver() {
-	config := startup()
+func RunReceiver(vers string) {
+	config := common.Startup(vers)
 	now := time.Now()
 	ctx := &rcvContext{}
 	ctx.timeFormat = now.Format("2006-01-02T15-04-05")
@@ -271,8 +277,8 @@ func runCollector(conf *fileConfig) {
 		if pathExists(p) {
 			e := os.Remove(p)
 			if e != nil {
-				info(fmt.Sprintf("file error on gc: %s", p))
-				errored("unable to remove garbage", e)
+				common.Info(fmt.Sprintf("file error on gc: %s", p))
+				common.Errored("unable to remove garbage", e)
 			}
 		}
 		// we are good to no longer know about this
@@ -292,7 +298,7 @@ type fileConfig struct {
 func scan(conf *fileConfig) {
 	files, e := ioutil.ReadDir(conf.directory)
 	if e != nil {
-		errored("unable to scan files", e)
+		common.Errored("unable to scan files", e)
 		return
 	}
 	lock.Lock()
@@ -311,24 +317,24 @@ func scan(conf *fileConfig) {
 		p := filepath.Join(conf.directory, n)
 		d, e := ioutil.ReadFile(p)
 		if e != nil {
-			info(fmt.Sprintf("file read error: %s", p))
-			errored("unable to read file", e)
+			common.Info(fmt.Sprintf("file read error: %s", p))
+			common.Errored("unable to read file", e)
 			continue
 		}
 		queue(n, d, true)
 	}
 }
 
-func fileReceive(config *Configuration) {
+func fileReceive(config *common.Configuration) {
 	conf := &fileConfig{}
 	conf.directory = config.Files.Directory
 	conf.gc = config.Files.Gc
 	conf.sleep = time.Duration(config.Files.Sleep)
 	conf.after = time.Duration(config.Files.After)
-	info("file mode enabled")
+	common.Info("file mode enabled")
 	err := os.Mkdir(conf.directory, 0777)
 	if err != nil {
-		errored("unable to create directory (not aborting)", err)
+		common.Errored("unable to create directory (not aborting)", err)
 	}
 	lastCollected := 0
 	for {
