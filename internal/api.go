@@ -74,7 +74,8 @@ type (
 		tracked map[string]*tagMeta
 	}
 
-	dataWriter struct {
+	// DataWriter handles writing data responses
+	DataWriter struct {
 		writer  io.Writer
 		write   bool
 		headers onHeaders
@@ -99,12 +100,13 @@ func (f *dataFilter) check(d []byte) bool {
 	return false
 }
 
-func conversions() map[string]common.TypeConv {
-	m := make(map[string]common.TypeConv)
-	m[common.TSKey] = int64Conv
-	m[common.IDKey] = strConv
-	m[fmt.Sprintf("%s.%s.%s", common.FieldKey, common.TagKey, common.NotJSON)] = strConv
-	return m
+// DefaultConverters initializes the converts we should plan to use
+func DefaultConverters() map[string]common.TypeConv {
+	return map[string]common.TypeConv{
+		common.TSKey: int64Conv,
+		common.IDKey: strConv,
+		fmt.Sprintf("%s.%s.%s", common.FieldKey, common.TagKey, common.NotJSON): strConv,
+	}
 }
 
 func stringToOp(op string) common.OpType {
@@ -262,8 +264,9 @@ func (t *TagAdder) done(ctx *Context, w io.Writer, limit bool) {
 	w.Write(ctx.byteFooter)
 }
 
-func newDataWriter(w io.Writer, h onHeaders) *dataWriter {
-	o := &dataWriter{}
+// NewDataWriter inits a new data writer for use
+func NewDataWriter(w io.Writer, h onHeaders) *DataWriter {
+	o := &DataWriter{}
 	o.write = w != nil
 	o.writer = w
 	o.header = h != nil
@@ -272,23 +275,23 @@ func newDataWriter(w io.Writer, h onHeaders) *dataWriter {
 	return o
 }
 
-func (d *dataWriter) setHeaders() {
+func (d *DataWriter) setHeaders() {
 	if d.header {
 		d.headers()
 	}
 }
 
-func (d *dataWriter) add(b []byte) {
+func (d *DataWriter) add(b []byte) {
 	if d.write {
 		d.writer.Write(b)
 	}
 }
 
-func (d *dataWriter) addString(s string) {
+func (d *DataWriter) addString(s string) {
 	d.add([]byte(s))
 }
 
-func handle(ctx *Context, req map[string][]string, h *common.Configuration, writer *dataWriter) bool {
+func handle(ctx *Context, req map[string][]string, h *common.Configuration, writer *DataWriter) bool {
 	dataFilters := []*dataFilter{}
 	limited := 0
 	if writer.limit {
@@ -456,32 +459,32 @@ func writeSuccess(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func newWebdataWriter(w http.ResponseWriter) *dataWriter {
-	return newDataWriter(w, func() {
+func newWebDataWriter(w http.ResponseWriter) *DataWriter {
+	return NewDataWriter(w, func() {
 		writeSuccess(w)
 	})
 }
 
-func (d *dataWriter) addObject(first bool, o map[string]json.RawMessage) {
+func (d *DataWriter) addObject(first bool, o map[string]json.RawMessage) {
 	if d.object {
 		d.objects.add(first, o)
 	}
 }
 
-func (d *dataWriter) closeObjects(ctx *Context, limited bool) {
+func (d *DataWriter) closeObjects(ctx *Context, limited bool) {
 	if d.object {
 		d.objects.done(ctx, d.writer, limited)
 	}
 }
 
-func webRequest(ctx *Context, h *common.Configuration, w http.ResponseWriter, r *http.Request, d *dataWriter) {
+func webRequest(ctx *Context, h *common.Configuration, w http.ResponseWriter, r *http.Request, d *DataWriter) {
 	success := handle(ctx, r.URL.Query(), h, d)
 	if !success {
 		w.WriteHeader(http.StatusBadRequest)
 	}
 }
 
-func (d *dataWriter) objectWriter(adder objectAdder) {
+func (d *DataWriter) objectWriter(adder objectAdder) {
 	d.object = true
 	d.write = false
 	d.objects = adder
@@ -521,7 +524,7 @@ func Run(vers string) {
 	ctx := &Context{}
 	ctx.Limit = limit
 	ctx.Directory = dir
-	ctx.Convert = conversions()
+	ctx.Convert = DefaultConverters()
 	ctx.ScanStart = time.Duration(conf.API.StartScan) * 24 * time.Hour
 	ctx.ScanEnd = time.Duration(conf.API.EndScan) * 24 * time.Hour
 	host, err := os.Hostname()
@@ -530,7 +533,7 @@ func Run(vers string) {
 	}
 	ctx.SetMeta(vers, host)
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		d := newWebdataWriter(w)
+		d := newWebDataWriter(w)
 		webRequest(ctx, conf, w, r, d)
 	})
 	apiBytes := apiMeta(ctx, time.Now().Format("2006-01-02T15:04:05"))
@@ -539,7 +542,7 @@ func Run(vers string) {
 		w.Write(apiBytes)
 	})
 	http.HandleFunc("/tags", func(w http.ResponseWriter, r *http.Request) {
-		obj := newWebdataWriter(w)
+		obj := newWebDataWriter(w)
 		obj.limit = false
 		obj.objectWriter(&TagAdder{})
 		webRequest(ctx, conf, w, r, obj)

@@ -19,7 +19,7 @@ func testHandlers() *common.Configuration {
 }
 
 type (
-	writerAdjust func(*dataWriter)
+	writerAdjust func(*DataWriter)
 
 	testHarness struct {
 		ctx *Context
@@ -37,7 +37,7 @@ func runTest(c *Context, output string, r map[string][]string, h *common.Configu
 
 func tagTest(c *Context) {
 	h := &testHarness{ctx: c, out: "tags", req: nil, hdl: nil, ok: true}
-	h.adj = func(d *dataWriter) {
+	h.adj = func(d *DataWriter) {
 		d.objectWriter(&TagAdder{})
 	}
 	test(h)
@@ -58,7 +58,7 @@ func test(h *testHarness) {
 	check := func() {
 		called = true
 	}
-	d := newDataWriter(b, check)
+	d := NewDataWriter(b, check)
 	if h.adj != nil {
 		h.adj(d)
 	}
@@ -98,13 +98,13 @@ func RunTests() {
 	runTest(c, "skip", m, nil, true)
 	// start & end
 	c.Limit = 10
-	c.Convert = conversions()
+	c.Convert = DefaultConverters()
 	delete(m, "skip")
 	m["start"] = []string{"1538671495199"}
 	m["end"] = []string{"1538671495201"}
 	runTest(c, "startend", m, nil, true)
 	// filters
-	c.Convert = conversions()
+	c.Convert = DefaultConverters()
 	delete(m, "start")
 	delete(m, "end")
 	c.Convert["fields.simtime.raw"] = float64Conv
@@ -115,6 +115,6 @@ func RunTests() {
 	filter = append(filter, "fields.tag.raw:eq:jzml")
 	m["filter"] = filter
 	runTest(c, "filtersand", m, nil, true)
-	c.Convert = conversions()
+	c.Convert = DefaultConverters()
 	tagTest(c)
 }
