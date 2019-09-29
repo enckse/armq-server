@@ -1,11 +1,11 @@
 package main
 
 import (
-	"voidedtech.com/armq-server/internal"
+	"voidedtech.com/armq-server/internal/api"
 )
 
 var vers = "master"
 
 func main() {
-	internal.Run(vers)
+	api.Run(vers)
 }

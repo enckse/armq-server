@@ -1,4 +1,4 @@
-package internal
+package api
 
 import (
 	"encoding/json"
@@ -17,10 +17,14 @@ import (
 )
 
 const (
-	int64Conv       common.TypeConv = 1
-	strConv         common.TypeConv = 2
-	intConv         common.TypeConv = 3
-	float64Conv     common.TypeConv = 4
+	// Int64Conv for int64 conversions
+	Int64Conv common.TypeConv = 1
+	// StrConv for string conversions
+	StrConv common.TypeConv = 2
+	// IntConv for integer conversions
+	IntConv common.TypeConv = 3
+	// Float64Conv for float64 conversions
+	Float64Conv     common.TypeConv = 4
 	filterDelimiter                 = ":"
 	startStringOp                   = "ge"
 	endStringOp                     = "le"
@@ -88,13 +92,13 @@ type (
 
 func (f *dataFilter) check(d []byte) bool {
 	switch f.fxn {
-	case int64Conv:
+	case Int64Conv:
 		return common.JSONint64Converter(f.int64Val, d, f.op)
-	case intConv:
+	case IntConv:
 		return common.JSONintConverter(f.intVal, d, f.op)
-	case strConv:
+	case StrConv:
 		return common.JSONstringConverter(f.strVal, d, f.op)
-	case float64Conv:
+	case Float64Conv:
 		return common.JSONfloat64Converter(f.float64Val, d, f.op)
 	}
 	return false
@@ -103,9 +107,9 @@ func (f *dataFilter) check(d []byte) bool {
 // DefaultConverters initializes the converts we should plan to use
 func DefaultConverters() map[string]common.TypeConv {
 	return map[string]common.TypeConv{
-		common.TSKey: int64Conv,
-		common.IDKey: strConv,
-		fmt.Sprintf("%s.%s.%s", common.FieldKey, common.TagKey, common.NotJSON): strConv,
+		common.TSKey: Int64Conv,
+		common.IDKey: StrConv,
+		fmt.Sprintf("%s.%s.%s", common.FieldKey, common.TagKey, common.NotJSON): StrConv,
 	}
 }
 
@@ -148,27 +152,27 @@ func parseFilter(filter string, mapping map[string]common.TypeConv) *dataFilter 
 	}
 	f.fxn = t
 	switch t {
-	case intConv:
+	case IntConv:
 		i, e := strconv.Atoi(val)
 		if e != nil {
 			common.Info("filter is not an int")
 			return nil
 		}
 		f.intVal = i
-	case int64Conv:
+	case Int64Conv:
 		i, e := strconv.ParseInt(val, 10, 64)
 		if e != nil {
 			common.Info("filter is not an int64")
 			return nil
 		}
 		f.int64Val = i
-	case float64Conv:
+	case Float64Conv:
 		i, e := strconv.ParseFloat(val, 64)
 		if e != nil {
 			common.Info("filter is not a float64")
 		}
 		f.float64Val = i
-	case strConv:
+	case StrConv:
 		if f.op == common.Equals || f.op == common.NEquals {
 			f.strVal = val
 		} else {
@@ -291,7 +295,8 @@ func (d *DataWriter) addString(s string) {
 	d.add([]byte(s))
 }
 
-func handle(ctx *Context, req map[string][]string, h *common.Configuration, writer *DataWriter) bool {
+// Handle is how we handle data requests
+func Handle(ctx *Context, req map[string][]string, h *common.Configuration, writer *DataWriter) bool {
 	dataFilters := []*dataFilter{}
 	limited := 0
 	if writer.limit {
@@ -478,13 +483,14 @@ func (d *DataWriter) closeObjects(ctx *Context, limited bool) {
 }
 
 func webRequest(ctx *Context, h *common.Configuration, w http.ResponseWriter, r *http.Request, d *DataWriter) {
-	success := handle(ctx, r.URL.Query(), h, d)
+	success := Handle(ctx, r.URL.Query(), h, d)
 	if !success {
 		w.WriteHeader(http.StatusBadRequest)
 	}
 }
 
-func (d *DataWriter) objectWriter(adder objectAdder) {
+// ObjectWriter appends an object to the writer/output data
+func (d *DataWriter) ObjectWriter(adder objectAdder) {
 	d.object = true
 	d.write = false
 	d.objects = adder
@@ -544,7 +550,7 @@ func Run(vers string) {
 	http.HandleFunc("/tags", func(w http.ResponseWriter, r *http.Request) {
 		obj := newWebDataWriter(w)
 		obj.limit = false
-		obj.objectWriter(&TagAdder{})
+		obj.ObjectWriter(&TagAdder{})
 		webRequest(ctx, conf, w, r, obj)
 	})
 	err = http.ListenAndServe(bind, nil)

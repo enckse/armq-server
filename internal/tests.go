@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"time"
 
+	"voidedtech.com/armq-server/internal/api"
 	"voidedtech.com/armq-server/internal/common"
 )
 
@@ -19,10 +20,10 @@ func testHandlers() *common.Configuration {
 }
 
 type (
-	writerAdjust func(*DataWriter)
+	writerAdjust func(*api.DataWriter)
 
 	testHarness struct {
-		ctx *Context
+		ctx *api.Context
 		out string
 		req map[string][]string
 		hdl *common.Configuration
@@ -31,14 +32,14 @@ type (
 	}
 )
 
-func runTest(c *Context, output string, r map[string][]string, h *common.Configuration, success bool) {
+func runTest(c *api.Context, output string, r map[string][]string, h *common.Configuration, success bool) {
 	test(&testHarness{ctx: c, out: output, req: r, hdl: h, ok: success})
 }
 
-func tagTest(c *Context) {
+func tagTest(c *api.Context) {
 	h := &testHarness{ctx: c, out: "tags", req: nil, hdl: nil, ok: true}
-	h.adj = func(d *DataWriter) {
-		d.objectWriter(&TagAdder{})
+	h.adj = func(d *api.DataWriter) {
+		d.ObjectWriter(&api.TagAdder{})
 	}
 	test(h)
 }
@@ -58,11 +59,11 @@ func test(h *testHarness) {
 	check := func() {
 		called = true
 	}
-	d := NewDataWriter(b, check)
+	d := api.NewDataWriter(b, check)
 	if h.adj != nil {
 		h.adj(d)
 	}
-	handle(h.ctx, request, handlers, d)
+	api.Handle(h.ctx, request, handlers, d)
 	if called != h.ok {
 		panic("failed test: " + h.out)
 	}
@@ -79,7 +80,7 @@ func test(h *testHarness) {
 
 // RunTests performs test execution
 func RunTests() {
-	c := &Context{}
+	c := &api.Context{}
 	c.Directory = "bin/"
 	c.Limit = 10
 	c.ScanStart = -10 * 24 * time.Hour
@@ -98,16 +99,16 @@ func RunTests() {
 	runTest(c, "skip", m, nil, true)
 	// start & end
 	c.Limit = 10
-	c.Convert = DefaultConverters()
+	c.Convert = api.DefaultConverters()
 	delete(m, "skip")
 	m["start"] = []string{"1538671495199"}
 	m["end"] = []string{"1538671495201"}
 	runTest(c, "startend", m, nil, true)
 	// filters
-	c.Convert = DefaultConverters()
+	c.Convert = api.DefaultConverters()
 	delete(m, "start")
 	delete(m, "end")
-	c.Convert["fields.simtime.raw"] = float64Conv
+	c.Convert["fields.simtime.raw"] = api.Float64Conv
 	filter := []string{"fields.simtime.raw:gt:100"}
 	m["filter"] = filter
 	runTest(c, "filters", m, nil, true)
@@ -115,6 +116,6 @@ func RunTests() {
 	filter = append(filter, "fields.tag.raw:eq:jzml")
 	m["filter"] = filter
 	runTest(c, "filtersand", m, nil, true)
-	c.Convert = DefaultConverters()
+	c.Convert = api.DefaultConverters()
 	tagTest(c)
 }
