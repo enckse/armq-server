@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"voidedtech.com/armq-server/internal/common"
+	"voidedtech.com/armq-server/internal"
 )
 
 var (
@@ -96,18 +96,18 @@ func next() (*object, bool) {
 }
 
 func (d *Datum) toJSON() string {
-	return fmt.Sprintf("\"%s\": \"%s\", \"%s\": %d, \"vers\": \"%s\", \"file\": \"%s\", \"%s\": \"%s\"", common.IDKey, d.ID, common.TSKey, d.Timestamp, d.Version, d.File, common.DTKey, d.Date)
+	return fmt.Sprintf("\"%s\": \"%s\", \"%s\": %d, \"vers\": \"%s\", \"file\": \"%s\", \"%s\": \"%s\"", internal.IDKey, d.ID, internal.TSKey, d.Timestamp, d.Version, d.File, internal.DTKey, d.Date)
 }
 
-func writerWorker(id, count int, outdir string, obj *object, conf *common.Configuration, timeStr string) bool {
-	dump := &common.Entry{Raw: string(obj.data), Type: common.NotJSON}
+func writerWorker(id, count int, outdir string, obj *object, conf *internal.Configuration, timeStr string) bool {
+	dump := &internal.Entry{Raw: string(obj.data), Type: internal.NotJSON}
 	datum := &Datum{}
 	parts := strings.Split(dump.Raw, delimiter)
 	ts := parts[0]
 	i, e := strconv.ParseInt(ts, 10, 64)
 	if e != nil {
-		common.Info(fmt.Sprintf("unable to parse timestamp (not critical): %s", obj.id))
-		common.Errored("parse error was", e)
+		internal.Info(fmt.Sprintf("unable to parse timestamp (not critical): %s", obj.id))
+		internal.Errored("parse error was", e)
 		i = -1
 	}
 	datum.Timestamp = i
@@ -123,36 +123,36 @@ func writerWorker(id, count int, outdir string, obj *object, conf *common.Config
 	if conf.Global.Dump {
 		j, e = json.Marshal(dump)
 		if e != nil {
-			common.Info(fmt.Sprintf("unable to handle file %s", obj.id))
-			common.Errored("unable to read object to json", e)
+			internal.Info(fmt.Sprintf("unable to handle file %s", obj.id))
+			internal.Errored("unable to read object to json", e)
 			return false
 		}
 	}
-	j = []byte(fmt.Sprintf("{%s, \"%s\": %s, \"%s\": %s}", datum.toJSON(), common.DumpKey, j, common.FieldKey, fields))
+	j = []byte(fmt.Sprintf("{%s, \"%s\": %s, \"%s\": %s}", datum.toJSON(), internal.DumpKey, j, internal.FieldKey, fields))
 	p := filepath.Join(outdir, datum.ID)
 	err := ioutil.WriteFile(p, j, 0644)
 	if err != nil {
-		common.Info(fmt.Sprintf("error saving results: %s", p))
-		common.Errored("unable to save file", err)
+		internal.Info(fmt.Sprintf("error saving results: %s", p))
+		internal.Errored("unable to save file", err)
 		return false
 	}
 	return true
 }
 
-func resetWorker(conf *common.Configuration) (int, string) {
+func resetWorker(conf *internal.Configuration) (int, string) {
 	now := time.Now().Format("2006-01-02")
 	p := filepath.Join(conf.Global.Output, now)
 	if !pathExists(p) {
 		err := os.MkdirAll(p, 0755)
 		if err != nil {
-			common.Info(fmt.Sprintf("error reseting path: %s", p))
-			common.Errored("error for path reset", err)
+			internal.Info(fmt.Sprintf("error reseting path: %s", p))
+			internal.Errored("error for path reset", err)
 		}
 	}
 	return 0, p
 }
 
-func createWorker(id int, conf *common.Configuration, timeStr string) {
+func createWorker(id int, conf *internal.Configuration, timeStr string) {
 	count, outdir := resetWorker(conf)
 	lastWorked := 0
 	for {
@@ -196,24 +196,24 @@ func detectJSON(segment []string) string {
 	if len(segment) == 0 {
 		return ""
 	}
-	entries := []*common.Entry{}
+	entries := []*internal.Entry{}
 	for idx, section := range segment {
-		p := &common.Entry{}
-		p.Type = common.NotJSON
+		p := &internal.Entry{}
+		p.Type = internal.NotJSON
 		p.Raw = section
 		var arr []json.RawMessage
 		bytes := []byte(section)
 		if json.Unmarshal(bytes, &arr) == nil {
 			p.Array = arr
-			p.Type = common.ArrayJSON
+			p.Type = internal.ArrayJSON
 		} else {
 			var obj map[string]json.RawMessage
 			if json.Unmarshal(bytes, &obj) == nil {
-				p.Type = common.ObjJSON
+				p.Type = internal.ObjJSON
 				p.Object = obj
 			}
 		}
-		p.Name = fmt.Sprintf("%s%d", common.FKey, idx)
+		p.Name = fmt.Sprintf("%s%d", internal.FKey, idx)
 		entries = append(entries, p)
 	}
 	var buffer bytes.Buffer
@@ -221,18 +221,18 @@ func detectJSON(segment []string) string {
 		if idx > 0 {
 			buffer.WriteString(",")
 		}
-		entry := &common.Entry{Type: e.Type}
+		entry := &internal.Entry{Type: e.Type}
 		switch e.Type {
-		case common.NotJSON:
+		case internal.NotJSON:
 			entry.Raw = e.Raw
-		case common.ArrayJSON:
+		case internal.ArrayJSON:
 			entry.Array = e.Array
-		case common.ObjJSON:
+		case internal.ObjJSON:
 			entry.Object = e.Object
 		}
 		j, err := json.Marshal(entry)
 		if err != nil {
-			common.Errored("unable to marshal raw object", err)
+			internal.Errored("unable to marshal raw object", err)
 			j = emptyObject
 		}
 		buffer.WriteString(fmt.Sprintf("\"%s\": ", e.Name))
@@ -243,11 +243,11 @@ func detectJSON(segment []string) string {
 
 // Run runs the receiving component to parse armq outputs
 func Run(vers string) {
-	config := common.Startup(vers)
+	config := internal.Startup(vers)
 	go fileReceive(config)
 	worker := config.Global.Workers
 	i := 0
-	n := common.Now()
+	n := internal.Now()
 	for i < worker {
 		go createWorker(i, config, n)
 		i++
@@ -273,8 +273,8 @@ func runCollector(conf *fileConfig) {
 		if pathExists(p) {
 			e := os.Remove(p)
 			if e != nil {
-				common.Info(fmt.Sprintf("file error on gc: %s", p))
-				common.Errored("unable to remove garbage", e)
+				internal.Info(fmt.Sprintf("file error on gc: %s", p))
+				internal.Errored("unable to remove garbage", e)
 			}
 		}
 		// we are good to no longer know about this
@@ -287,7 +287,7 @@ func runCollector(conf *fileConfig) {
 func scan(conf *fileConfig) {
 	files, e := ioutil.ReadDir(conf.directory)
 	if e != nil {
-		common.Errored("unable to scan files", e)
+		internal.Errored("unable to scan files", e)
 		return
 	}
 	lock.Lock()
@@ -306,24 +306,24 @@ func scan(conf *fileConfig) {
 		p := filepath.Join(conf.directory, n)
 		d, e := ioutil.ReadFile(p)
 		if e != nil {
-			common.Info(fmt.Sprintf("file read error: %s", p))
-			common.Errored("unable to read file", e)
+			internal.Info(fmt.Sprintf("file read error: %s", p))
+			internal.Errored("unable to read file", e)
 			continue
 		}
 		queue(n, d, true)
 	}
 }
 
-func fileReceive(config *common.Configuration) {
+func fileReceive(config *internal.Configuration) {
 	conf := &fileConfig{}
 	conf.directory = config.Files.Directory
 	conf.gc = config.Files.Gc
 	conf.sleep = time.Duration(config.Files.Sleep)
 	conf.after = time.Duration(config.Files.After)
-	common.Info("file mode enabled")
+	internal.Info("file mode enabled")
 	err := os.Mkdir(conf.directory, 0777)
 	if err != nil {
-		common.Errored("unable to create directory (not aborting)", err)
+		internal.Errored("unable to create directory (not aborting)", err)
 	}
 	lastCollected := 0
 	for {

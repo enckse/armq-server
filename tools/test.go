@@ -6,12 +6,12 @@ import (
 	"io/ioutil"
 	"time"
 
+	"voidedtech.com/armq-server/internal"
 	"voidedtech.com/armq-server/internal/api"
-	"voidedtech.com/armq-server/internal/common"
 )
 
-func testHandlers() *common.Configuration {
-	cfg := &common.Configuration{}
+func testHandlers() *internal.Configuration {
+	cfg := &internal.Configuration{}
 	cfg.API.Handlers.Enable = true
 	cfg.API.Handlers.Dump = true
 	cfg.API.Handlers.Empty = true
@@ -26,13 +26,13 @@ type (
 		ctx *api.Context
 		out string
 		req map[string][]string
-		hdl *common.Configuration
+		hdl *internal.Configuration
 		ok  bool
 		adj writerAdjust
 	}
 )
 
-func runTest(c *api.Context, output string, r map[string][]string, h *common.Configuration, success bool) {
+func runTest(c *api.Context, output string, r map[string][]string, h *internal.Configuration, success bool) {
 	test(&testHarness{ctx: c, out: output, req: r, hdl: h, ok: success})
 }
 
@@ -86,7 +86,7 @@ func main() {
 	c.ScanEnd = 24 * time.Hour
 	c.SetMeta("master", "localhost")
 	runTest(c, "normal", nil, nil, true)
-	runTest(c, "nohandlers", nil, &common.Configuration{}, true)
+	runTest(c, "nohandlers", nil, &internal.Configuration{}, true)
 	// limit input
 	m := make(map[string][]string)
 	m["limit"] = []string{"1"}

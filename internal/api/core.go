@@ -12,42 +12,42 @@ import (
 	"strings"
 	"time"
 
-	"voidedtech.com/armq-server/internal/common"
+	"voidedtech.com/armq-server/internal"
 	"voidedtech.com/armq-server/internal/messages"
 )
 
 const (
 	// Int64Conv for int64 conversions
-	Int64Conv common.TypeConv = 1
+	Int64Conv internal.TypeConv = 1
 	// StrConv for string conversions
-	StrConv common.TypeConv = 2
+	StrConv internal.TypeConv = 2
 	// IntConv for integer conversions
-	IntConv common.TypeConv = 3
+	IntConv internal.TypeConv = 3
 	// Float64Conv for float64 conversions
-	Float64Conv     common.TypeConv = 4
-	filterDelimiter                 = ":"
-	startStringOp                   = "ge"
-	endStringOp                     = "le"
-	limitIndicator                  = ", {\"limited\": \"true\"}"
-	spec                            = "0.1"
+	Float64Conv     internal.TypeConv = 4
+	filterDelimiter                   = ":"
+	startStringOp                     = "ge"
+	endStringOp                       = "le"
+	limitIndicator                    = ", {\"limited\": \"true\"}"
+	spec                              = "0.1"
 )
 
 type (
 	dataFilter struct {
 		field      string
-		op         common.OpType
+		op         internal.OpType
 		int64Val   int64
 		strVal     string
 		intVal     int
 		float64Val float64
-		fxn        common.TypeConv
+		fxn        internal.TypeConv
 	}
 
 	// Context represents operating context
 	Context struct {
 		Limit     int
 		Directory string
-		Convert   map[string]common.TypeConv
+		Convert   map[string]internal.TypeConv
 		// api output data
 		metaFooter string
 		metaHeader string
@@ -93,48 +93,48 @@ type (
 func (f *dataFilter) check(d []byte) bool {
 	switch f.fxn {
 	case Int64Conv:
-		return common.JSONint64Converter(f.int64Val, d, f.op)
+		return internal.JSONint64Converter(f.int64Val, d, f.op)
 	case IntConv:
-		return common.JSONintConverter(f.intVal, d, f.op)
+		return internal.JSONintConverter(f.intVal, d, f.op)
 	case StrConv:
-		return common.JSONstringConverter(f.strVal, d, f.op)
+		return internal.JSONstringConverter(f.strVal, d, f.op)
 	case Float64Conv:
-		return common.JSONfloat64Converter(f.float64Val, d, f.op)
+		return internal.JSONfloat64Converter(f.float64Val, d, f.op)
 	}
 	return false
 }
 
 // DefaultConverters initializes the converts we should plan to use
-func DefaultConverters() map[string]common.TypeConv {
-	return map[string]common.TypeConv{
-		common.TSKey: Int64Conv,
-		common.IDKey: StrConv,
-		fmt.Sprintf("%s.%s.%s", common.FieldKey, common.TagKey, common.NotJSON): StrConv,
+func DefaultConverters() map[string]internal.TypeConv {
+	return map[string]internal.TypeConv{
+		internal.TSKey: Int64Conv,
+		internal.IDKey: StrConv,
+		fmt.Sprintf("%s.%s.%s", internal.FieldKey, internal.TagKey, internal.NotJSON): StrConv,
 	}
 }
 
-func stringToOp(op string) common.OpType {
+func stringToOp(op string) internal.OpType {
 	switch op {
 	case "eq":
-		return common.Equals
+		return internal.Equals
 	case "neq":
-		return common.NEquals
+		return internal.NEquals
 	case "gt":
-		return common.GreatThan
+		return internal.GreatThan
 	case "lt":
-		return common.LessThan
+		return internal.LessThan
 	case endStringOp:
-		return common.LessTE
+		return internal.LessTE
 	case startStringOp:
-		return common.GreatTE
+		return internal.GreatTE
 	}
-	return common.InvalidOp
+	return internal.InvalidOp
 }
 
-func parseFilter(filter string, mapping map[string]common.TypeConv) *dataFilter {
+func parseFilter(filter string, mapping map[string]internal.TypeConv) *dataFilter {
 	parts := strings.Split(filter, filterDelimiter)
 	if len(parts) < 3 {
-		common.Info("filter missing components")
+		internal.Info("filter missing components")
 		return nil
 	}
 	val := strings.Join(parts[2:], filterDelimiter)
@@ -142,12 +142,12 @@ func parseFilter(filter string, mapping map[string]common.TypeConv) *dataFilter 
 	f.field = parts[0]
 	t, ok := mapping[f.field]
 	if !ok {
-		common.Info(fmt.Sprintf("filter field unknown: %s", f.field))
+		internal.Info(fmt.Sprintf("filter field unknown: %s", f.field))
 		return nil
 	}
 	f.op = stringToOp(parts[1])
-	if f.op == common.InvalidOp {
-		common.Info("filter op invalid")
+	if f.op == internal.InvalidOp {
+		internal.Info("filter op invalid")
 		return nil
 	}
 	f.fxn = t
@@ -155,39 +155,39 @@ func parseFilter(filter string, mapping map[string]common.TypeConv) *dataFilter 
 	case IntConv:
 		i, e := strconv.Atoi(val)
 		if e != nil {
-			common.Info("filter is not an int")
+			internal.Info("filter is not an int")
 			return nil
 		}
 		f.intVal = i
 	case Int64Conv:
 		i, e := strconv.ParseInt(val, 10, 64)
 		if e != nil {
-			common.Info("filter is not an int64")
+			internal.Info("filter is not an int64")
 			return nil
 		}
 		f.int64Val = i
 	case Float64Conv:
 		i, e := strconv.ParseFloat(val, 64)
 		if e != nil {
-			common.Info("filter is not a float64")
+			internal.Info("filter is not a float64")
 		}
 		f.float64Val = i
 	case StrConv:
-		if f.op == common.Equals || f.op == common.NEquals {
+		if f.op == internal.Equals || f.op == internal.NEquals {
 			f.strVal = val
 		} else {
-			common.Info("filter string op is invalid")
+			internal.Info("filter string op is invalid")
 			return nil
 		}
 	default:
-		common.Info("unknown filter type")
+		internal.Info("unknown filter type")
 		return nil
 	}
 	return f
 }
 
-func timeFilter(op, value string, mapping map[string]common.TypeConv) *dataFilter {
-	return parseFilter(fmt.Sprintf("%s%s%s%s%s", common.TSKey, filterDelimiter, op, filterDelimiter, value), mapping)
+func timeFilter(op, value string, mapping map[string]internal.TypeConv) *dataFilter {
+	return parseFilter(fmt.Sprintf("%s%s%s%s%s", internal.TSKey, filterDelimiter, op, filterDelimiter, value), mapping)
 }
 
 func getDate(in string, adding time.Duration) time.Time {
@@ -204,31 +204,31 @@ func (t *TagAdder) add(first bool, j map[string]json.RawMessage) {
 	if first {
 		t.tracked = make(map[string]*tagMeta)
 	}
-	o, ok := getSubField(common.FieldKey, j)
+	o, ok := getSubField(internal.FieldKey, j)
 	if !ok {
 		return
 	}
-	o, ok = getSubField(common.TagKey, o)
+	o, ok = getSubField(internal.TagKey, o)
 	if !ok {
 		return
 	}
-	v, ok := o[common.NotJSON]
+	v, ok := o[internal.NotJSON]
 	if !ok {
 		return
 	}
-	tsRaw, ok := j[common.TSKey]
+	tsRaw, ok := j[internal.TSKey]
 	if !ok {
 		return
 	}
-	dtRaw, ok := j[common.DTKey]
+	dtRaw, ok := j[internal.DTKey]
 	if !ok {
 		return
 	}
-	d, ok := common.JSONstring(dtRaw)
+	d, ok := internal.JSONstring(dtRaw)
 	if !ok {
 		return
 	}
-	i, ok := common.JSONint64(tsRaw)
+	i, ok := internal.JSONint64(tsRaw)
 	if !ok {
 		return
 	}
@@ -296,7 +296,7 @@ func (d *DataWriter) addString(s string) {
 }
 
 // Handle is how we handle data requests
-func Handle(ctx *Context, req map[string][]string, h *common.Configuration, writer *DataWriter) bool {
+func Handle(ctx *Context, req map[string][]string, h *internal.Configuration, writer *DataWriter) bool {
 	dataFilters := []*dataFilter{}
 	limited := 0
 	if writer.limit {
@@ -359,7 +359,7 @@ func Handle(ctx *Context, req map[string][]string, h *common.Configuration, writ
 		dirs = []os.FileInfo{last}
 	}
 	if e != nil {
-		common.Errored("unable to read dir", e)
+		internal.Errored("unable to read dir", e)
 		return false
 	}
 	filterFiles := len(fileRead) > 0
@@ -376,8 +376,8 @@ func Handle(ctx *Context, req map[string][]string, h *common.Configuration, writ
 			p := filepath.Join(ctx.Directory, dname)
 			f, e := ioutil.ReadDir(p)
 			if e != nil {
-				common.Info(fmt.Sprintf("unable to read subdir: %s", dname))
-				common.Errored("reading subdir failed", e)
+				internal.Info(fmt.Sprintf("unable to read subdir: %s", dname))
+				internal.Errored("reading subdir failed", e)
 				continue
 			}
 			for _, file := range f {
@@ -424,8 +424,8 @@ func Handle(ctx *Context, req map[string][]string, h *common.Configuration, writ
 						var sub map[string]json.RawMessage
 						err := json.Unmarshal(v, &sub)
 						if err != nil {
-							common.Info(fmt.Sprintf("unable to unmarshal obj: %s (%s)", p, d.field))
-							common.Errored("unmarshal error", err)
+							internal.Info(fmt.Sprintf("unable to unmarshal obj: %s (%s)", p, d.field))
+							internal.Errored("unmarshal error", err)
 							break
 						}
 						filterObj = sub
@@ -482,7 +482,7 @@ func (d *DataWriter) closeObjects(ctx *Context, limited bool) {
 	}
 }
 
-func webRequest(ctx *Context, h *common.Configuration, w http.ResponseWriter, r *http.Request, d *DataWriter) {
+func webRequest(ctx *Context, h *internal.Configuration, w http.ResponseWriter, r *http.Request, d *DataWriter) {
 	success := Handle(ctx, r.URL.Query(), h, d)
 	if !success {
 		w.WriteHeader(http.StatusBadRequest)
@@ -523,7 +523,7 @@ func (ctx *Context) SetMeta(version, host string) {
 
 // Run runs the API listener
 func Run(vers string) {
-	conf := common.Startup(vers)
+	conf := internal.Startup(vers)
 	dir := conf.Global.Output
 	bind := conf.API.Bind
 	limit := conf.API.Limit
@@ -555,41 +555,41 @@ func Run(vers string) {
 	})
 	err = http.ListenAndServe(bind, nil)
 	if err != nil {
-		common.Errored("unable to do http serve", err)
+		internal.Errored("unable to do http serve", err)
 		panic("unable to host")
 	}
 }
 
-func loadFile(path string, h *common.Configuration) (map[string]json.RawMessage, []byte) {
+func loadFile(path string, h *internal.Configuration) (map[string]json.RawMessage, []byte) {
 	b, err := ioutil.ReadFile(path)
 	if err != nil {
-		common.Info(fmt.Sprintf("error reading file: %s", path))
-		common.Errored("unable to read file", err)
+		internal.Info(fmt.Sprintf("error reading file: %s", path))
+		internal.Errored("unable to read file", err)
 		return nil, nil
 	}
 	var obj map[string]json.RawMessage
 	err = json.Unmarshal(b, &obj)
 	if err != nil {
-		common.Info(fmt.Sprintf("unable to marshal object: %s", path))
-		common.Errored("unable to parse json", err)
+		internal.Info(fmt.Sprintf("unable to marshal object: %s", path))
+		internal.Errored("unable to parse json", err)
 		return nil, nil
 	}
 	if h.API.Handlers.Enable {
 		if !h.API.Handlers.Dump {
-			_, ok := obj[common.DumpKey]
+			_, ok := obj[internal.DumpKey]
 			if ok {
-				delete(obj, common.DumpKey)
+				delete(obj, internal.DumpKey)
 			}
 		}
-		v, ok := obj[common.FieldKey]
+		v, ok := obj[internal.FieldKey]
 		if ok {
-			var fields map[string]*common.Entry
+			var fields map[string]*internal.Entry
 			err = json.Unmarshal(v, &fields)
 			if err == nil {
 				rewrite := messages.HandleEntries(fields, h)
 				r, err := json.Marshal(rewrite)
 				if err == nil {
-					obj[common.FieldKey] = r
+					obj[internal.FieldKey] = r
 					b, _ = json.Marshal(obj)
 				}
 			}

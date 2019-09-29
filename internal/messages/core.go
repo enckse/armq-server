@@ -3,7 +3,7 @@ package messages
 import (
 	"strings"
 
-	"voidedtech.com/armq-server/internal/common"
+	"voidedtech.com/armq-server/internal"
 )
 
 const (
@@ -13,35 +13,35 @@ const (
 	playerType   = "player"
 	playerIDType = "playerid"
 	emptyJSON    = "empty"
-	field0Key    = common.FKey + "0"
-	field1Key    = common.FKey + "1"
-	field2Key    = common.FKey + "2"
-	field3Key    = common.FKey + "3"
-	field4Key    = common.FKey + "4"
-	field5Key    = common.FKey + "5"
+	field0Key    = internal.FKey + "0"
+	field1Key    = internal.FKey + "1"
+	field2Key    = internal.FKey + "2"
+	field3Key    = internal.FKey + "3"
+	field4Key    = internal.FKey + "4"
+	field5Key    = internal.FKey + "5"
 )
 
-func isEmpty(e *common.Entry) bool {
+func isEmpty(e *internal.Entry) bool {
 	return len(e.Raw) == 0 && len(e.Array) == 0 && len(e.Object) == 0
 }
 
-func isRaw(e *common.Entry) bool {
-	return e.Type == common.NotJSON
+func isRaw(e *internal.Entry) bool {
+	return e.Type == internal.NotJSON
 }
 
-func isArray(e *common.Entry) bool {
-	return e.Type == common.ArrayJSON
+func isArray(e *internal.Entry) bool {
+	return e.Type == internal.ArrayJSON
 }
 
-func isObject(e *common.Entry) bool {
-	return e.Type == common.ObjJSON
+func isObject(e *internal.Entry) bool {
+	return e.Type == internal.ObjJSON
 }
 
-func isNotRaw(e *common.Entry) bool {
+func isNotRaw(e *internal.Entry) bool {
 	return isObject(e) || isArray(e)
 }
 
-func isTag(e *common.Entry) bool {
+func isTag(e *internal.Entry) bool {
 	if isRaw(e) && len(e.Raw) == 4 {
 		for _, r := range e.Raw {
 			if r >= 'a' && r <= 'z' {
@@ -54,12 +54,12 @@ func isTag(e *common.Entry) bool {
 	return false
 }
 
-func handleAll(entries map[string]*common.Entry, h entityHandler) map[string]*common.Entry {
+func handleAll(entries map[string]*internal.Entry, h entityHandler) map[string]*internal.Entry {
 	return h.handle(len(entries), entries)
 }
 
 // HandleEntries is responsible for taking a set of input entries and massaging them into useful data
-func HandleEntries(entries map[string]*common.Entry, settings *common.Configuration) map[string]*common.Entry {
+func HandleEntries(entries map[string]*internal.Entry, settings *internal.Configuration) map[string]*internal.Entry {
 	if len(entries) == 0 {
 		return entries
 	}
@@ -86,7 +86,7 @@ func HandleEntries(entries map[string]*common.Entry, settings *common.Configurat
 			handler = &playerHandler{}
 		}
 	}
-	r := make(map[string]*common.Entry)
+	r := make(map[string]*internal.Entry)
 	for k, v := range handleAll(entries, handler) {
 		n := strings.TrimSpace(v.Name)
 		if len(n) == 0 {
@@ -119,7 +119,7 @@ type (
 	}
 
 	entityHandler interface {
-		handle(int, map[string]*common.Entry) map[string]*common.Entry
+		handle(int, map[string]*internal.Entry) map[string]*internal.Entry
 	}
 
 	defaultHandler struct {
@@ -131,15 +131,15 @@ type (
 		entityHandler
 	}
 
-	entityCheck func(e *common.Entry) bool
+	entityCheck func(e *internal.Entry) bool
 )
 
 // default handler is a noop, we don't know what to do with this entity
-func (h *defaultHandler) handle(count int, entries map[string]*common.Entry) map[string]*common.Entry {
+func (h *defaultHandler) handle(count int, entries map[string]*internal.Entry) map[string]*internal.Entry {
 	return entries
 }
 
-func rewriteName(name, field string, check entityCheck, entries map[string]*common.Entry) bool {
+func rewriteName(name, field string, check entityCheck, entries map[string]*internal.Entry) bool {
 	v, ok := entries[field]
 	if !ok {
 		return false
@@ -151,13 +151,13 @@ func rewriteName(name, field string, check entityCheck, entries map[string]*comm
 	return ok
 }
 
-func set(e *common.Entry) bool {
+func set(e *internal.Entry) bool {
 	return true
 }
 
-func (h *eventHandler) handle(count int, entries map[string]*common.Entry) map[string]*common.Entry {
+func (h *eventHandler) handle(count int, entries map[string]*internal.Entry) map[string]*internal.Entry {
 	rewriteName(eventType, field0Key, set, entries)
-	if rewriteName(common.TagKey, field1Key, isTag, entries) {
+	if rewriteName(internal.TagKey, field1Key, isTag, entries) {
 		if rewriteName(playerIDType, field2Key, isRaw, entries) {
 			if rewriteName("type", field3Key, isRaw, entries) {
 				if rewriteName("data", field4Key, isNotRaw, entries) {
@@ -169,12 +169,12 @@ func (h *eventHandler) handle(count int, entries map[string]*common.Entry) map[s
 	return entries
 }
 
-func (h *startHandler) handle(count int, entries map[string]*common.Entry) map[string]*common.Entry {
+func (h *startHandler) handle(count int, entries map[string]*internal.Entry) map[string]*internal.Entry {
 	rewriteName(startType, field0Key, set, entries)
 	return entries
 }
 
-func (h *playerHandler) handle(count int, entries map[string]*common.Entry) map[string]*common.Entry {
+func (h *playerHandler) handle(count int, entries map[string]*internal.Entry) map[string]*internal.Entry {
 	rewriteName(playerType, field0Key, set, entries)
 	if rewriteName(playerIDType, field1Key, isRaw, entries) {
 		rewriteName("name", field2Key, isRaw, entries)
@@ -182,7 +182,7 @@ func (h *playerHandler) handle(count int, entries map[string]*common.Entry) map[
 	return entries
 }
 
-func (h *replayHandler) handle(count int, entries map[string]*common.Entry) map[string]*common.Entry {
+func (h *replayHandler) handle(count int, entries map[string]*internal.Entry) map[string]*internal.Entry {
 	rewriteName(replayType, field0Key, set, entries)
 	if rewriteName("mission", field1Key, isTag, entries) {
 		if rewriteName("world", field2Key, isRaw, entries) {
