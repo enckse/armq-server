@@ -20,8 +20,8 @@ const quoteByte = byte('"')
 `
 	strType  = "string"
 	convBody = `
-func {{.Name}}Converter(expect {{.Name}}, d []byte, op OpType) bool {
-	i, ok := {{.Name}}FromJSON(d)
+func JSON{{.Name}}Converter(expect {{.Name}}, d []byte, op OpType) bool {
+	i, ok := JSON{{.Name}}(d)
 	if ok {
 		switch op {
 {{if .IsNum}}
@@ -43,13 +43,13 @@ func {{.Name}}Converter(expect {{.Name}}, d []byte, op OpType) bool {
 	return false
 }
 
-func {{.Name}}FromJSON(d []byte) ({{.Name}}, bool) {
+func JSON{{.Name}}(d []byte) ({{.Name}}, bool) {
 	var i {{.Name}}
 	err := json.Unmarshal(d, &i)
 	if err != nil {
 		length := len(d)
 		if length > 1 && d[0] == quoteByte && d[length-1] == quoteByte {
-			return {{.Name}}FromJSON(d[1 : length-1])
+			return JSON{{.Name}}(d[1 : length-1])
 		}
 		return {{.Value}}, false
 	}

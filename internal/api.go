@@ -85,13 +85,13 @@ type (
 func (f *dataFilter) check(d []byte) bool {
 	switch f.fxn {
 	case int64Conv:
-		return int64Converter(f.int64Val, d, f.op)
+		return common.JSONint64Converter(f.int64Val, d, f.op)
 	case intConv:
-		return intConverter(f.intVal, d, f.op)
+		return common.JSONintConverter(f.intVal, d, f.op)
 	case strConv:
-		return stringConverter(f.strVal, d, f.op)
+		return common.JSONstringConverter(f.strVal, d, f.op)
 	case float64Conv:
-		return float64Converter(f.float64Val, d, f.op)
+		return common.JSONfloat64Converter(f.float64Val, d, f.op)
 	}
 	return false
 }
@@ -215,11 +215,11 @@ func (t *tagAdder) add(first bool, j map[string]json.RawMessage) {
 	if !ok {
 		return
 	}
-	d, ok := stringFromJSON(dtRaw)
+	d, ok := common.JSONstring(dtRaw)
 	if !ok {
 		return
 	}
-	i, ok := int64FromJSON(tsRaw)
+	i, ok := common.JSONint64(tsRaw)
 	if !ok {
 		return
 	}
