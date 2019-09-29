@@ -1,11 +1,11 @@
 package main
 
 import (
-	"voidedtech.com/armq-server/internal"
+	"voidedtech.com/armq-server/internal/receiver"
 )
 
 var vers = "master"
 
 func main() {
-	internal.RunReceiver(vers)
+	receiver.Run(vers)
 }

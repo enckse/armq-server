@@ -1,4 +1,4 @@
-package internal
+package receiver
 
 import (
 	"bytes"
@@ -12,23 +12,22 @@ import (
 	"sync"
 	"time"
 
+	"voidedtech.com/armq-server/internal"
 	"voidedtech.com/armq-server/internal/common"
 )
 
 var (
 	emptyObject = []byte("{}")
-)
-
-var (
-	gcLock   = &sync.Mutex{}
-	readLock = &sync.Mutex{}
-	objcache = []*object{}
-	gc       = []string{}
-	lock     = &sync.Mutex{}
-	cache    = make(map[string]struct{})
+	gcLock      = &sync.Mutex{}
+	readLock    = &sync.Mutex{}
+	objcache    = []*object{}
+	gc          = []string{}
+	lock        = &sync.Mutex{}
+	cache       = make(map[string]struct{})
 )
 
 const (
+	delimiter     = "`"
 	fileMode      = "file"
 	sleepCycleMin = 90
 	sleepCycleMax = 108
@@ -96,11 +95,11 @@ type Datum struct {
 }
 
 func (d *Datum) toJSON() string {
-	return fmt.Sprintf("\"%s\": \"%s\", \"%s\": %d, \"vers\": \"%s\", \"file\": \"%s\", \"%s\": \"%s\"", idKey, d.ID, tsKey, d.Timestamp, d.Version, d.File, dtKey, d.Date)
+	return fmt.Sprintf("\"%s\": \"%s\", \"%s\": %d, \"vers\": \"%s\", \"file\": \"%s\", \"%s\": \"%s\"", internal.IDKey, d.ID, internal.TSKey, d.Timestamp, d.Version, d.File, internal.DTKey, d.Date)
 }
 
 func writerWorker(id, count int, outdir string, obj *object, ctx *rcvContext) bool {
-	dump := &common.Entry{Raw: string(obj.data), Type: notJSON}
+	dump := &common.Entry{Raw: string(obj.data), Type: internal.NotJSON}
 	datum := &Datum{}
 	parts := strings.Split(dump.Raw, delimiter)
 	ts := parts[0]
@@ -128,7 +127,7 @@ func writerWorker(id, count int, outdir string, obj *object, ctx *rcvContext) bo
 			return false
 		}
 	}
-	j = []byte(fmt.Sprintf("{%s, \"%s\": %s, \"%s\": %s}", datum.toJSON(), dumpKey, j, fieldKey, fields))
+	j = []byte(fmt.Sprintf("{%s, \"%s\": %s, \"%s\": %s}", datum.toJSON(), internal.DumpKey, j, internal.FieldKey, fields))
 	p := filepath.Join(outdir, datum.ID)
 	err := ioutil.WriteFile(p, j, 0644)
 	if err != nil {
@@ -199,21 +198,21 @@ func detectJSON(segment []string) string {
 	entries := []*common.Entry{}
 	for idx, section := range segment {
 		p := &common.Entry{}
-		p.Type = notJSON
+		p.Type = internal.NotJSON
 		p.Raw = section
 		var arr []json.RawMessage
 		bytes := []byte(section)
 		if json.Unmarshal(bytes, &arr) == nil {
 			p.Array = arr
-			p.Type = arrayJSON
+			p.Type = internal.ArrayJSON
 		} else {
 			var obj map[string]json.RawMessage
 			if json.Unmarshal(bytes, &obj) == nil {
-				p.Type = objJSON
+				p.Type = internal.ObjJSON
 				p.Object = obj
 			}
 		}
-		p.Name = fmt.Sprintf("%s%d", fKey, idx)
+		p.Name = fmt.Sprintf("%s%d", internal.FKey, idx)
 		entries = append(entries, p)
 	}
 	var buffer bytes.Buffer
@@ -223,11 +222,11 @@ func detectJSON(segment []string) string {
 		}
 		entry := &common.Entry{Type: e.Type}
 		switch e.Type {
-		case notJSON:
+		case internal.NotJSON:
 			entry.Raw = e.Raw
-		case arrayJSON:
+		case internal.ArrayJSON:
 			entry.Array = e.Array
-		case objJSON:
+		case internal.ObjJSON:
 			entry.Object = e.Object
 		}
 		j, err := json.Marshal(entry)
@@ -241,8 +240,8 @@ func detectJSON(segment []string) string {
 	return fmt.Sprintf("{%s}", buffer.String())
 }
 
-// RunReceiver runs the receiving component to parse armq outputs
-func RunReceiver(vers string) {
+// Run runs the receiving component to parse armq outputs
+func Run(vers string) {
 	config := common.Startup(vers)
 	now := time.Now()
 	ctx := &rcvContext{}

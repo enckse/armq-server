@@ -43,7 +43,7 @@ type Entry struct {
 	Array []json.RawMessage `json:"array,omitempty"`
 	// Represents a map (object)
 	Object map[string]json.RawMessage `json:"object,omitempty"`
-	Name   string `json:"-"`
+	Name   string                     `json:"-"`
 }
 
 // Configuration for the server

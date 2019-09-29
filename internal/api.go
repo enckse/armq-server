@@ -31,7 +31,6 @@ const (
 	objJSON                         = "object"
 	arrayJSON                       = "array"
 	emptyJSON                       = "empty"
-	delimiter                       = "`"
 	fieldKey                        = "fields"
 	dumpKey                         = "dump"
 	fKey                            = "field"
@@ -52,6 +51,24 @@ const (
 	greatTE         common.OpType   = 4
 	nEquals         common.OpType   = maxOp
 	invalidOp       common.OpType   = minOp
+	// TSKey is the timestamp key
+	TSKey = tsKey
+	// IDKey is the identifier key
+	IDKey = idKey
+	// DumpKey is the raw dump
+	DumpKey = dumpKey
+	// DTKey is the datetime key
+	DTKey = dtKey
+	// NotJSON indicates raw json-ish object
+	NotJSON = notJSON
+	// FieldKey is for the fields in the data
+	FieldKey = fieldKey
+	// ArrayJSON indicates it is an array of things
+	ArrayJSON = arrayJSON
+	// ObjJSON indicates it is a json-ic ojbect
+	ObjJSON = objJSON
+	// FKey is a field indicator
+	FKey = fKey
 )
 
 type (
