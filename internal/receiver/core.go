@@ -49,12 +49,6 @@ type (
 		Date      string
 	}
 
-	rcvContext struct {
-		timeFormat string
-		output     string
-		dump       bool
-	}
-
 	object struct {
 		id   string
 		data []byte
@@ -106,7 +100,7 @@ func (d *Datum) toJSON() string {
 	return fmt.Sprintf("\"%s\": \"%s\", \"%s\": %d, \"vers\": \"%s\", \"file\": \"%s\", \"%s\": \"%s\"", common.IDKey, d.ID, common.TSKey, d.Timestamp, d.Version, d.File, common.DTKey, d.Date)
 }
 
-func writerWorker(id, count int, outdir string, obj *object, ctx *rcvContext) bool {
+func writerWorker(id, count int, outdir string, obj *object, conf *common.Configuration, timeStr string) bool {
 	dump := &common.Entry{Raw: string(obj.data), Type: common.NotJSON}
 	datum := &Datum{}
 	parts := strings.Split(dump.Raw, delimiter)
@@ -121,13 +115,13 @@ func writerWorker(id, count int, outdir string, obj *object, ctx *rcvContext) bo
 	datum.Date = time.Unix(i/1000, 0).Format("2006-01-02T15:04:05")
 	datum.Version = parts[1]
 	datum.File = obj.id
-	datum.ID = fmt.Sprintf("%s.%d.%d.%d", ctx.timeFormat, datum.Timestamp, id, count)
+	datum.ID = fmt.Sprintf("%s.%d.%d.%d", timeStr, datum.Timestamp, id, count)
 	fields := detectJSON(parts[2:])
 	if fields == "" {
 		fields = "{}"
 	}
 	j := emptyObject
-	if ctx.dump {
+	if conf.Global.Dump {
 		j, e = json.Marshal(dump)
 		if e != nil {
 			common.Info(fmt.Sprintf("unable to handle file %s", obj.id))
@@ -146,9 +140,9 @@ func writerWorker(id, count int, outdir string, obj *object, ctx *rcvContext) bo
 	return true
 }
 
-func (c *rcvContext) resetWorker() (int, string) {
+func resetWorker(conf *common.Configuration) (int, string) {
 	now := time.Now().Format("2006-01-02")
-	p := filepath.Join(c.output, now)
+	p := filepath.Join(conf.Global.Output, now)
 	if !pathExists(p) {
 		err := os.MkdirAll(p, 0755)
 		if err != nil {
@@ -159,13 +153,13 @@ func (c *rcvContext) resetWorker() (int, string) {
 	return 0, p
 }
 
-func createWorker(id int, ctx *rcvContext) {
-	count, outdir := ctx.resetWorker()
+func createWorker(id int, conf *common.Configuration, timeStr string) {
+	count, outdir := resetWorker(conf)
 	lastWorked := 0
 	for {
 		obj, ok := next()
 		if ok {
-			if writerWorker(id, count, outdir, obj, ctx) {
+			if writerWorker(id, count, outdir, obj, conf, timeStr) {
 				count++
 			} else {
 				ok = false
@@ -185,7 +179,7 @@ func createWorker(id int, ctx *rcvContext) {
 				cooldown = 1
 			case lastWorked >= sleepCycleMin && lastWorked < sleepCycleMax:
 				cooldown = 5
-				count, outdir = ctx.resetWorker()
+				count, outdir = resetWorker(conf)
 			case id > 0 && lastWorked >= sleepCycleMax:
 				// initial worker can never go this slow
 				cooldown = 30
@@ -251,16 +245,12 @@ func detectJSON(segment []string) string {
 // Run runs the receiving component to parse armq outputs
 func Run(vers string) {
 	config := common.Startup(vers)
-	now := time.Now()
-	ctx := &rcvContext{}
-	ctx.timeFormat = now.Format("2006-01-02T15-04-05")
-	ctx.output = config.Global.Output
-	ctx.dump = config.Global.Dump
 	go fileReceive(config)
 	worker := config.Global.Workers
 	i := 0
+	n := common.Now()
 	for i < worker {
-		go createWorker(i, ctx)
+		go createWorker(i, config, n)
 		i++
 	}
 	for {

@@ -18,16 +18,18 @@ func testHandlers() *common.Configuration {
 	return cfg
 }
 
-type writerAdjust func(*dataWriter)
+type (
+	writerAdjust func(*dataWriter)
 
-type testHarness struct {
-	ctx *apiContext
-	out string
-	req map[string][]string
-	hdl *common.Configuration
-	ok  bool
-	adj writerAdjust
-}
+	testHarness struct {
+		ctx *apiContext
+		out string
+		req map[string][]string
+		hdl *common.Configuration
+		ok  bool
+		adj writerAdjust
+	}
+)
 
 func runTest(c *apiContext, output string, r map[string][]string, h *common.Configuration, success bool) {
 	test(&testHarness{ctx: c, out: output, req: r, hdl: h, ok: success})

@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"time"
 
 	yaml "gopkg.in/yaml.v2"
 )
@@ -116,6 +117,11 @@ type (
 		}
 	}
 )
+
+// Now formats a DateTime as YYYY-MM-DDTHH-MM-SS
+func Now() string {
+	return time.Now().Format("2006-01-02T15-04-05")
+}
 
 // HandleFields indicates if the handlers support field handling
 func (c *Configuration) HandleFields() bool {
