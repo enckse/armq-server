@@ -7,7 +7,7 @@ all: run $(DIFFS)
 
 run:
 	./setup.sh
-	./armq-tests
+	go run ../tools/test.go
 
 $(DIFFS):
 	diff -u $(BIN)$@ $@.expected
