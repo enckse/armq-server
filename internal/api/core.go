@@ -552,8 +552,7 @@ func Run(vers string) {
 		webRequest(ctx, conf, w, r, obj)
 	})
 	if err := http.ListenAndServe(bind, nil); err != nil {
-		internal.Errored("unable to do http serve", err)
-		panic("unable to host")
+		internal.Fatal("unable to do http serve", err)
 	}
 }
 

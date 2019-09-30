@@ -3,6 +3,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"text/template"
 )
@@ -91,19 +92,23 @@ func converters() {
 	write(b)
 }
 
+func fail(message string, err error) {
+	panic(fmt.Sprintf("%s -> %v", message, err))
+}
+
 func runTemplate(text string, b *bytes.Buffer, obj *Object) {
 	tmpl, err := template.New("tmpl").Parse(text)
 	if err != nil {
-		panic(err)
+		fail("template parse", err)
 	}
 	if err := tmpl.Execute(b, obj); err != nil {
-		panic(err)
+		fail("template execute", err)
 	}
 }
 
 func write(b *bytes.Buffer) {
 	if err := ioutil.WriteFile("../internal/generated.go", b.Bytes(), 0644); err != nil {
-		panic(err)
+		fail("output file", err)
 	}
 }
 

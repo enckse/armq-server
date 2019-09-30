@@ -56,10 +56,10 @@ func Startup(vers string) *Configuration {
 	c := &Configuration{}
 	b, err := ioutil.ReadFile(*conf)
 	if err != nil {
-		panic(fmt.Sprintf("unable to read config %v", err))
+		Fatal("unable to read config", err)
 	}
 	if err := yaml.Unmarshal(b, c); err != nil {
-		panic(fmt.Sprintf("unable to parse config %v", err))
+		Fatal("unable to parse config %v", err)
 	}
 	Info(vers)
 	return c
@@ -134,5 +134,15 @@ func Info(message string) {
 
 // Errored is for error messaging
 func Errored(message string, err error) {
-	Info(fmt.Sprintf("ERROR -> %s (%v)", message, err))
+	msg := message
+	if err != nil {
+		msg = fmt.Sprintf("%s -> %v", message, err)
+	}
+	Info(fmt.Sprintf("ERROR: %s", msg))
+}
+
+// Fatal is unrecoverable
+func Fatal(message string, err error) {
+	Errored(message, err)
+	panic("^ unrecoverable")
 }
