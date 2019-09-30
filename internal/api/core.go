@@ -422,8 +422,7 @@ func Handle(ctx *Context, req map[string][]string, h *internal.Configuration, wr
 						break
 					} else {
 						var sub map[string]json.RawMessage
-						err := json.Unmarshal(v, &sub)
-						if err != nil {
+						if err := json.Unmarshal(v, &sub); err != nil {
 							internal.Info(fmt.Sprintf("unable to unmarshal obj: %s (%s)", p, d.field))
 							internal.Errored("unmarshal error", err)
 							break
@@ -502,8 +501,7 @@ func getSubField(key string, j map[string]json.RawMessage) (map[string]json.RawM
 		return nil, false
 	}
 	var sub map[string]json.RawMessage
-	err := json.Unmarshal(v, &sub)
-	if err != nil {
+	if err := json.Unmarshal(v, &sub); err != nil {
 		return nil, false
 	}
 	return sub, true
@@ -553,8 +551,7 @@ func Run(vers string) {
 		obj.ObjectWriter(&TagAdder{})
 		webRequest(ctx, conf, w, r, obj)
 	})
-	err = http.ListenAndServe(bind, nil)
-	if err != nil {
+	if err := http.ListenAndServe(bind, nil); err != nil {
 		internal.Errored("unable to do http serve", err)
 		panic("unable to host")
 	}
@@ -568,8 +565,7 @@ func loadFile(path string, h *internal.Configuration) (map[string]json.RawMessag
 		return nil, nil
 	}
 	var obj map[string]json.RawMessage
-	err = json.Unmarshal(b, &obj)
-	if err != nil {
+	if err := json.Unmarshal(b, &obj); err != nil {
 		internal.Info(fmt.Sprintf("unable to marshal object: %s", path))
 		internal.Errored("unable to parse json", err)
 		return nil, nil
@@ -584,8 +580,7 @@ func loadFile(path string, h *internal.Configuration) (map[string]json.RawMessag
 		v, ok := obj[internal.FieldKey]
 		if ok {
 			var fields map[string]*internal.Entry
-			err = json.Unmarshal(v, &fields)
-			if err == nil {
+			if err := json.Unmarshal(v, &fields); err == nil {
 				rewrite := messages.HandleEntries(fields, h)
 				r, err := json.Marshal(rewrite)
 				if err == nil {

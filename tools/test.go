@@ -68,12 +68,10 @@ func test(h *testHarness) {
 		panic("failed test: " + h.out)
 	}
 	var indent bytes.Buffer
-	err := json.Indent(&indent, b.Bytes(), "", "  ")
-	if err != nil {
+	if err := json.Indent(&indent, b.Bytes(), "", "  "); err != nil {
 		panic("unable to adjust output")
 	}
-	err = ioutil.WriteFile(h.ctx.Directory+h.out, indent.Bytes(), 0644)
-	if err != nil {
+	if err := ioutil.WriteFile(h.ctx.Directory+h.out, indent.Bytes(), 0644); err != nil {
 		panic("unable to complete test")
 	}
 }

@@ -58,8 +58,7 @@ func Startup(vers string) *Configuration {
 	if err != nil {
 		panic(fmt.Sprintf("unable to read config %v", err))
 	}
-	err = yaml.Unmarshal(b, c)
-	if err != nil {
+	if err := yaml.Unmarshal(b, c); err != nil {
 		panic(fmt.Sprintf("unable to parse config %v", err))
 	}
 	Info(vers)

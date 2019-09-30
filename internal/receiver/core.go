@@ -130,8 +130,7 @@ func writerWorker(id, count int, outdir string, obj *object, conf *internal.Conf
 	}
 	j = []byte(fmt.Sprintf("{%s, \"%s\": %s, \"%s\": %s}", datum.toJSON(), internal.DumpKey, j, internal.FieldKey, fields))
 	p := filepath.Join(outdir, datum.ID)
-	err := ioutil.WriteFile(p, j, 0644)
-	if err != nil {
+	if err := ioutil.WriteFile(p, j, 0644); err != nil {
 		internal.Info(fmt.Sprintf("error saving results: %s", p))
 		internal.Errored("unable to save file", err)
 		return false
@@ -143,8 +142,7 @@ func resetWorker(conf *internal.Configuration) (int, string) {
 	now := time.Now().Format("2006-01-02")
 	p := filepath.Join(conf.Global.Output, now)
 	if !pathExists(p) {
-		err := os.MkdirAll(p, 0755)
-		if err != nil {
+		if err := os.MkdirAll(p, 0755); err != nil {
 			internal.Info(fmt.Sprintf("error reseting path: %s", p))
 			internal.Errored("error for path reset", err)
 		}
@@ -321,8 +319,7 @@ func fileReceive(config *internal.Configuration) {
 	conf.sleep = time.Duration(config.Files.Sleep)
 	conf.after = time.Duration(config.Files.After)
 	internal.Info("file mode enabled")
-	err := os.Mkdir(conf.directory, 0777)
-	if err != nil {
+	if err := os.Mkdir(conf.directory, 0777); err != nil {
 		internal.Errored("unable to create directory (not aborting)", err)
 	}
 	lastCollected := 0

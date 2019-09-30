@@ -45,8 +45,7 @@ func JSON{{.Name}}Converter(expect {{.Name}}, d []byte, op OpType) bool {
 
 func JSON{{.Name}}(d []byte) ({{.Name}}, bool) {
 	var i {{.Name}}
-	err := json.Unmarshal(d, &i)
-	if err != nil {
+	if err := json.Unmarshal(d, &i); err != nil {
 		length := len(d)
 		if length > 1 && d[0] == quoteByte && d[length-1] == quoteByte {
 			return JSON{{.Name}}(d[1 : length-1])
@@ -97,8 +96,7 @@ func runTemplate(text string, b *bytes.Buffer, obj *Object) {
 	if err != nil {
 		panic(err)
 	}
-	err = tmpl.Execute(b, obj)
-	if err != nil {
+	if err := tmpl.Execute(b, obj); err != nil {
 		panic(err)
 	}
 }
