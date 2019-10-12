@@ -16,11 +16,6 @@ build
 make
 ```
 
-then install
-```
-make install
-```
-
 ### armqserver
 
 config file (default should work) is `/etc/armq.conf`, enable the following service to collect data
