@@ -1,5 +1,5 @@
 VERSION ?= master
-FLAGS   := -ldflags '-linkmode external -extldflags '$(LDFLAGS)' -s -w -X main.vers=$(VERSION)'  -gcflags=all=-trimpath=$(GOPATH) -asmflags=all=-trimpath=$(GOPATH) -buildmode=pie
+FLAGS   := -ldflags '-linkmode external -extldflags '$(LDFLAGS)' -s -w -X main.vers=$(VERSION)'  -gcflags=all=-trimpath=$(PWD) -asmflags=all=-trimpath=$(PWD) -ldflags=-extldflags=-zrelro -ldflags=-extldflags=-znow -buildmode=pie
 GEN_SRC := internal/generated.go
 OBJECTS := armq-api armq-receiver
 
