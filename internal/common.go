@@ -51,6 +51,7 @@ const (
 
 // Startup is a common way to setup command-line application in the armq-* portfolio
 func Startup(vers string) *Configuration {
+	Info(vers)
 	conf := flag.String("config", "/etc/armq.conf", "config file")
 	flag.Parse()
 	c := &Configuration{}
@@ -61,7 +62,6 @@ func Startup(vers string) *Configuration {
 	if err := yaml.Unmarshal(b, c); err != nil {
 		Fatal("unable to parse config %v", err)
 	}
-	Info(vers)
 	return c
 }
 
