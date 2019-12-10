@@ -3,13 +3,13 @@ armq-server
 
 In conjunction with [armq](https://github.com/enckse/armq) - provides a receiving endpoint to extension payloads
 
-# Description
+armq-server works by being a reader over `/opt/armq/` and using workers to process and archive data
 
-armq-server works by using a reader over `/opt/armq/`
+## running
 
-## Running
+first you need to have deployed arma, adc, and armq (not documented here)
 
-first you need to have deploy arma, adc, and armq (not documented here)
+### build
 
 build
 ```
@@ -22,6 +22,7 @@ config file (default should work) is `/etc/armq.conf`, enable the following serv
 ```
 systemctl enable --now armqserver.service
 ```
+
 **NOTE: armqserver MUST run with access to the directory armq writes to (e.g. `/opt/armq`)**
 
 to extract data:
