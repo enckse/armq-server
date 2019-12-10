@@ -141,7 +141,7 @@ func writerWorker(id, count int, outdir string, obj *object, conf *internal.Conf
 func resetWorker(conf *internal.Configuration) (int, string) {
 	now := time.Now().Format("2006-01-02")
 	p := filepath.Join(conf.Global.Output, now)
-	if !pathExists(p) {
+	if !internal.PathExists(p) {
 		if err := os.MkdirAll(p, 0755); err != nil {
 			internal.Info(fmt.Sprintf("error reseting path: %s", p))
 			internal.Errored("error for path reset", err)
@@ -241,7 +241,7 @@ func detectJSON(segment []string) string {
 
 // Run runs the receiving component to parse armq outputs
 func Run(vers string) {
-	config := internal.Startup(vers)
+	config, _ := internal.Startup(vers)
 	go fileReceive(config)
 	worker := config.Global.Workers
 	i := 0
@@ -255,20 +255,13 @@ func Run(vers string) {
 	}
 }
 
-func pathExists(file string) bool {
-	if _, err := os.Stat(file); os.IsNotExist(err) {
-		return false
-	}
-	return true
-}
-
 func runCollector(conf *fileConfig) {
 	files := collect()
 	lock.Lock()
 	defer lock.Unlock()
 	for _, f := range files {
 		p := filepath.Join(conf.directory, f)
-		if pathExists(p) {
+		if internal.PathExists(p) {
 			e := os.Remove(p)
 			if e != nil {
 				internal.Info(fmt.Sprintf("file error on gc: %s", p))

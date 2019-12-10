@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"time"
 
 	yaml "gopkg.in/yaml.v2"
@@ -50,7 +51,7 @@ const (
 )
 
 // Startup is a common way to setup command-line application in the armq-* portfolio
-func Startup(vers string) *Configuration {
+func Startup(vers string) (*Configuration, []string) {
 	Info(vers)
 	conf := flag.String("config", "/etc/armq.conf", "config file")
 	flag.Parse()
@@ -62,7 +63,7 @@ func Startup(vers string) *Configuration {
 	if err := yaml.Unmarshal(b, c); err != nil {
 		Fatal("unable to parse config %v", err)
 	}
-	return c
+	return c, flag.Args()
 }
 
 type (
@@ -104,6 +105,9 @@ type (
 			Top       int
 			StartScan int
 			EndScan   int
+			Extract   string
+			SpinUp    int
+			Service   bool
 			Handlers  struct {
 				Enable bool
 				Dump   bool
@@ -145,4 +149,12 @@ func Errored(message string, err error) {
 func Fatal(message string, err error) {
 	Errored(message, err)
 	panic("^ unrecoverable")
+}
+
+// PathExists indicates if a path exists
+func PathExists(file string) bool {
+	if _, err := os.Stat(file); os.IsNotExist(err) {
+		return false
+	}
+	return true
 }

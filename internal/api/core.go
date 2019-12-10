@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -30,6 +31,9 @@ const (
 	endStringOp                       = "le"
 	limitIndicator                    = ", {\"limited\": \"true\"}"
 	spec                              = "0.1"
+	dataField                         = "data"
+	// URL endpoints
+	tagURL = "/tags"
 )
 
 type (
@@ -513,24 +517,14 @@ func apiMeta(ctx *Context, started string) []byte {
 
 // SetMeta indicates metadata for the context run
 func (ctx *Context) SetMeta(version, host string) {
-	ctx.metaHeader = "{\"meta\": {\"spec\": \"" + spec + "\", \"api\": \"" + version + "\", \"server\": \"" + host + "\"}, \"data\": ["
+	ctx.metaHeader = "{\"meta\": {\"spec\": \"" + spec + "\", \"api\": \"" + version + "\", \"server\": \"" + host + "\"}, \"" + dataField + "\": ["
 	ctx.metaFooter = "]}"
 	ctx.byteHeader = []byte(ctx.metaHeader)
 	ctx.byteFooter = []byte(ctx.metaFooter)
 }
 
-// Run runs the API listener
-func Run(vers string) {
-	conf := internal.Startup(vers)
-	dir := conf.Global.Output
+func listen(ctx *Context, vers string, conf *internal.Configuration) {
 	bind := conf.API.Bind
-	limit := conf.API.Limit
-	ctx := &Context{}
-	ctx.Limit = limit
-	ctx.Directory = dir
-	ctx.Convert = DefaultConverters()
-	ctx.ScanStart = time.Duration(conf.API.StartScan) * 24 * time.Hour
-	ctx.ScanEnd = time.Duration(conf.API.EndScan) * 24 * time.Hour
 	host, err := os.Hostname()
 	if err != nil {
 		host = "localhost"
@@ -545,7 +539,7 @@ func Run(vers string) {
 		writeSuccess(w)
 		w.Write(apiBytes)
 	})
-	http.HandleFunc("/tags", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc(tagURL, func(w http.ResponseWriter, r *http.Request) {
 		obj := newWebDataWriter(w)
 		obj.limit = false
 		obj.ObjectWriter(&TagAdder{})
@@ -553,6 +547,99 @@ func Run(vers string) {
 	})
 	if err := http.ListenAndServe(bind, nil); err != nil {
 		internal.Fatal("unable to do http serve", err)
+	}
+}
+
+func pullData(url string) ([]byte, error) {
+	internal.Info(fmt.Sprintf("get: %s", url))
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	return ioutil.ReadAll(resp.Body)
+}
+
+func prettifyToFile(target string, data []byte) error {
+	var b bytes.Buffer
+	if err := json.Indent(&b, data, "", "    "); err != nil {
+		return err
+	}
+	return ioutil.WriteFile(target, b.Bytes(), 0644)
+}
+
+func extract(conf *internal.Configuration, args []string) error {
+	bound := fmt.Sprintf("http://%s", conf.API.Bind)
+	query := "limit=0&filter=fields.tag.raw:eq:%s"
+	if len(args) > 0 {
+		query = args[0]
+	}
+	t := time.Now().Format("2006-01-02T15-04-05")
+	internal.Info("pulling tags...")
+	tags, err := pullData(fmt.Sprintf("%s%s", bound, tagURL))
+	if err != nil {
+		return err
+	}
+	tagMap := make(map[string]json.RawMessage)
+	if err := json.Unmarshal(tags, &tagMap); err != nil {
+		return err
+	}
+	data, ok := tagMap[dataField]
+	if !ok {
+		return fmt.Errorf("no data field in tag data")
+	}
+	if !internal.PathExists(conf.API.Extract) {
+		if err := os.MkdirAll(conf.API.Extract, 0755); err != nil {
+			return err
+		}
+	}
+	var tagData []map[string]json.RawMessage
+	if err := json.Unmarshal(data, &tagData); err != nil {
+		return err
+	}
+	tagFile := filepath.Join(conf.API.Extract, fmt.Sprintf("tags.%s.json", t))
+	if err := prettifyToFile(tagFile, data); err != nil {
+		return err
+	}
+	internal.Info("pulling data...")
+	for _, tag := range tagData {
+		internal.Info(fmt.Sprintf("downloading: %s", tag))
+		for idx := range tag {
+			dumpFile := filepath.Join(conf.API.Extract, idx+".json")
+			if internal.PathExists(dumpFile) {
+				internal.Info("already downloaded...")
+				continue
+			}
+			dump, err := pullData(fmt.Sprintf("%s/?%s", bound, fmt.Sprintf(query, idx)))
+			if err != nil {
+				return err
+			}
+			if err := prettifyToFile(dumpFile, dump); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// Run runs the API listener
+func Run(vers string) {
+	conf, args := internal.Startup(vers)
+	dir := conf.Global.Output
+	limit := conf.API.Limit
+	ctx := &Context{}
+	ctx.Limit = limit
+	ctx.Directory = dir
+	ctx.Convert = DefaultConverters()
+	ctx.ScanStart = time.Duration(conf.API.StartScan) * 24 * time.Hour
+	ctx.ScanEnd = time.Duration(conf.API.EndScan) * 24 * time.Hour
+	if conf.API.Service {
+		listen(ctx, vers, conf)
+	}
+	go listen(ctx, vers, conf)
+	time.Sleep(time.Duration(conf.API.SpinUp) * time.Second)
+	if err := extract(conf, args); err != nil {
+		internal.Fatal("unable to extract data", err)
 	}
 }
 
