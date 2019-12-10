@@ -634,10 +634,16 @@ func Run(vers string) {
 	ctx.ScanStart = time.Duration(conf.API.StartScan) * 24 * time.Hour
 	ctx.ScanEnd = time.Duration(conf.API.EndScan) * 24 * time.Hour
 	if conf.API.Service {
+		internal.Info("running as service")
 		listen(ctx, vers, conf)
+		return
 	}
-	go listen(ctx, vers, conf)
-	time.Sleep(time.Duration(conf.API.SpinUp) * time.Second)
+	if !conf.API.NoHost {
+		internal.Info("running local API instance")
+		go listen(ctx, vers, conf)
+		time.Sleep(time.Duration(conf.API.SpinUp) * time.Second)
+	}
+	internal.Info("extracting data")
 	if err := extract(conf, args); err != nil {
 		internal.Fatal("unable to extract data", err)
 	}

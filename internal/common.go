@@ -108,6 +108,7 @@ type (
 			Extract   string
 			SpinUp    int
 			Service   bool
+			NoHost    bool
 			Handlers  struct {
 				Enable bool
 				Dump   bool
