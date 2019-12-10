@@ -11,7 +11,6 @@ first you need to have deployed arma, adc, and armq (not documented here)
 
 ### build
 
-build
 ```
 make
 ```
