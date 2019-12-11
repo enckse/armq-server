@@ -29,9 +29,15 @@ const (
 	filterDelimiter                   = ":"
 	startStringOp                     = "ge"
 	endStringOp                       = "le"
+	eqStringOp                        = "eq"
 	limitIndicator                    = ", {\"limited\": \"true\"}"
 	spec                              = "0.1"
 	dataField                         = "data"
+	limitKey                          = "limit"
+	filterKey                         = "filter"
+	fieldNamespace                    = "."
+	defaultQuery                      = limitKey + "=0&" + filterKey + "=" + internal.FieldKey + fieldNamespace + internal.TagKey + fieldNamespace + internal.NotJSON + filterDelimiter + eqStringOp + filterDelimiter + "%s"
+
 	// URL endpoints
 	tagURL = "/tags"
 )
@@ -119,7 +125,7 @@ func DefaultConverters() map[string]internal.TypeConv {
 
 func stringToOp(op string) internal.OpType {
 	switch op {
-	case "eq":
+	case eqStringOp:
 		return internal.Equals
 	case "neq":
 		return internal.NEquals
@@ -316,7 +322,7 @@ func Handle(ctx *Context, req map[string][]string, h *internal.Configuration, wr
 			continue
 		}
 		switch k {
-		case "filter":
+		case filterKey:
 			for _, val := range p {
 				f := parseFilter(val, ctx.Convert)
 				if f != nil {
@@ -335,7 +341,7 @@ func Handle(ctx *Context, req map[string][]string, h *internal.Configuration, wr
 			if f != nil {
 				dataFilters = append(dataFilters, f)
 			}
-		case "limit":
+		case limitKey:
 			i, err := strconv.Atoi(p[0])
 			if err == nil {
 				limited = i
@@ -413,7 +419,7 @@ func Handle(ctx *Context, req map[string][]string, h *internal.Configuration, wr
 			valid := false
 			for _, d := range dataFilters {
 				filterObj := obj
-				parts := strings.Split(d.field, ".")
+				parts := strings.Split(d.field, fieldNamespace)
 				fieldLen := len(parts) - 1
 				for i, p := range parts {
 					v, ok := filterObj[p]
@@ -570,7 +576,7 @@ func prettifyToFile(target string, data []byte) error {
 
 func extract(conf *internal.Configuration, args []string) error {
 	bound := fmt.Sprintf("http://%s", conf.API.Bind)
-	query := "limit=0&filter=fields.tag.raw:eq:%s"
+	query := defaultQuery
 	if len(args) > 0 {
 		query = args[0]
 	}
